@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LuxServe - Luxury Service Finder</title>
-    <!-- Telegram Mini App SDK -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Tailwind CSS -->
+    <title>Telegram Food Finder</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -15,280 +13,311 @@
                 extend: {
                     colors: {
                         primary: '#5D5CDE',
-                        secondary: '#E2E1FF',
-                        luxury: {
-                            gold: '#D4AF37',
-                            silver: '#C0C0C0',
-                            black: '#121212',
-                        }
+                        'primary-dark': '#4A49B7',
+                        'telegram': '#0088cc',
+                        'telegram-dark': '#0077b5',
+                        'yellow-rating': '#FFCA28',
                     },
+                    spacing: {
+                        '128': '32rem',
+                    }
                 }
             }
         }
     </script>
-    <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+        .modal {
+            transition: opacity 0.3s ease, visibility 0.3s ease;
         }
-        ::-webkit-scrollbar-track {
-            background: transparent;
+        .modal-content {
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
         }
-        ::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 3px;
+        .modal.active .modal-content {
+            transform: scale(1);
         }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #666;
+        .rating-stars {
+            display: inline-flex;
+            direction: rtl;
+        }
+        .rating-stars input {
+            display: none;
+        }
+        .rating-stars label {
+            cursor: pointer;
+            color: #ccc;
+            transition: color 0.2s;
+        }
+        .rating-stars label:hover,
+        .rating-stars label:hover ~ label,
+        .rating-stars input:checked ~ label {
+            color: #FFCA28;
         }
         
-        /* Animations */
-        .animate-fade-in {
-            animation: fadeIn 0.5s ease-in-out;
+        /* Restaurant image effects */
+        .restaurant-image {
+            position: relative;
+            overflow: hidden;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .restaurant-image img {
+            transition: transform 0.3s ease;
+        }
+        .restaurant-image:hover img {
+            transform: scale(1.05);
         }
         
-        /* Dark mode transitions */
-        * {
-            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        /* Slide in animation for restaurant list */
+        @keyframes slideInFromBottom {
+            0% {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        .restaurant-card {
+            animation: slideInFromBottom 0.3s ease forwards;
+        }
+        
+        /* Skeleton loading */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+            100% {
+                background-position: 200% 0;
+            }
+        }
+        
+        .dark .skeleton {
+            background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
+            background-size: 200% 100%;
         }
     </style>
 </head>
-<body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100">
-    <div id="app" class="max-w-md mx-auto min-h-screen pb-24 relative">
-        <!-- Header -->
-        <header class="sticky top-0 z-30 bg-white dark:bg-gray-900 shadow-sm dark:shadow-gray-800 p-4">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center space-x-2">
-                    <span class="text-primary text-2xl font-bold">LuxServe</span>
-                    <span class="bg-luxury-gold text-white text-xs px-2 py-0.5 rounded">PREMIUM</span>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen transition-colors duration-200">
+    <div id="app">
+        <!-- Main screen (Restaurant List) -->
+        <div id="main-screen" class="block">
+            <!-- Header with location -->
+            <header class="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-10">
+                <div class="container mx-auto px-4 py-3">
+                    <div class="flex items-center justify-between">
+                        <h1 class="text-xl font-bold text-telegram dark:text-blue-400">Food Finder</h1>
+                        <div class="flex items-center">
+                            <div id="location-display" class="flex items-center text-sm mr-2">
+                                <i class="fas fa-location-dot text-primary mr-1"></i>
+                                <span id="current-location">Loading location...</span>
+                            </div>
+                            <button id="refresh-location" class="p-2 text-primary dark:text-primary-dark">
+                                <i class="fas fa-arrow-rotate-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Search Box -->
+                    <div class="relative mt-2">
+                        <input type="text" id="search-input" 
+                            class="w-full pl-10 pr-4 py-2 rounded-full border border-gray-300 dark:border-gray-600 
+                            dark:bg-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-primary" 
+                            placeholder="Search restaurants, cuisines...">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    </div>
+                    
+                    <!-- Filter options -->
+                    <div class="flex space-x-2 mt-3 pb-1 overflow-x-auto hide-scrollbar">
+                        <button class="filter-btn active whitespace-nowrap px-3 py-1 rounded-full text-sm bg-primary text-white" data-filter="all">
+                            All
+                        </button>
+                        <button class="filter-btn whitespace-nowrap px-3 py-1 rounded-full text-sm bg-gray-200 dark:bg-gray-700" data-filter="fastfood">
+                            Fast Food
+                        </button>
+                        <button class="filter-btn whitespace-nowrap px-3 py-1 rounded-full text-sm bg-gray-200 dark:bg-gray-700" data-filter="italian">
+                            Italian
+                        </button>
+                        <button class="filter-btn whitespace-nowrap px-3 py-1 rounded-full text-sm bg-gray-200 dark:bg-gray-700" data-filter="asian">
+                            Asian
+                        </button>
+                        <button class="filter-btn whitespace-nowrap px-3 py-1 rounded-full text-sm bg-gray-200 dark:bg-gray-700" data-filter="cafe">
+                            Café
+                        </button>
+                        <button class="filter-btn whitespace-nowrap px-3 py-1 rounded-full text-sm bg-gray-200 dark:bg-gray-700" data-filter="desserts">
+                            Desserts
+                        </button>
+                    </div>
                 </div>
-                <div class="flex space-x-3">
-                    <button id="filter-btn" class="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-primary">
-                        <i class="fas fa-sliders-h"></i>
-                    </button>
-                    <button id="location-btn" class="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-primary">
-                        <i class="fas fa-location-dot"></i>
-                    </button>
+            </header>
+            
+            <!-- Restaurant List -->
+            <div class="container mx-auto px-4 py-4">
+                <div id="restaurant-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Restaurants will be loaded here -->
+                    <!-- Loading Skeletons -->
+                    <div class="skeleton-card rounded-lg shadow-md overflow-hidden bg-white dark:bg-gray-800">
+                        <div class="skeleton h-48 w-full"></div>
+                        <div class="p-4">
+                            <div class="skeleton h-6 w-3/4 rounded mb-2"></div>
+                            <div class="skeleton h-4 w-1/2 rounded mb-3"></div>
+                            <div class="skeleton h-4 w-full rounded mb-2"></div>
+                            <div class="skeleton h-4 w-2/3 rounded"></div>
+                        </div>
+                    </div>
+                    <div class="skeleton-card rounded-lg shadow-md overflow-hidden bg-white dark:bg-gray-800">
+                        <div class="skeleton h-48 w-full"></div>
+                        <div class="p-4">
+                            <div class="skeleton h-6 w-3/4 rounded mb-2"></div>
+                            <div class="skeleton h-4 w-1/2 rounded mb-3"></div>
+                            <div class="skeleton h-4 w-full rounded mb-2"></div>
+                            <div class="skeleton h-4 w-2/3 rounded"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- No results message -->
+                <div id="no-results" class="hidden text-center py-8">
+                    <i class="fas fa-search text-4xl text-gray-400 mb-3"></i>
+                    <p class="text-gray-500 dark:text-gray-400">No restaurants found matching your criteria.</p>
+                    <button id="clear-filters" class="mt-2 text-primary">Clear filters</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Restaurant Detail Screen -->
+        <div id="detail-screen" class="hidden">
+            <!-- Detail Header -->
+            <div class="relative">
+                <div id="restaurant-cover" class="h-48 md:h-72 bg-gray-300 dark:bg-gray-700 bg-center bg-cover">
+                    <!-- Restaurant cover image will be set via JS -->
+                </div>
+                <button id="back-to-list" class="absolute top-4 left-4 bg-black bg-opacity-50 text-white p-2 rounded-full">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4 text-white">
+                    <h1 id="detail-name" class="text-2xl font-bold mb-1">Restaurant Name</h1>
+                    <div class="flex items-center">
+                        <div id="detail-rating" class="flex items-center mr-3">
+                            <i class="fas fa-star text-yellow-rating mr-1"></i>
+                            <span>4.5</span>
+                        </div>
+                        <div id="detail-cuisine" class="text-sm">Cuisine</div>
+                    </div>
                 </div>
             </div>
             
-            <!-- Search bar -->
-            <div class="mt-4 relative">
-                <input type="text" id="search-input" placeholder="Search luxury services..." 
-                       class="w-full p-3 pl-10 rounded-lg bg-gray-100 dark:bg-gray-800 text-base focus:outline-none focus:ring-2 focus:ring-primary">
-                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-            </div>
-        </header>
-
-        <!-- Categories Horizontal Scroll -->
-        <div class="overflow-x-auto py-4 px-4 whitespace-nowrap">
-            <div class="flex space-x-3">
-                <button class="category-btn active px-4 py-2 rounded-full bg-primary text-white text-sm font-medium">
-                    All
-                </button>
-                <button class="category-btn px-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-medium">
-                    Spa & Wellness
-                </button>
-                <button class="category-btn px-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-medium">
-                    Personal Stylist
-                </button>
-                <button class="category-btn px-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-medium">
-                    Chef Services
-                </button>
-                <button class="category-btn px-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-medium">
-                    Home Services
-                </button>
-                <button class="category-btn px-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-medium">
-                    Transportation
-                </button>
-            </div>
-        </div>
-        
-        <!-- Filter Panel (Hidden by default) -->
-        <div id="filter-panel" class="hidden fixed inset-0 z-40 bg-black bg-opacity-50">
-            <div class="absolute bottom-0 w-full bg-white dark:bg-gray-900 rounded-t-xl p-4 animate-fade-in">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold">Filters</h3>
-                    <button id="close-filter" class="p-2">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                
-                <!-- Price Range -->
-                <div class="mb-4">
-                    <h4 class="font-medium mb-2">Price Range</h4>
-                    <div class="flex items-center space-x-2">
-                        <input type="range" min="0" max="1000" value="1000" class="w-full accent-primary" id="price-range">
-                        <span id="price-display">$0-$1000</span>
+            <!-- Restaurant Info -->
+            <div class="container mx-auto px-4 py-4">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-4">
+                    <div class="flex flex-wrap gap-4 mb-2">
+                        <div class="flex items-center">
+                            <i class="fas fa-location-dot text-primary mr-2"></i>
+                            <span id="detail-distance" class="text-sm">1.2 km away</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-clock text-primary mr-2"></i>
+                            <span id="detail-hours" class="text-sm">Open until 10:00 PM</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-phone text-primary mr-2"></i>
+                            <a id="detail-phone" href="tel:" class="text-sm">+1234567890</a>
+                        </div>
                     </div>
-                </div>
-                
-                <!-- Rating Filter -->
-                <div class="mb-4">
-                    <h4 class="font-medium mb-2">Minimum Rating</h4>
+                    <p id="detail-description" class="text-gray-600 dark:text-gray-300 mb-3">
+                        Restaurant description will be placed here.
+                    </p>
                     <div class="flex space-x-2">
-                        <button class="rating-btn px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700">
-                            3+ <i class="fas fa-star text-yellow-400 text-xs"></i>
+                        <button id="share-restaurant" class="flex-1 bg-telegram hover:bg-telegram-dark text-white py-2 px-4 rounded-md flex justify-center items-center">
+                            <i class="fas fa-share-alt mr-2"></i>Share
                         </button>
-                        <button class="rating-btn px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700">
-                            4+ <i class="fas fa-star text-yellow-400 text-xs"></i>
-                        </button>
-                        <button class="rating-btn px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700">
-                            4.5+ <i class="fas fa-star text-yellow-400 text-xs"></i>
+                        <button id="view-location" class="flex-1 bg-primary hover:bg-primary-dark text-white py-2 px-4 rounded-md flex justify-center items-center">
+                            <i class="fas fa-map-marker-alt mr-2"></i>View Map
                         </button>
                     </div>
                 </div>
                 
-                <!-- Badges Filter -->
-                <div class="mb-4">
-                    <h4 class="font-medium mb-2">Badges</h4>
-                    <div class="flex flex-wrap gap-2">
-                        <button class="badge-btn px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700 text-sm">
-                            Premium
-                        </button>
-                        <button class="badge-btn px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700 text-sm">
-                            Verified
-                        </button>
-                        <button class="badge-btn px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700 text-sm">
-                            Top Rated
-                        </button>
-                        <button class="badge-btn px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700 text-sm">
-                            Exclusive
-                        </button>
+                <!-- Menu Section -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-4">
+                    <h2 class="text-xl font-bold mb-3">Menu</h2>
+                    <div id="menu-categories" class="flex space-x-2 mb-3 overflow-x-auto pb-1">
+                        <!-- Menu categories will be added here -->
+                    </div>
+                    <div id="menu-items" class="space-y-3">
+                        <!-- Menu items will be added here -->
                     </div>
                 </div>
                 
-                <!-- Apply Filters Button -->
-                <button id="apply-filters" class="w-full py-3 bg-primary text-white rounded-lg font-medium">
-                    Apply Filters
-                </button>
+                <!-- Reviews Section -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-4">
+                    <div class="flex justify-between items-center mb-3">
+                        <h2 class="text-xl font-bold">Reviews</h2>
+                        <button id="add-review" class="bg-primary hover:bg-primary-dark text-white py-1 px-3 rounded-md text-sm">
+                            Write a Review
+                        </button>
+                    </div>
+                    <div id="review-list" class="space-y-3">
+                        <!-- Reviews will be added here -->
+                    </div>
+                </div>
             </div>
         </div>
         
-        <!-- Service Detail Modal (Hidden by default) -->
-        <div id="service-modal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-50">
-            <div class="absolute bottom-0 w-full bg-white dark:bg-gray-900 rounded-t-xl max-h-[90vh] overflow-y-auto animate-fade-in">
-                <div id="service-detail-content">
-                    <!-- Content will be populated by JavaScript -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Location Modal (Hidden by default) -->
-        <div id="location-modal" class="hidden fixed inset-0 z-40 bg-black bg-opacity-50">
-            <div class="absolute bottom-0 w-full bg-white dark:bg-gray-900 rounded-t-xl p-4 animate-fade-in">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold">Set Location</h3>
-                    <button id="close-location" class="p-2">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                
-                <div class="mb-4">
-                    <button id="current-location" class="w-full py-3 flex justify-center items-center bg-primary text-white rounded-lg font-medium">
-                        <i class="fas fa-location-crosshairs mr-2"></i> Use Current Location
-                    </button>
-                </div>
-                
-                <div class="mb-4">
-                    <input type="text" placeholder="Enter address or area" 
-                           class="w-full p-3 rounded-lg bg-gray-100 dark:bg-gray-800 text-base focus:outline-none focus:ring-2 focus:ring-primary">
-                </div>
-                
-                <div class="mb-4">
-                    <h4 class="font-medium mb-2">Recent Locations</h4>
-                    <div class="space-y-2">
-                        <div class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
-                            <i class="fas fa-history text-gray-400 mr-2"></i>
-                            <span>Downtown, New York</span>
+        <!-- Review Form Modal -->
+        <div id="review-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 opacity-0 invisible">
+            <div class="modal-content bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full mx-4">
+                <div class="p-6">
+                    <h3 class="text-xl font-semibold mb-4">Write a Review</h3>
+                    <form id="review-form">
+                        <input type="hidden" id="review-restaurant-id">
+                        <input type="hidden" id="review-user-id">
+                        
+                        <div class="mb-4 text-center">
+                            <div class="text-base mb-2">Rate your experience</div>
+                            <div class="rating-stars text-2xl">
+                                <input type="radio" id="star5" name="rating" value="5" />
+                                <label for="star5" class="px-1"><i class="fas fa-star"></i></label>
+                                <input type="radio" id="star4" name="rating" value="4" />
+                                <label for="star4" class="px-1"><i class="fas fa-star"></i></label>
+                                <input type="radio" id="star3" name="rating" value="3" />
+                                <label for="star3" class="px-1"><i class="fas fa-star"></i></label>
+                                <input type="radio" id="star2" name="rating" value="2" />
+                                <label for="star2" class="px-1"><i class="fas fa-star"></i></label>
+                                <input type="radio" id="star1" name="rating" value="1" />
+                                <label for="star1" class="px-1"><i class="fas fa-star"></i></label>
+                            </div>
                         </div>
-                        <div class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
-                            <i class="fas fa-history text-gray-400 mr-2"></i>
-                            <span>Upper East Side, New York</span>
+                        
+                        <div class="mb-4">
+                            <label for="review-title" class="block text-gray-700 dark:text-gray-300 mb-1">Title</label>
+                            <input type="text" id="review-title" class="w-full px-3 py-2 border rounded-md text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" required placeholder="Summarize your experience">
                         </div>
-                    </div>
+                        
+                        <div class="mb-4">
+                            <label for="review-text" class="block text-gray-700 dark:text-gray-300 mb-1">Your Review</label>
+                            <textarea id="review-text" rows="4" class="w-full px-3 py-2 border rounded-md text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" required placeholder="Tell others about your experience"></textarea>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" class="close-modal px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg">Cancel</button>
+                            <button type="submit" class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg">Submit Review</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
-        
-        <!-- Booking Success Modal (Hidden by default) -->
-        <div id="booking-success-modal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
-            <div class="bg-white dark:bg-gray-900 rounded-xl p-6 max-w-xs w-full text-center animate-fade-in">
-                <div class="flex justify-center mb-4">
-                    <div class="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
-                        <i class="fas fa-check text-2xl text-green-500"></i>
-                    </div>
-                </div>
-                <h3 class="text-xl font-bold mb-2">Booking Confirmed!</h3>
-                <p class="text-gray-600 dark:text-gray-400 mb-4">Your reservation has been successfully confirmed. You'll receive a notification with details.</p>
-                <button id="close-success" class="w-full py-3 bg-primary text-white rounded-lg font-medium">
-                    Done
-                </button>
-            </div>
-        </div>
-
-        <!-- Share Success Modal -->
-        <div id="share-success-modal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
-            <div class="bg-white dark:bg-gray-900 rounded-xl p-6 max-w-xs w-full text-center animate-fade-in">
-                <div class="flex justify-center mb-4">
-                    <div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
-                        <i class="fas fa-share-alt text-2xl text-blue-500"></i>
-                    </div>
-                </div>
-                <h3 class="text-xl font-bold mb-2">Shared Successfully!</h3>
-                <p class="text-gray-600 dark:text-gray-400 mb-4">Your selected service has been shared to Telegram.</p>
-                <button id="close-share-success" class="w-full py-3 bg-primary text-white rounded-lg font-medium">
-                    Done
-                </button>
-            </div>
-        </div>
-
-        <!-- Main Service List -->
-        <div id="service-list" class="px-4 pb-20">
-            <!-- Services will be populated by JavaScript -->
-            <div id="service-loading" class="py-10 text-center">
-                <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-                <p class="mt-2 text-gray-600 dark:text-gray-400">Loading luxury services...</p>
-            </div>
-        </div>
-        
-        <!-- Bottom Navigation -->
-        <nav class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 shadow-lg dark:shadow-gray-800 z-20">
-            <div class="max-w-md mx-auto px-4 py-2">
-                <div class="flex justify-between items-center">
-                    <button class="nav-btn flex flex-col items-center p-2 text-primary">
-                        <i class="fas fa-home text-lg"></i>
-                        <span class="text-xs mt-1">Home</span>
-                    </button>
-                    <button class="nav-btn flex flex-col items-center p-2 text-gray-500 dark:text-gray-400">
-                        <i class="fas fa-compass text-lg"></i>
-                        <span class="text-xs mt-1">Explore</span>
-                    </button>
-                    <button class="nav-btn flex flex-col items-center p-2 text-gray-500 dark:text-gray-400">
-                        <i class="fas fa-calendar-alt text-lg"></i>
-                        <span class="text-xs mt-1">Bookings</span>
-                    </button>
-                    <button class="nav-btn flex flex-col items-center p-2 text-gray-500 dark:text-gray-400">
-                        <i class="fas fa-user text-lg"></i>
-                        <span class="text-xs mt-1">Profile</span>
-                    </button>
-                </div>
-            </div>
-        </nav>
     </div>
 
     <script>
-        // Dark mode detection and setup
+        // Check for dark mode preference
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
             document.documentElement.classList.add('dark');
         }
+        
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
             if (event.matches) {
                 document.documentElement.classList.add('dark');
@@ -297,690 +326,730 @@
             }
         });
 
-        // Telegram Web App initialization
-        let tg = window.Telegram?.WebApp;
-        if (tg) {
-            tg.expand();
-            tg.enableClosingConfirmation();
-            
-            // Set theme based on Telegram theme
-            if (tg.colorScheme === 'dark') {
-                document.documentElement.classList.add('dark');
-            }
-        }
-
-        // Function to generate colored blocks for mock images
-        function generateColorBlock(color, text) {
-            const canvas = document.createElement('canvas');
-            canvas.width = 300;
-            canvas.height = 200;
-            const ctx = canvas.getContext('2d');
-            
-            // Fill background
-            ctx.fillStyle = color;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Add text
-            ctx.fillStyle = '#333333';
-            ctx.font = 'bold 20px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(text, canvas.width/2, canvas.height/2);
-            
-            return canvas.toDataURL();
-        }
-
-        // Mock data for services
-        const services = [
-            {
-                id: 1,
-                name: "Royal Spa & Massage",
-                category: "Spa & Wellness",
-                images: [
-                    generateColorBlock("#E6D7B9", "Luxury Spa"),
-                    generateColorBlock("#B9C9E6", "Massage Room"),
-                    generateColorBlock("#E6B9D7", "Wellness Area")
-                ],
-                description: "Experience ultimate relaxation with our premium spa treatments designed for discerning clients. Our therapists are trained in exclusive techniques from around the world.",
-                rating: 4.9,
-                reviews: 128,
-                price: "$150 - $400",
-                badges: ["Premium", "Top Rated"],
-                location: "Downtown",
-                distance: "0.8 miles",
-                features: ["Swedish Massage", "Hot Stone Therapy", "Aromatherapy", "Couples Massage"],
-                availability: ["10:00 AM", "12:30 PM", "3:00 PM", "5:30 PM"]
+        // App State
+        const appState = {
+            userLocation: null,
+            currentRestaurant: null,
+            userProfile: {
+                id: 'user123', // In a real app, this would come from Telegram
+                name: 'John Doe',
+                photo: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f466.png'
             },
-            {
-                id: 2,
-                name: "Elite Personal Styling",
-                category: "Personal Stylist",
-                images: [
-                    generateColorBlock("#CFD8DC", "Fashion Styling"),
-                    generateColorBlock("#DCEDC8", "Wardrobe Selection"),
-                    generateColorBlock("#FFE0B2", "Personal Shopper")
-                ],
-                description: "Transform your image with our elite personal styling services. Our fashion experts will curate a personalized wardrobe that reflects your unique style and status.",
-                rating: 4.7,
-                reviews: 85,
-                price: "$200 - $750",
-                badges: ["Exclusive", "Verified"],
-                location: "Fashion District",
-                distance: "1.2 miles",
-                features: ["Style Consultation", "Wardrobe Audit", "Personal Shopping", "Event Styling"],
-                availability: ["9:00 AM", "11:30 AM", "2:00 PM", "4:30 PM"]
-            },
-            {
-                id: 3,
-                name: "Gourmet Chef At Home",
-                category: "Chef Services",
-                images: [
-                    generateColorBlock("#BBDEFB", "Chef Service"),
-                    generateColorBlock("#F8BBD0", "Gourmet Cuisine"),
-                    generateColorBlock("#C8E6C9", "Fine Dining")
-                ],
-                description: "Enjoy restaurant-quality dining in the comfort of your home. Our Michelin-trained chefs will create a bespoke culinary experience tailored to your preferences.",
-                rating: 4.8,
-                reviews: 104,
-                price: "$300 - $1000",
-                badges: ["Premium", "Top Rated", "Exclusive"],
-                location: "Citywide",
-                distance: "Service at your location",
-                features: ["Personalized Menu", "Wine Pairing", "Dietary Accommodations", "Special Occasions"],
-                availability: ["6:00 PM", "7:00 PM", "8:00 PM", "9:00 PM"]
-            },
-            {
-                id: 4,
-                name: "Premium Home Cleaning",
-                category: "Home Services",
-                images: [
-                    generateColorBlock("#D1C4E9", "Home Cleaning"),
-                    generateColorBlock("#B3E5FC", "Premium Service"),
-                    generateColorBlock("#FFCCBC", "Housekeeping")
-                ],
-                description: "Our premium cleaning service uses eco-friendly products and hospital-grade disinfection techniques to ensure your home is immaculately clean and healthy.",
-                rating: 4.6,
-                reviews: 156,
-                price: "$100 - $350",
-                badges: ["Verified", "Top Rated"],
-                location: "Citywide",
-                distance: "Service at your location",
-                features: ["Deep Cleaning", "Window Washing", "Carpet Cleaning", "Organization Services"],
-                availability: ["9:00 AM", "11:00 AM", "1:00 PM", "3:00 PM"]
-            },
-            {
-                id: 5,
-                name: "Luxury Car Service",
-                category: "Transportation",
-                images: [
-                    generateColorBlock("#E1BEE7", "Luxury Cars"),
-                    generateColorBlock("#B2DFDB", "Chauffeur Service"),
-                    generateColorBlock("#FFECB3", "Premium Transportation")
-                ],
-                description: "Travel in style with our fleet of luxury vehicles. Whether it's airport transfers or city tours, our professional chauffeurs provide a seamless experience.",
-                rating: 4.8,
-                reviews: 92,
-                price: "$80 - $250/hour",
-                badges: ["Premium", "Verified"],
-                location: "Citywide",
-                distance: "On-demand service",
-                features: ["Airport Transfers", "City Tours", "Event Transportation", "Hourly Chauffeur"],
-                availability: ["24/7 Service"]
-            },
-            {
-                id: 6,
-                name: "Elite Personal Training",
-                category: "Spa & Wellness",
-                images: [
-                    generateColorBlock("#BCAAA4", "Personal Training"),
-                    generateColorBlock("#B2EBF2", "Fitness Premium"),
-                    generateColorBlock("#DCEDC8", "Elite Workout")
-                ],
-                description: "Achieve your fitness goals with our elite personal trainers. Customized workout programs, nutrition planning, and motivation to help you reach your peak condition.",
-                rating: 4.7,
-                reviews: 78,
-                price: "$120 - $200/session",
-                badges: ["Premium", "Verified"],
-                location: "Multiple Locations",
-                distance: "1.5 miles",
-                features: ["1-on-1 Training", "Nutrition Planning", "Progress Tracking", "Recovery Techniques"],
-                availability: ["6:00 AM", "8:00 AM", "5:00 PM", "7:00 PM"]
-            }
-        ];
+            restaurants: [],
+            reviews: [],
+            activeFilter: 'all',
+            searchQuery: '',
+            activeMenuCategory: 'all'
+        };
 
-        // Render service cards
-        function renderServices(serviceList = services) {
-            const serviceListEl = document.getElementById('service-list');
-            serviceListEl.innerHTML = '';
-            
-            serviceList.forEach(service => {
-                const serviceCard = document.createElement('div');
-                serviceCard.className = 'bg-white dark:bg-gray-800 rounded-xl shadow-sm dark:shadow-gray-700 mb-4 overflow-hidden';
-                serviceCard.setAttribute('data-service-id', service.id);
-                
-                const badgesHTML = service.badges.map(badge => 
-                    `<span class="bg-secondary dark:bg-gray-700 text-primary text-xs px-2 py-0.5 rounded mr-2">${badge}</span>`
-                ).join('');
-                
-                serviceCard.innerHTML = `
-                    <div class="relative">
-                        <img src="${service.images[0]}" alt="${service.name}" class="w-full h-48 object-cover">
-                        <div class="absolute bottom-0 left-0 w-full p-3 bg-gradient-to-t from-black to-transparent">
-                            <div class="flex items-center text-white">
-                                <span class="font-bold">${service.rating}</span>
-                                <div class="ml-1">
-                                    ${generateStars(service.rating)}
-                                </div>
-                                <span class="ml-1 text-sm">(${service.reviews})</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="p-4">
-                        <div class="flex justify-between items-start mb-2">
-                            <h3 class="text-lg font-bold">${service.name}</h3>
-                            <button class="favorite-btn p-1 text-gray-400 hover:text-red-500">
-                                <i class="far fa-heart"></i>
-                            </button>
-                        </div>
-                        <div class="flex items-center mb-2">
-                            <i class="fas fa-map-marker-alt text-primary mr-1"></i>
-                            <span class="text-sm text-gray-600 dark:text-gray-400">${service.location} · ${service.distance}</span>
-                        </div>
-                        <div class="mb-2">
-                            ${badgesHTML}
-                        </div>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">${service.description}</p>
-                        <div class="flex justify-between items-center">
-                            <span class="font-semibold text-primary">${service.price}</span>
-                            <button class="book-now-btn px-4 py-2 bg-primary text-white rounded-lg text-sm">
-                                Book Now
-                            </button>
-                        </div>
-                    </div>
-                `;
-                
-                serviceListEl.appendChild(serviceCard);
-                
-                // Add event listeners to the card
-                serviceCard.addEventListener('click', (e) => {
-                    // Don't open service details if clicking on favorite or book now button
-                    if (!e.target.closest('.favorite-btn') && !e.target.closest('.book-now-btn')) {
-                        openServiceDetails(service.id);
-                    }
-                });
-                
-                // Add event listener to favorite button
-                const favoriteBtn = serviceCard.querySelector('.favorite-btn');
-                favoriteBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    toggleFavorite(favoriteBtn);
-                });
-                
-                // Add event listener to book now button
-                const bookNowBtn = serviceCard.querySelector('.book-now-btn');
-                bookNowBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    openServiceDetails(service.id, true);
-                });
-            });
-        }
-
-        // Generate star rating HTML
-        function generateStars(rating) {
-            let stars = '';
-            const fullStars = Math.floor(rating);
-            const halfStar = rating % 1 >= 0.5;
-            
-            for (let i = 0; i < fullStars; i++) {
-                stars += '<i class="fas fa-star text-yellow-400 text-xs"></i>';
-            }
-            
-            if (halfStar) {
-                stars += '<i class="fas fa-star-half-alt text-yellow-400 text-xs"></i>';
-                
-                for (let i = 0; i < 5 - fullStars - 1; i++) {
-                    stars += '<i class="far fa-star text-yellow-400 text-xs"></i>';
-                }
-            } else {
-                for (let i = 0; i < 5 - fullStars; i++) {
-                    stars += '<i class="far fa-star text-yellow-400 text-xs"></i>';
-                }
-            }
-            
-            return stars;
-        }
-
-        // Toggle favorite
-        function toggleFavorite(btn) {
-            if (btn.innerHTML.includes('far')) {
-                btn.innerHTML = '<i class="fas fa-heart text-red-500"></i>';
-                showToast('Added to favorites');
-            } else {
-                btn.innerHTML = '<i class="far fa-heart"></i>';
-                showToast('Removed from favorites');
-            }
-        }
-
-        // Open service details
-        function openServiceDetails(serviceId, scrollToBooking = false) {
-            const service = services.find(s => s.id === serviceId);
-            if (!service) return;
-            
-            const modal = document.getElementById('service-modal');
-            const contentEl = document.getElementById('service-detail-content');
-            
-            const imagesHTML = service.images.map((img, index) => 
-                `<div class="carousel-item ${index === 0 ? 'active' : ''}" data-index="${index}">
-                    <img src="${img}" alt="" class="w-full h-64 object-cover">
-                </div>`
-            ).join('');
-            
-            const featuresHTML = service.features.map(feature => 
-                `<div class="flex items-center mb-2">
-                    <i class="fas fa-check text-primary mr-2"></i>
-                    <span>${feature}</span>
-                </div>`
-            ).join('');
-            
-            const availabilityHTML = service.availability.map(time => 
-                `<button class="time-slot px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-center hover:border-primary">
-                    ${time}
-                </button>`
-            ).join('');
-            
-            const badgesHTML = service.badges.map(badge => 
-                `<span class="bg-secondary dark:bg-gray-700 text-primary text-xs px-2 py-0.5 rounded mr-2">${badge}</span>`
-            ).join('');
-            
-            contentEl.innerHTML = `
-                <div class="relative">
-                    <div class="carousel relative">
-                        <div class="carousel-inner">
-                            ${imagesHTML}
-                        </div>
-                        <button class="carousel-control-prev absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full">
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
-                        <button class="carousel-control-next absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
-                        <div class="carousel-indicators absolute bottom-3 left-1/2 transform -translate-x-1/2 flex space-x-2">
-                            ${service.images.map((_, index) => 
-                                `<button class="carousel-indicator w-2 h-2 rounded-full bg-white ${index === 0 ? 'opacity-100' : 'opacity-50'}" data-index="${index}"></button>`
-                            ).join('')}
-                        </div>
-                    </div>
-                    <button id="close-service-modal" class="absolute top-4 right-4 bg-black bg-opacity-50 text-white p-2 rounded-full">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                
-                <div class="p-4">
-                    <div class="flex justify-between items-start mb-2">
-                        <h2 class="text-xl font-bold">${service.name}</h2>
-                        <button class="favorite-detail-btn p-1 text-gray-400 hover:text-red-500">
-                            <i class="far fa-heart"></i>
-                        </button>
-                    </div>
-                    
-                    <div class="flex items-center mb-2">
-                        <span class="font-bold mr-1">${service.rating}</span>
-                        <div class="ml-1">
-                            ${generateStars(service.rating)}
-                        </div>
-                        <span class="ml-1 text-sm">(${service.reviews} reviews)</span>
-                    </div>
-                    
-                    <div class="flex items-center mb-2">
-                        <i class="fas fa-map-marker-alt text-primary mr-1"></i>
-                        <span class="text-sm text-gray-600 dark:text-gray-400">${service.location} · ${service.distance}</span>
-                    </div>
-                    
-                    <div class="mb-3">
-                        ${badgesHTML}
-                    </div>
-                    
-                    <div class="mb-6">
-                        <h3 class="font-bold mb-2">About</h3>
-                        <p class="text-gray-600 dark:text-gray-400">${service.description}</p>
-                    </div>
-                    
-                    <div class="mb-6">
-                        <h3 class="font-bold mb-2">Services Offered</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            ${featuresHTML}
-                        </div>
-                    </div>
-                    
-                    <div id="booking-section" class="mb-6">
-                        <h3 class="font-bold mb-2">Book an Appointment</h3>
-                        <p class="text-gray-600 dark:text-gray-400 mb-2">Select a time slot:</p>
-                        <div class="grid grid-cols-2 gap-2 mb-4">
-                            ${availabilityHTML}
-                        </div>
-                        <button id="confirm-booking" class="w-full py-3 bg-primary text-white rounded-lg font-medium">
-                            Confirm Booking
-                        </button>
-                    </div>
-                    
-                    <div class="mb-6">
-                        <h3 class="font-bold mb-2">Reviews</h3>
-                        <div class="mb-4">
-                            <div class="flex items-center mb-2">
-                                <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
-                                    <i class="fas fa-user text-gray-500"></i>
-                                </div>
-                                <div>
-                                    <h4 class="font-medium">John D.</h4>
-                                    <div class="flex items-center">
-                                        <div class="mr-1">
-                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
-                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
-                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
-                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
-                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
-                                        </div>
-                                        <span class="text-xs text-gray-500">2 days ago</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="text-gray-600 dark:text-gray-400 text-sm">
-                                Exceptional service! The attention to detail and personalization exceeded my expectations. Will definitely book again.
-                            </p>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <div class="flex items-center mb-2">
-                                <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
-                                    <i class="fas fa-user text-gray-500"></i>
-                                </div>
-                                <div>
-                                    <h4 class="font-medium">Sarah M.</h4>
-                                    <div class="flex items-center">
-                                        <div class="mr-1">
-                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
-                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
-                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
-                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
-                                            <i class="far fa-star text-yellow-400 text-xs"></i>
-                                        </div>
-                                        <span class="text-xs text-gray-500">1 week ago</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="text-gray-600 dark:text-gray-400 text-sm">
-                                Very professional and high-quality service. The only issue was a slight delay, but the experience made up for it.
-                            </p>
-                        </div>
-                        
-                        <button class="text-primary font-medium">
-                            View all ${service.reviews} reviews
-                        </button>
-                    </div>
-                    
-                    <div class="flex space-x-3">
-                        <button id="share-service" class="flex-1 py-3 border border-primary text-primary rounded-lg font-medium">
-                            <i class="fas fa-share-alt mr-1"></i> Share
-                        </button>
-                        <button id="report-service" class="flex-1 py-3 border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-300 rounded-lg font-medium">
-                            <i class="fas fa-flag mr-1"></i> Report
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            modal.classList.remove('hidden');
-            
-            // Set up carousel functionality
-            const carouselItems = contentEl.querySelectorAll('.carousel-item');
-            const carouselIndicators = contentEl.querySelectorAll('.carousel-indicator');
-            const prevButton = contentEl.querySelector('.carousel-control-prev');
-            const nextButton = contentEl.querySelector('.carousel-control-next');
-            
-            let currentIndex = 0;
-            
-            function showSlide(index) {
-                carouselItems.forEach(item => item.classList.remove('active'));
-                carouselIndicators.forEach(indicator => indicator.classList.remove('opacity-100'));
-                carouselIndicators.forEach(indicator => indicator.classList.add('opacity-50'));
-                
-                carouselItems[index].classList.add('active');
-                carouselIndicators[index].classList.remove('opacity-50');
-                carouselIndicators[index].classList.add('opacity-100');
-                currentIndex = index;
-            }
-            
-            prevButton.addEventListener('click', () => {
-                const newIndex = currentIndex === 0 ? carouselItems.length - 1 : currentIndex - 1;
-                showSlide(newIndex);
-            });
-            
-            nextButton.addEventListener('click', () => {
-                const newIndex = currentIndex === carouselItems.length - 1 ? 0 : currentIndex + 1;
-                showSlide(newIndex);
-            });
-            
-            carouselIndicators.forEach((indicator, index) => {
-                indicator.addEventListener('click', () => {
-                    showSlide(index);
-                });
-            });
-            
-            // Set up event listeners for the modal
-            document.getElementById('close-service-modal').addEventListener('click', () => {
-                modal.classList.add('hidden');
-            });
-            
-            // Scroll to booking section if needed
-            if (scrollToBooking) {
-                setTimeout(() => {
-                    document.getElementById('booking-section').scrollIntoView({ behavior: 'smooth' });
-                }, 300);
-            }
-            
-            // Set up time slot selection
-            const timeSlots = contentEl.querySelectorAll('.time-slot');
-            timeSlots.forEach(slot => {
-                slot.addEventListener('click', () => {
-                    timeSlots.forEach(s => s.classList.remove('border-primary', 'text-primary'));
-                    slot.classList.add('border-primary', 'text-primary');
-                });
-            });
-            
-            // Set up confirm booking
-            document.getElementById('confirm-booking').addEventListener('click', () => {
-                showBookingSuccess();
-                modal.classList.add('hidden');
-            });
-            
-            // Set up favorite button
-            const favoriteBtn = contentEl.querySelector('.favorite-detail-btn');
-            favoriteBtn.addEventListener('click', () => {
-                toggleFavorite(favoriteBtn);
-            });
-            
-            // Set up share service button
-            document.getElementById('share-service').addEventListener('click', () => {
-                shareService(service);
-            });
-        }
-
-        // Show booking success modal
-        function showBookingSuccess() {
-            const modal = document.getElementById('booking-success-modal');
-            modal.classList.remove('hidden');
-            
-            document.getElementById('close-success').addEventListener('click', () => {
-                modal.classList.add('hidden');
-            });
-        }
-
-        // Share service
-        function shareService(service) {
-            if (tg && tg.showPopup) {
-                tg.showPopup({
-                    title: 'Share via',
-                    message: 'Choose where to share this service',
-                    buttons: [
-                        {id: 'telegram', type: 'default', text: 'Share to Telegram'},
-                        {id: 'cancel', type: 'cancel', text: 'Cancel'}
+        // Simulate loading restaurants near the user
+        function loadSampleData() {
+            // Sample data for restaurants
+            appState.restaurants = [
+                {
+                    id: 1,
+                    name: "Burger King",
+                    cuisine: "Fast Food",
+                    cuisineType: "fastfood",
+                    description: "Classic burger joint offering flame-grilled burgers, fries, and milkshakes in a casual setting.",
+                    distance: 0.3,
+                    rating: 4.2,
+                    reviewCount: 128,
+                    hours: "09:00 AM - 11:00 PM",
+                    phone: "+1-555-123-4567",
+                    image: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f354.png",
+                    location: { lat: 40.7128, lng: -74.0060 },
+                    menu: [
+                        { category: "Burgers", items: [
+                            { name: "Whopper", price: 5.99, description: "Flame-grilled beef patty topped with tomatoes, lettuce, mayo, ketchup, pickles, and onions." },
+                            { name: "Bacon King", price: 7.99, description: "Double flame-grilled beef patties with bacon, cheese, ketchup and mayo." },
+                            { name: "Chicken Royale", price: 6.49, description: "Crispy chicken patty with lettuce and mayo in a long sesame seed bun." }
+                        ]},
+                        { category: "Sides", items: [
+                            { name: "French Fries", price: 2.99, description: "Crispy, golden french fries." },
+                            { name: "Onion Rings", price: 3.49, description: "Crispy, fried onion rings." }
+                        ]},
+                        { category: "Drinks", items: [
+                            { name: "Soft Drink", price: 1.99, description: "Choice of soft drinks." },
+                            { name: "Milkshake", price: 3.99, description: "Creamy milkshakes in various flavors." }
+                        ]}
                     ]
-                }, (buttonId) => {
-                    if (buttonId === 'telegram') {
-                        // In a real app, this would share to Telegram
-                        const shareModal = document.getElementById('share-success-modal');
-                        shareModal.classList.remove('hidden');
-                        
-                        document.getElementById('close-share-success').addEventListener('click', () => {
-                            shareModal.classList.add('hidden');
-                        });
+                },
+                {
+                    id: 2,
+                    name: "Pizza Paradise",
+                    cuisine: "Italian",
+                    cuisineType: "italian",
+                    description: "Authentic Italian pizzas made in a wood-fired oven with fresh, locally-sourced ingredients.",
+                    distance: 0.7,
+                    rating: 4.8,
+                    reviewCount: 205,
+                    hours: "11:00 AM - 10:00 PM",
+                    phone: "+1-555-678-9012",
+                    image: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f355.png",
+                    location: { lat: 40.7228, lng: -74.0060 },
+                    menu: [
+                        { category: "Pizzas", items: [
+                            { name: "Margherita", price: 12.99, description: "Tomato sauce, mozzarella, and fresh basil." },
+                            { name: "Pepperoni", price: 14.99, description: "Tomato sauce, mozzarella, and pepperoni." },
+                            { name: "Vegetarian", price: 13.99, description: "Tomato sauce, mozzarella, bell peppers, mushrooms, and olives." }
+                        ]},
+                        { category: "Pasta", items: [
+                            { name: "Spaghetti Carbonara", price: 14.99, description: "Spaghetti with egg, pecorino romano, pancetta, and black pepper." },
+                            { name: "Penne Arrabbiata", price: 13.99, description: "Penne with spicy tomato sauce." }
+                        ]},
+                        { category: "Desserts", items: [
+                            { name: "Tiramisu", price: 6.99, description: "Coffee-flavoured Italian dessert made of ladyfingers dipped in coffee, layered with a whipped mixture of eggs, sugar, and mascarpone cheese." }
+                        ]}
+                    ]
+                },
+                {
+                    id: 3,
+                    name: "Sushi Palace",
+                    cuisine: "Japanese",
+                    cuisineType: "asian",
+                    description: "Premium sushi restaurant offering the freshest fish and authentic Japanese dishes in an elegant atmosphere.",
+                    distance: 1.2,
+                    rating: 4.7,
+                    reviewCount: 162,
+                    hours: "12:00 PM - 10:30 PM",
+                    phone: "+1-555-456-7890",
+                    image: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f363.png",
+                    location: { lat: 40.7328, lng: -74.0160 },
+                    menu: [
+                        { category: "Sushi", items: [
+                            { name: "Salmon Nigiri (2pc)", price: 5.99, description: "Fresh salmon on hand-pressed sushi rice." },
+                            { name: "Tuna Nigiri (2pc)", price: 6.99, description: "Fresh tuna on hand-pressed sushi rice." },
+                            { name: "California Roll (6pc)", price: 7.99, description: "Crab, avocado, and cucumber." }
+                        ]},
+                        { category: "Sashimi", items: [
+                            { name: "Salmon Sashimi (5pc)", price: 10.99, description: "Thinly sliced fresh salmon." },
+                            { name: "Tuna Sashimi (5pc)", price: 12.99, description: "Thinly sliced fresh tuna." }
+                        ]},
+                        { category: "Bento", items: [
+                            { name: "Chicken Teriyaki Bento", price: 16.99, description: "Chicken teriyaki, rice, salad, gyoza, and miso soup." }
+                        ]}
+                    ]
+                },
+                {
+                    id: 4,
+                    name: "Café Mocha",
+                    cuisine: "Café",
+                    cuisineType: "cafe",
+                    description: "Cozy café serving specialty coffees, teas, and homemade pastries in a relaxed environment. Free Wi-Fi available.",
+                    distance: 0.5,
+                    rating: 4.5,
+                    reviewCount: 93,
+                    hours: "07:00 AM - 08:00 PM",
+                    phone: "+1-555-234-5678",
+                    image: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/2615.png",
+                    location: { lat: 40.7228, lng: -74.0160 },
+                    menu: [
+                        { category: "Coffee", items: [
+                            { name: "Espresso", price: 2.99, description: "Strong black coffee made by forcing steam through ground coffee beans." },
+                            { name: "Cappuccino", price: 4.49, description: "Espresso with steamed milk and foam." },
+                            { name: "Latte", price: 4.99, description: "Espresso with steamed milk." }
+                        ]},
+                        { category: "Pastries", items: [
+                            { name: "Butter Croissant", price: 3.49, description: "Flaky, buttery pastry." },
+                            { name: "Blueberry Muffin", price: 3.99, description: "Moist muffin filled with blueberries." }
+                        ]},
+                        { category: "Sandwiches", items: [
+                            { name: "Avocado Toast", price: 7.99, description: "Smashed avocado on multigrain toast with sea salt and red pepper flakes." }
+                        ]}
+                    ]
+                },
+                {
+                    id: 5,
+                    name: "Sweet Delights",
+                    cuisine: "Desserts",
+                    cuisineType: "desserts",
+                    description: "A heaven for dessert lovers with a wide range of cakes, pastries, ice creams, and more.",
+                    distance: 0.9,
+                    rating: 4.9,
+                    reviewCount: 178,
+                    hours: "10:00 AM - 09:00 PM",
+                    phone: "+1-555-890-1234",
+                    image: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f370.png",
+                    location: { lat: 40.7428, lng: -74.0260 },
+                    menu: [
+                        { category: "Cakes", items: [
+                            { name: "Chocolate Cake", price: 6.99, description: "Rich chocolate cake with chocolate ganache." },
+                            { name: "Cheesecake", price: 7.99, description: "Creamy cheesecake with graham cracker crust." },
+                            { name: "Red Velvet", price: 7.49, description: "Moist red velvet cake with cream cheese frosting." }
+                        ]},
+                        { category: "Ice Cream", items: [
+                            { name: "Vanilla (1 scoop)", price: 3.49, description: "Classic vanilla ice cream." },
+                            { name: "Chocolate (1 scoop)", price: 3.49, description: "Rich chocolate ice cream." }
+                        ]},
+                        { category: "Pastries", items: [
+                            { name: "Éclair", price: 4.99, description: "Chocolate-covered pastry filled with cream." }
+                        ]}
+                    ]
+                },
+                {
+                    id: 6,
+                    name: "Thai Taste",
+                    cuisine: "Thai",
+                    cuisineType: "asian",
+                    description: "Authentic Thai cuisine with a modern twist. From pad thai to curry dishes, experience the flavors of Thailand.",
+                    distance: 1.5,
+                    rating: 4.6,
+                    reviewCount: 145,
+                    hours: "11:30 AM - 10:00 PM",
+                    phone: "+1-555-345-6789",
+                    image: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f35b.png",
+                    location: { lat: 40.7528, lng: -74.0360 },
+                    menu: [
+                        { category: "Starters", items: [
+                            { name: "Spring Rolls (4pc)", price: 6.99, description: "Vegetable filled crispy spring rolls with sweet chili sauce." },
+                            { name: "Chicken Satay (4pc)", price: 8.99, description: "Grilled chicken skewers with peanut sauce." }
+                        ]},
+                        { category: "Main Courses", items: [
+                            { name: "Pad Thai", price: 14.99, description: "Stir-fried rice noodles with tofu, shrimp, peanuts, and bean sprouts." },
+                            { name: "Green Curry", price: 15.99, description: "Spicy curry with coconut milk, bamboo shoots, and basil." }
+                        ]},
+                        { category: "Desserts", items: [
+                            { name: "Mango Sticky Rice", price: 7.99, description: "Sweet sticky rice with fresh mango and coconut cream." }
+                        ]}
+                    ]
+                }
+            ];
+
+            // Sample reviews
+            appState.reviews = [
+                {
+                    id: 1,
+                    restaurantId: 1,
+                    userId: "user123",
+                    userName: "John Doe",
+                    userPhoto: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f466.png",
+                    rating: 4,
+                    title: "Great burgers",
+                    text: "The Whopper was delicious and the service was fast.",
+                    date: new Date('2023-05-15')
+                },
+                {
+                    id: 2,
+                    restaurantId: 1,
+                    userId: "user456",
+                    userName: "Jane Smith",
+                    userPhoto: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f467.png",
+                    rating: 5,
+                    title: "Best fast food place",
+                    text: "Always consistent quality and quick service.",
+                    date: new Date('2023-06-20')
+                },
+                {
+                    id: 3,
+                    restaurantId: 2,
+                    userId: "user789",
+                    userName: "Mike Johnson",
+                    userPhoto: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f468.png",
+                    rating: 5,
+                    title: "Authentic Italian Pizza",
+                    text: "Reminds me of the pizza I had in Naples. Truly authentic and delicious!",
+                    date: new Date('2023-07-10')
+                }
+            ];
+        }
+
+        // DOM Elements
+        const mainScreen = document.getElementById('main-screen');
+        const detailScreen = document.getElementById('detail-screen');
+        const reviewModal = document.getElementById('review-modal');
+        const restaurantList = document.getElementById('restaurant-list');
+        const currentLocation = document.getElementById('current-location');
+        const noResults = document.getElementById('no-results');
+        const menuCategories = document.getElementById('menu-categories');
+        const menuItems = document.getElementById('menu-items');
+        const reviewList = document.getElementById('review-list');
+
+        // Event Listeners
+        document.getElementById('back-to-list').addEventListener('click', showMainScreen);
+        document.getElementById('add-review').addEventListener('click', showReviewModal);
+        document.getElementById('share-restaurant').addEventListener('click', shareRestaurant);
+        document.getElementById('view-location').addEventListener('click', viewRestaurantLocation);
+        document.getElementById('refresh-location').addEventListener('click', getUserLocation);
+        document.getElementById('clear-filters').addEventListener('click', clearFilters);
+        document.getElementById('search-input').addEventListener('input', handleSearch);
+
+        // Close modals
+        document.querySelectorAll('.close-modal').forEach(button => {
+            button.addEventListener('click', () => {
+                hideModal(reviewModal);
+            });
+        });
+
+        // Filter buttons
+        document.querySelectorAll('.filter-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const filter = button.dataset.filter;
+                appState.activeFilter = filter;
+                
+                // Update button styles
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    if (btn.dataset.filter === filter) {
+                        btn.classList.add('bg-primary', 'text-white');
+                        btn.classList.remove('bg-gray-200', 'dark:bg-gray-700');
+                    } else {
+                        btn.classList.remove('bg-primary', 'text-white');
+                        btn.classList.add('bg-gray-200', 'dark:bg-gray-700');
                     }
                 });
-            } else {
-                // Fallback for when Telegram SDK is not available
-                const shareModal = document.getElementById('share-success-modal');
-                shareModal.classList.remove('hidden');
                 
-                document.getElementById('close-share-success').addEventListener('click', () => {
-                    shareModal.classList.add('hidden');
+                renderRestaurants();
+            });
+        });
+
+        // Review Form submission
+        document.getElementById('review-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            submitReview();
+        });
+
+        // Utility Functions
+        function showModal(modal) {
+            modal.classList.remove('opacity-0', 'invisible');
+            modal.classList.add('active');
+            setTimeout(() => {
+                modal.querySelector('input')?.focus();
+            }, 300);
+        }
+
+        function hideModal(modal) {
+            modal.classList.remove('active');
+            modal.classList.add('opacity-0', 'invisible');
+        }
+
+        function formatDate(date) {
+            return new Date(date).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        // App Functions
+        function initApp() {
+            loadSampleData();
+            getUserLocation();
+            renderRestaurants();
+        }
+
+        function getUserLocation() {
+            currentLocation.textContent = "Getting location...";
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        appState.userLocation = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        currentLocation.textContent = "Your Location";
+                        // In a real app, we would fetch restaurants near this location
+                        // For demo, we just show the sample data
+                        renderRestaurants();
+                    },
+                    (error) => {
+                        console.error("Error getting location:", error);
+                        currentLocation.textContent = "Location unavailable";
+                        // Still render sample data for demo
+                        renderRestaurants();
+                    },
+                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                );
+            } else {
+                currentLocation.textContent = "Geolocation not supported";
+                renderRestaurants();
+            }
+        }
+
+        function renderRestaurants() {
+            // Clear skeleton loaders
+            document.querySelectorAll('.skeleton-card').forEach(card => card.remove());
+            
+            let filteredRestaurants = appState.restaurants;
+            
+            // Apply cuisine filter
+            if (appState.activeFilter !== 'all') {
+                filteredRestaurants = filteredRestaurants.filter(
+                    restaurant => restaurant.cuisineType === appState.activeFilter
+                );
+            }
+            
+            // Apply search filter
+            if (appState.searchQuery) {
+                const query = appState.searchQuery.toLowerCase();
+                filteredRestaurants = filteredRestaurants.filter(restaurant => 
+                    restaurant.name.toLowerCase().includes(query) || 
+                    restaurant.cuisine.toLowerCase().includes(query) ||
+                    restaurant.description.toLowerCase().includes(query)
+                );
+            }
+            
+            // Sort by distance
+            filteredRestaurants = [...filteredRestaurants].sort((a, b) => a.distance - b.distance);
+            
+            // Check if we have any results
+            if (filteredRestaurants.length === 0) {
+                restaurantList.innerHTML = '';
+                noResults.classList.remove('hidden');
+            } else {
+                noResults.classList.add('hidden');
+                
+                restaurantList.innerHTML = '';
+                filteredRestaurants.forEach((restaurant, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'restaurant-card rounded-lg shadow-md overflow-hidden bg-white dark:bg-gray-800';
+                    card.style.animationDelay = `${index * 0.05}s`;
+                    
+                    const reviewsForRestaurant = appState.reviews.filter(r => r.restaurantId === restaurant.id);
+                    
+                    card.innerHTML = `
+                        <div class="restaurant-image h-48 bg-gray-200 dark:bg-gray-700">
+                            <img src="${restaurant.image}" alt="${restaurant.name}" 
+                                class="w-full h-full object-cover">
+                        </div>
+                        <div class="p-4">
+                            <div class="flex justify-between items-start">
+                                <h3 class="font-bold text-lg">${restaurant.name}</h3>
+                                <div class="flex items-center bg-yellow-rating bg-opacity-20 px-2 py-1 rounded">
+                                    <i class="fas fa-star text-yellow-rating mr-1"></i>
+                                    <span>${restaurant.rating}</span>
+                                    <span class="text-xs text-gray-500 dark:text-gray-400 ml-1">(${restaurant.reviewCount})</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center mt-1 mb-2">
+                                <span class="text-gray-600 dark:text-gray-300 text-sm">${restaurant.cuisine}</span>
+                                <span class="mx-2">•</span>
+                                <span class="text-gray-600 dark:text-gray-300 text-sm">${restaurant.distance} km away</span>
+                            </div>
+                            <p class="text-gray-500 dark:text-gray-400 text-sm line-clamp-2">${restaurant.description}</p>
+                            <div class="mt-3 flex justify-between items-center">
+                                <span class="text-primary text-sm">${restaurant.hours}</span>
+                                <button class="view-restaurant-btn px-3 py-1 rounded-full bg-primary text-white text-sm hover:bg-primary-dark" 
+                                    data-id="${restaurant.id}">View Menu</button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    restaurantList.appendChild(card);
+                    
+                    // Add event listener to view restaurant button
+                    card.querySelector('.view-restaurant-btn').addEventListener('click', () => {
+                        showRestaurantDetails(restaurant.id);
+                    });
                 });
             }
         }
 
-        // Show toast message
-        function showToast(message) {
-            const toastId = 'toast-' + Date.now();
-            const toast = document.createElement('div');
-            toast.id = toastId;
-            toast.className = 'fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg z-50 animate-fade-in';
-            toast.textContent = message;
-            document.body.appendChild(toast);
+        function showRestaurantDetails(restaurantId) {
+            const restaurant = appState.restaurants.find(r => r.id === restaurantId);
+            if (!restaurant) return;
             
-            setTimeout(() => {
-                toast.remove();
-            }, 3000);
+            appState.currentRestaurant = restaurant;
+            
+            // Set restaurant details
+            document.getElementById('restaurant-cover').style.backgroundImage = `url(${restaurant.image})`;
+            document.getElementById('detail-name').textContent = restaurant.name;
+            document.getElementById('detail-rating').innerHTML = `
+                <i class="fas fa-star text-yellow-rating mr-1"></i>
+                <span>${restaurant.rating} (${restaurant.reviewCount})</span>
+            `;
+            document.getElementById('detail-cuisine').textContent = restaurant.cuisine;
+            document.getElementById('detail-distance').textContent = `${restaurant.distance} km away`;
+            document.getElementById('detail-hours').textContent = restaurant.hours;
+            document.getElementById('detail-phone').textContent = restaurant.phone;
+            document.getElementById('detail-phone').href = `tel:${restaurant.phone}`;
+            document.getElementById('detail-description').textContent = restaurant.description;
+            
+            // Render menu categories
+            renderMenuCategories(restaurant);
+            
+            // Render menu items (starting with first category or all)
+            appState.activeMenuCategory = 'all';
+            renderMenuItems(restaurant);
+            
+            // Render reviews
+            renderReviews(restaurant.id);
+            
+            // Switch screens
+            mainScreen.classList.add('hidden');
+            detailScreen.classList.remove('hidden');
+            
+            // Scroll to top
+            window.scrollTo(0, 0);
         }
 
-        // Filter panel functionality
-        document.getElementById('filter-btn').addEventListener('click', () => {
-            document.getElementById('filter-panel').classList.remove('hidden');
-        });
-        
-        document.getElementById('close-filter').addEventListener('click', () => {
-            document.getElementById('filter-panel').classList.add('hidden');
-        });
-        
-        // Price range functionality
-        const priceRange = document.getElementById('price-range');
-        const priceDisplay = document.getElementById('price-display');
-        
-        priceRange.addEventListener('input', () => {
-            priceDisplay.textContent = `$0-$${priceRange.value}`;
-        });
-        
-        // Badge & rating filter selection
-        const badgeBtns = document.querySelectorAll('.badge-btn');
-        badgeBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                btn.classList.toggle('bg-primary');
-                btn.classList.toggle('text-white');
-                btn.classList.toggle('border-primary');
-            });
-        });
-        
-        const ratingBtns = document.querySelectorAll('.rating-btn');
-        ratingBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                ratingBtns.forEach(b => {
-                    b.classList.remove('bg-primary', 'text-white', 'border-primary');
+        function renderMenuCategories(restaurant) {
+            menuCategories.innerHTML = `
+                <button class="menu-category-btn whitespace-nowrap px-3 py-1 rounded-full text-sm bg-primary text-white active" 
+                    data-category="all">All</button>
+            `;
+            
+            // Extract unique categories
+            const categories = restaurant.menu.map(item => item.category);
+            
+            categories.forEach(category => {
+                const btn = document.createElement('button');
+                btn.className = 'menu-category-btn whitespace-nowrap px-3 py-1 rounded-full text-sm bg-gray-200 dark:bg-gray-700';
+                btn.setAttribute('data-category', category);
+                btn.textContent = category;
+                menuCategories.appendChild(btn);
+                
+                // Add event listener
+                btn.addEventListener('click', () => {
+                    appState.activeMenuCategory = category;
+                    
+                    // Update button styles
+                    document.querySelectorAll('.menu-category-btn').forEach(el => {
+                        if (el.dataset.category === category) {
+                            el.classList.add('bg-primary', 'text-white');
+                            el.classList.remove('bg-gray-200', 'dark:bg-gray-700');
+                        } else {
+                            el.classList.remove('bg-primary', 'text-white');
+                            el.classList.add('bg-gray-200', 'dark:bg-gray-700');
+                        }
+                    });
+                    
+                    renderMenuItems(restaurant);
                 });
-                btn.classList.add('bg-primary', 'text-white', 'border-primary');
             });
-        });
-        
-        // Apply filters button
-        document.getElementById('apply-filters').addEventListener('click', () => {
-            // In a real app, this would filter the results
-            document.getElementById('filter-panel').classList.add('hidden');
-            document.getElementById('service-list').innerHTML = `
-                <div id="service-loading" class="py-10 text-center">
-                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-                    <p class="mt-2 text-gray-600 dark:text-gray-400">Filtering services...</p>
-                </div>
-            `;
             
-            // Simulate filtering delay
-            setTimeout(() => {
-                renderServices();
-                showToast('Filters applied successfully!');
-            }, 800);
-        });
-        
-        // Location modal functionality
-        document.getElementById('location-btn').addEventListener('click', () => {
-            document.getElementById('location-modal').classList.remove('hidden');
-        });
-        
-        document.getElementById('close-location').addEventListener('click', () => {
-            document.getElementById('location-modal').classList.add('hidden');
-        });
-        
-        document.getElementById('current-location').addEventListener('click', () => {
-            document.getElementById('location-modal').classList.add('hidden');
-            document.getElementById('service-list').innerHTML = `
-                <div id="service-loading" class="py-10 text-center">
-                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-                    <p class="mt-2 text-gray-600 dark:text-gray-400">Finding services near you...</p>
-                </div>
-            `;
+            // Add event listener to "All" button
+            document.querySelector('.menu-category-btn[data-category="all"]').addEventListener('click', () => {
+                appState.activeMenuCategory = 'all';
+                
+                // Update button styles
+                document.querySelectorAll('.menu-category-btn').forEach(el => {
+                    if (el.dataset.category === 'all') {
+                        el.classList.add('bg-primary', 'text-white');
+                        el.classList.remove('bg-gray-200', 'dark:bg-gray-700');
+                    } else {
+                        el.classList.remove('bg-primary', 'text-white');
+                        el.classList.add('bg-gray-200', 'dark:bg-gray-700');
+                    }
+                });
+                
+                renderMenuItems(restaurant);
+            });
+        }
+
+        function renderMenuItems(restaurant) {
+            menuItems.innerHTML = '';
             
-            // Simulate location update delay
-            setTimeout(() => {
-                renderServices();
-                showToast('Location updated to current location');
-            }, 1200);
-        });
-        
-        // Category buttons functionality
-        const categoryBtns = document.querySelectorAll('.category-btn');
-        categoryBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                // Remove active class from all buttons
-                categoryBtns.forEach(b => b.classList.remove('active', 'bg-primary', 'text-white'));
-                categoryBtns.forEach(b => b.classList.add('bg-gray-100', 'dark:bg-gray-800', 'text-gray-600', 'dark:text-gray-300'));
+            restaurant.menu.forEach(category => {
+                // Skip if not matching the active category filter
+                if (appState.activeMenuCategory !== 'all' && category.category !== appState.activeMenuCategory) {
+                    return;
+                }
                 
-                // Add active class to clicked button
-                btn.classList.add('active', 'bg-primary', 'text-white');
-                btn.classList.remove('bg-gray-100', 'dark:bg-gray-800', 'text-gray-600', 'dark:text-gray-300');
+                // Add category title if showing all categories
+                if (appState.activeMenuCategory === 'all') {
+                    const categoryTitle = document.createElement('h3');
+                    categoryTitle.className = 'font-semibold text-lg mt-4 mb-2';
+                    categoryTitle.textContent = category.category;
+                    menuItems.appendChild(categoryTitle);
+                }
                 
-                // Show loading state
-                document.getElementById('service-list').innerHTML = `
-                    <div id="service-loading" class="py-10 text-center">
-                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-                        <p class="mt-2 text-gray-600 dark:text-gray-400">Loading ${btn.textContent.trim() === 'All' ? 'services' : btn.textContent.trim() + ' services'}...</p>
+                // Add menu items
+                category.items.forEach(item => {
+                    const menuItem = document.createElement('div');
+                    menuItem.className = 'flex justify-between border-b dark:border-gray-700 pb-2 last:border-0';
+                    menuItem.innerHTML = `
+                        <div>
+                            <div class="font-medium">${item.name}</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">${item.description}</div>
+                        </div>
+                        <div class="text-primary font-semibold whitespace-nowrap ml-2">$${item.price.toFixed(2)}</div>
+                    `;
+                    menuItems.appendChild(menuItem);
+                });
+            });
+        }
+
+        function renderReviews(restaurantId) {
+            const restaurantReviews = appState.reviews.filter(review => review.restaurantId === restaurantId);
+            reviewList.innerHTML = '';
+            
+            if (restaurantReviews.length === 0) {
+                reviewList.innerHTML = `
+                    <div class="text-center py-4 text-gray-500 dark:text-gray-400">
+                        <p>No reviews yet. Be the first to write one!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            restaurantReviews.forEach(review => {
+                const reviewItem = document.createElement('div');
+                reviewItem.className = 'border-b dark:border-gray-700 pb-3 last:border-0';
+                
+                // Generate star rating HTML
+                let starsHtml = '';
+                for (let i = 1; i <= 5; i++) {
+                    if (i <= review.rating) {
+                        starsHtml += '<i class="fas fa-star text-yellow-rating"></i>';
+                    } else {
+                        starsHtml += '<i class="far fa-star text-gray-300 dark:text-gray-600"></i>';
+                    }
+                }
+                
+                reviewItem.innerHTML = `
+                    <div class="flex items-start">
+                        <img src="${review.userPhoto}" alt="${review.userName}" class="w-10 h-10 rounded-full mr-3">
+                        <div class="flex-1">
+                            <div class="flex justify-between items-center">
+                                <h4 class="font-medium">${review.userName}</h4>
+                                <span class="text-sm text-gray-500 dark:text-gray-400">${formatDate(review.date)}</span>
+                            </div>
+                            <div class="flex items-center my-1">
+                                <div class="text-sm">${starsHtml}</div>
+                            </div>
+                            <div class="font-medium mb-1">${review.title}</div>
+                            <p class="text-gray-600 dark:text-gray-300 text-sm">${review.text}</p>
+                        </div>
                     </div>
                 `;
                 
-                // Filter services based on category with a slight delay to show the loading state
-                setTimeout(() => {
-                    const category = btn.textContent.trim();
-                    let filteredServices;
-                    
-                    if (category === 'All') {
-                        filteredServices = services;
-                    } else {
-                        filteredServices = services.filter(service => service.category === category);
-                    }
-                    
-                    renderServices(filteredServices);
-                }, 800);
+                reviewList.appendChild(reviewItem);
             });
-        });
-        
-        // Initialize the service list with a loading state
-        setTimeout(() => {
-            renderServices();
-        }, 1000);
+        }
+
+        function showMainScreen() {
+            detailScreen.classList.add('hidden');
+            mainScreen.classList.remove('hidden');
+        }
+
+        function showReviewModal() {
+            if (!appState.currentRestaurant) return;
+            
+            // Reset form
+            document.getElementById('review-restaurant-id').value = appState.currentRestaurant.id;
+            document.getElementById('review-user-id').value = appState.userProfile.id;
+            document.getElementById('review-title').value = '';
+            document.getElementById('review-text').value = '';
+            document.querySelector('input[name="rating"]:checked')?.removeAttribute('checked');
+            
+            showModal(reviewModal);
+        }
+
+        function submitReview() {
+            const restaurantId = parseInt(document.getElementById('review-restaurant-id').value);
+            const userId = document.getElementById('review-user-id').value;
+            const rating = parseInt(document.querySelector('input[name="rating"]:checked')?.value || '5');
+            const title = document.getElementById('review-title').value.trim();
+            const text = document.getElementById('review-text').value.trim();
+            
+            if (!title || !text) return;
+            
+            // Create new review
+            const newReview = {
+                id: Math.max(0, ...appState.reviews.map(r => r.id)) + 1,
+                restaurantId,
+                userId,
+                userName: appState.userProfile.name,
+                userPhoto: appState.userProfile.photo,
+                rating,
+                title,
+                text,
+                date: new Date()
+            };
+            
+            // Add to reviews
+            appState.reviews.push(newReview);
+            
+            // Update restaurant rating
+            updateRestaurantRating(restaurantId);
+            
+            // Close modal
+            hideModal(reviewModal);
+            
+            // Render updated reviews
+            renderReviews(restaurantId);
+        }
+
+        function updateRestaurantRating(restaurantId) {
+            const restaurant = appState.restaurants.find(r => r.id === restaurantId);
+            if (!restaurant) return;
+            
+            const restaurantReviews = appState.reviews.filter(r => r.restaurantId === restaurantId);
+            const reviewCount = restaurantReviews.length;
+            
+            if (reviewCount === 0) return;
+            
+            // Calculate average rating
+            const totalRating = restaurantReviews.reduce((sum, review) => sum + review.rating, 0);
+            const avgRating = totalRating / reviewCount;
+            
+            // Update restaurant
+            restaurant.rating = parseFloat(avgRating.toFixed(1));
+            restaurant.reviewCount = reviewCount;
+            
+            // Update UI
+            document.getElementById('detail-rating').innerHTML = `
+                <i class="fas fa-star text-yellow-rating mr-1"></i>
+                <span>${restaurant.rating} (${restaurant.reviewCount})</span>
+            `;
+        }
+
+        function shareRestaurant() {
+            if (!appState.currentRestaurant) return;
+            
+            // In a real Telegram Mini App, we would use Telegram's native
+            // sharing functionality. For this demo, we'll simulate it with an alert.
+            const restaurant = appState.currentRestaurant;
+            const shareText = `Check out ${restaurant.name} - ${restaurant.cuisine} restaurant, rated ${restaurant.rating}/5!`;
+            
+            // This would be replaced with Telegram's native sharing API
+            // For demo purposes, let's assume we're calling Telegram's WebApp API
+            try {
+                // In a real app, we would use window.Telegram.WebApp.showPopup
+                alert(`Sharing: ${shareText}`);
+            } catch (error) {
+                console.error("Error sharing:", error);
+            }
+        }
+
+        function viewRestaurantLocation() {
+            if (!appState.currentRestaurant) return;
+            
+            // In a real app, this would open the location in Telegram's map viewer
+            // or use a map API to show the location
+            const restaurant = appState.currentRestaurant;
+            alert(`Viewing location for ${restaurant.name} at coordinates: ${restaurant.location.lat}, ${restaurant.location.lng}`);
+        }
+
+        function handleSearch(e) {
+            appState.searchQuery = e.target.value.trim();
+            renderRestaurants();
+        }
+
+        function clearFilters() {
+            appState.activeFilter = 'all';
+            appState.searchQuery = '';
+            
+            // Reset search input
+            document.getElementById('search-input').value = '';
+            
+            // Reset filter buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if (btn.dataset.filter === 'all') {
+                    btn.classList.add('bg-primary', 'text-white');
+                    btn.classList.remove('bg-gray-200', 'dark:bg-gray-700');
+                } else {
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.classList.add('bg-gray-200', 'dark:bg-gray-700');
+                }
+            });
+            
+            renderRestaurants();
+        }
+
+        // Initialize the app
+        initApp();
     </script>
 </body>
 </html>
