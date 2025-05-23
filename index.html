@@ -1,1896 +1,2376 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Luxe Dine - Exclusive Food Discovery</title>
-    
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        luxury: {
-                            gold: '#D4AF37',
-                            lightGold: '#F4E9C9',
-                            darkGold: '#AA8C2C',
-                            black: '#1A1A1A',
-                            charcoal: '#2D2D2D',
-                            cream: '#F9F6EE',
-                            navy: '#0F1A30',
-                        }
-                    },
-                    fontFamily: {
-                        'playfair': ['"Playfair Display"', 'serif'],
-                        'sans': ['Montserrat', 'sans-serif'],
-                    },
-                    boxShadow: {
-                        'luxury': '0 4px 20px rgba(0, 0, 0, 0.15)',
-                        'luxury-dark': '0 4px 20px rgba(212, 175, 55, 0.15)',
-                    }
-                }
-            }
-        };
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              luxury: {
+                gold: "#D4AF37",
+                lightGold: "#F4E9C9",
+                darkGold: "#AA8C2C",
+                black: "#1A1A1A",
+                charcoal: "#2D2D2D",
+                cream: "#F9F6EE",
+                navy: "#0F1A30",
+              },
+            },
+            fontFamily: {
+              playfair: ['"Playfair Display"', "serif"],
+              sans: ["Montserrat", "sans-serif"],
+            },
+            boxShadow: {
+              luxury: "0 4px 20px rgba(0, 0, 0, 0.15)",
+              "luxury-dark": "0 4px 20px rgba(212, 175, 55, 0.15)",
+            },
+          },
+        },
+      };
     </script>
-    
+
     <style>
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-        
-        .dark ::-webkit-scrollbar-track {
-            background: #1A1A1A;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: #D4AF37;
-            border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: #AA8C2C;
-        }
-        
-        /* Map styles */
-        .map-container {
-            height: 300px;
-            width: 100%;
-            border-radius: 0.5rem;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        
-        .dark .map-container {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-        
-        .dark .leaflet-tile {
-            filter: brightness(0.8) contrast(1.2) saturate(0.7);
-        }
-        
-        /* Custom marker */
-        .map-marker {
-            background-color: #D4AF37;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            font-weight: bold;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        }
-        
-        /* Badge system */
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.15rem 0.5rem;
-            border-radius: 0.5rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-        
-        .badge-gold {
-            background-color: #D4AF37;
-            color: white;
-        }
-        
-        .badge-silver {
-            background-color: #C0C0C0;
-            color: #1A1A1A;
-        }
-        
-        .badge-special {
-            background-color: #800020;
-            color: white;
-        }
-        
-        /* Star ratings */
-        .stars {
-            display: inline-flex;
-            align-items: center;
-        }
-        
-        .stars i {
-            color: #D4AF37;
-            font-size: 0.875rem;
-        }
-        
-        /* Category pills */
-        .category-pill {
-            cursor: pointer;
-            transition: all 0.3s ease;
-            white-space: nowrap;
-        }
-        
-        .category-pill.active {
-            background-color: #D4AF37;
-            color: white;
-        }
-        
-        .dark .category-pill.active {
-            box-shadow: 0 2px 8px rgba(212, 175, 55, 0.5);
-        }
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
 
-        /* Animations */
-        .fade-in {
-            animation: fadeIn 0.5s ease-in-out;
+      ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+
+      .dark ::-webkit-scrollbar-track {
+        background: #1a1a1a;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: #d4af37;
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: #aa8c2c;
+      }
+
+      /* Map styles */
+      .map-container {
+        height: 300px;
+        width: 100%;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .dark .map-container {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+
+      .dark .leaflet-tile {
+        filter: brightness(0.8) contrast(1.2) saturate(0.7);
+      }
+
+      /* Custom marker */
+      .map-marker {
+        background-color: #d4af37;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-weight: bold;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+      }
+
+      /* Badge system */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.15rem 0.5rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+
+      .badge-gold {
+        background-color: #d4af37;
+        color: white;
+      }
+
+      .badge-silver {
+        background-color: #c0c0c0;
+        color: #1a1a1a;
+      }
+
+      .badge-special {
+        background-color: #800020;
+        color: white;
+      }
+
+      /* Star ratings */
+      .stars {
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .stars i {
+        color: #d4af37;
+        font-size: 0.875rem;
+      }
+
+      /* Category pills */
+      .category-pill {
+        cursor: pointer;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+      }
+
+      .category-pill.active {
+        background-color: #d4af37;
+        color: white;
+      }
+
+      .dark .category-pill.active {
+        box-shadow: 0 2px 8px rgba(212, 175, 55, 0.5);
+      }
+
+      /* Animations */
+      .fade-in {
+        animation: fadeIn 0.5s ease-in-out;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
         }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
-        
-        .slide-in {
-            animation: slideIn 0.3s ease-in-out;
+      }
+
+      .slide-in {
+        animation: slideIn 0.3s ease-in-out;
+      }
+
+      @keyframes slideIn {
+        from {
+          transform: translateX(-20px);
+          opacity: 0;
         }
-        
-        @keyframes slideIn {
-            from { transform: translateX(-20px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+        to {
+          transform: translateX(0);
+          opacity: 1;
         }
-        
-        /* Toast notification */
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 0.75rem 1.5rem;
-            border-radius: 4px;
-            color: white;
-            z-index: 1000;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-            opacity: 0;
-            pointer-events: none;
+      }
+
+      /* Toast notification */
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 0.75rem 1.5rem;
+        border-radius: 4px;
+        color: white;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .toast.show {
+        opacity: 1;
+      }
+      /* Fix z-index for modal and map */
+      #mapView {
+        z-index: 10; /* Ensure map is below modals */
+      }
+
+      #detailModal,
+      #businessEditModal,
+      #menuEditModal,
+      #reviewModal {
+        z-index: 1000; /* Ensure modals are above all other elements */
+      }
+      .toast.success {
+        background-color: #10b981;
+      }
+
+      .toast.error {
+        background-color: #ef4444;
+      }
+
+      /* Loading spinner */
+      .loader {
+        border: 3px solid rgba(212, 175, 55, 0.3);
+        border-radius: 50%;
+        border-top: 3px solid #d4af37;
+        width: 24px;
+        height: 24px;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
         }
-        
-        .toast.show {
-            opacity: 1;
+        100% {
+          transform: rotate(360deg);
         }
-        
-        .toast.success {
-            background-color: #10B981;
-        }
-        
-        .toast.error {
-            background-color: #EF4444;
-        }
-        
-        /* Loading spinner */
-        .loader {
-            border: 3px solid rgba(212, 175, 55, 0.3);
-            border-radius: 50%;
-            border-top: 3px solid #D4AF37;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+      }
     </style>
-</head>
+  </head>
 
-<body class="font-sans bg-white dark:bg-luxury-black text-luxury-black dark:text-white min-h-screen">
+  <body
+    class="font-sans bg-white dark:bg-luxury-black text-luxury-black dark:text-white min-h-screen"
+  >
     <!-- Toast Notification -->
     <div id="toast" class="toast"></div>
-    
+
     <!-- App Header -->
-    <header class="sticky top-0 z-50 bg-white dark:bg-luxury-black border-b border-gray-200 dark:border-luxury-charcoal shadow-sm">
-        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center">
-                <h1 class="text-2xl font-playfair font-bold text-luxury-gold">Luxe<span class="text-luxury-black dark:text-white">Dine</span></h1>
-            </div>
-            <div class="flex items-center space-x-3">
-                <button id="darkModeToggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-luxury-charcoal transition">
-                    <i class="fas fa-moon dark:hidden"></i>
-                    <i class="fas fa-sun hidden dark:block text-luxury-gold"></i>
-                </button>
-                <button id="filterButton" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-luxury-charcoal transition">
-                    <i class="fas fa-sliders-h text-luxury-black dark:text-luxury-gold"></i>
-                </button>
-                <button id="profileButton" class="p-2 rounded-full bg-luxury-gold text-white shadow-luxury hover:bg-luxury-darkGold transition">
-                    <i class="fas fa-user"></i>
-                </button>
-            </div>
+    <header
+      class="sticky top-0 z-50 bg-white dark:bg-luxury-black border-b border-gray-200 dark:border-luxury-charcoal shadow-sm"
+    >
+      <div
+        class="container mx-auto px-4 py-3 flex justify-between items-center"
+      >
+        <div class="flex items-center">
+          <h1 class="text-2xl font-playfair font-bold text-luxury-gold">
+            Luxe<span class="text-luxury-black dark:text-white">Dine</span>
+          </h1>
         </div>
+        <div class="flex items-center space-x-3">
+          <button
+            id="darkModeToggle"
+            class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-luxury-charcoal transition"
+          >
+            <i class="fas fa-moon dark:hidden"></i>
+            <i class="fas fa-sun hidden dark:block text-luxury-gold"></i>
+          </button>
+          <button
+            id="filterButton"
+            class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-luxury-charcoal transition"
+          >
+            <i
+              class="fas fa-sliders-h text-luxury-black dark:text-luxury-gold"
+            ></i>
+          </button>
+          <button
+            id="profileButton"
+            class="p-2 rounded-full bg-luxury-gold text-white shadow-luxury hover:bg-luxury-darkGold transition"
+          >
+            <i class="fas fa-user"></i>
+          </button>
+        </div>
+      </div>
     </header>
-    
+
     <!-- Main Content -->
     <main class="container mx-auto px-4 py-6 pb-20">
-        <!-- Location and Search -->
-        <div class="mb-6">
-            <div class="flex items-center justify-between mb-2">
-                <div>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Current Location</p>
-                    <div class="flex items-center">
-                        <i class="fas fa-map-marker-alt text-luxury-gold mr-2"></i>
-                        <span id="currentLocation" class="font-medium">Loading location...</span>
-                    </div>
-                </div>
-                <button id="refreshLocation" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-luxury-charcoal transition">
-                    <i class="fas fa-sync-alt text-luxury-gold"></i>
-                </button>
+      <!-- Location and Search -->
+      <div class="mb-6">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              Current Location
+            </p>
+            <div class="flex items-center">
+              <i class="fas fa-map-marker-alt text-luxury-gold mr-2"></i>
+              <span id="currentLocation" class="font-medium"
+                >Loading location...</span
+              >
             </div>
-            
-            <div class="relative mt-3">
-                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                <input 
-                    type="text" 
-                    id="searchInput" 
-                    placeholder="Search for restaurants, cuisines, or dishes" 
-                    class="w-full pl-10 pr-4 py-3 bg-gray-100 dark:bg-luxury-charcoal border-none rounded-lg focus:ring-2 focus:ring-luxury-gold focus:outline-none text-base"
-                >
-            </div>
+          </div>
+          <button
+            id="refreshLocation"
+            class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-luxury-charcoal transition"
+          >
+            <i class="fas fa-sync-alt text-luxury-gold"></i>
+          </button>
         </div>
-        
-        <!-- Filter Panel (hidden by default) -->
-        <div id="filterPanel" class="bg-white dark:bg-luxury-charcoal rounded-lg p-4 mb-6 shadow-luxury dark:shadow-luxury-dark hidden fade-in">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="font-playfair font-semibold text-lg">Refine Your Search</h3>
-                <button id="closeFilter" class="text-gray-500 hover:text-luxury-gold">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <div class="space-y-4">
-                <!-- Price Range -->
-                <div>
-                    <label class="block mb-2 text-sm font-medium">Price Range</label>
-                    <div class="flex space-x-2">
-                        <button data-price="$" class="price-filter flex-1 py-2 px-3 border border-gray-200 dark:border-gray-700 rounded-md text-center hover:border-luxury-gold hover:text-luxury-gold transition">$</button>
-                        <button data-price="$$" class="price-filter flex-1 py-2 px-3 border border-gray-200 dark:border-gray-700 rounded-md text-center hover:border-luxury-gold hover:text-luxury-gold transition">$$</button>
-                        <button data-price="$$$" class="price-filter flex-1 py-2 px-3 border border-gray-200 dark:border-gray-700 rounded-md text-center hover:border-luxury-gold hover:text-luxury-gold transition">$$$</button>
-                        <button data-price="$$$$" class="price-filter flex-1 py-2 px-3 border border-gray-200 dark:border-gray-700 rounded-md text-center hover:border-luxury-gold hover:text-luxury-gold transition">$$$$</button>
-                    </div>
-                </div>
-                
-                <!-- Rating -->
-                <div>
-                    <label class="block mb-2 text-sm font-medium">Minimum Rating</label>
-                    <div class="flex space-x-2">
-                        <button data-rating="3" class="rating-filter flex-1 py-2 px-3 border border-gray-200 dark:border-gray-700 rounded-md text-center hover:border-luxury-gold hover:text-luxury-gold transition">3+</button>
-                        <button data-rating="4" class="rating-filter flex-1 py-2 px-3 border border-gray-200 dark:border-gray-700 rounded-md text-center hover:border-luxury-gold hover:text-luxury-gold transition">4+</button>
-                        <button data-rating="4.5" class="rating-filter flex-1 py-2 px-3 border border-gray-200 dark:border-gray-700 rounded-md text-center hover:border-luxury-gold hover:text-luxury-gold transition">4.5+</button>
-                    </div>
-                </div>
-                
-                <!-- Badges -->
-                <div>
-                    <label class="block mb-2 text-sm font-medium">Special Badges</label>
-                    <div class="flex flex-wrap gap-2">
-                        <button data-badge="luxury" class="badge-filter py-1 px-3 border border-gray-200 dark:border-gray-700 rounded-full text-sm hover:border-luxury-gold hover:text-luxury-gold transition">Luxury</button>
-                        <button data-badge="trending" class="badge-filter py-1 px-3 border border-gray-200 dark:border-gray-700 rounded-full text-sm hover:border-luxury-gold hover:text-luxury-gold transition">Trending</button>
-                        <button data-badge="special-offer" class="badge-filter py-1 px-3 border border-gray-200 dark:border-gray-700 rounded-full text-sm hover:border-luxury-gold hover:text-luxury-gold transition">Special Offer</button>
-                        <button data-badge="exclusive" class="badge-filter py-1 px-3 border border-gray-200 dark:border-gray-700 rounded-full text-sm hover:border-luxury-gold hover:text-luxury-gold transition">Exclusive</button>
-                    </div>
-                </div>
-                
-                <!-- Distance -->
-                <div>
-                    <label class="block mb-2 text-sm font-medium">Maximum Distance</label>
-                    <input 
-                        type="range" 
-                        min="1" 
-                        max="10" 
-                        value="5" 
-                        class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-luxury-gold" 
-                        id="distanceRange"
-                    >
-                    <div class="flex justify-between text-xs text-gray-500 mt-1">
-                        <span>1 km</span>
-                        <span id="distanceValue">5 km</span>
-                        <span>10 km</span>
-                    </div>
-                </div>
-                
-                <div class="flex justify-end mt-4">
-                    <button id="resetFilters" class="mr-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-luxury-charcoal transition">Reset</button>
-                    <button id="applyFilters" class="px-4 py-2 bg-luxury-gold text-white rounded-md hover:bg-luxury-darkGold transition shadow-sm">Apply Filters</button>
-                </div>
-            </div>
+
+        <div class="relative mt-3">
+          <i
+            class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+          ></i>
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Search for restaurants, cuisines, or dishes"
+            class="w-full pl-10 pr-4 py-3 bg-gray-100 dark:bg-luxury-charcoal border-none rounded-lg focus:ring-2 focus:ring-luxury-gold focus:outline-none text-base"
+          />
         </div>
-        
-        <!-- Map View -->
-        <div class="mb-6">
-            <div class="flex justify-between items-center mb-3">
-                <h2 class="font-playfair font-bold text-xl">Nearby Establishments</h2>
-                <button id="toggleMapView" class="text-sm text-luxury-gold hover:underline">Show List</button>
-            </div>
-            
-            <div id="mapView" class="map-container"></div>
-            
-            <div id="listView" class="hidden space-y-4 mt-3">
-                <!-- Business list will be populated here by JavaScript -->
-            </div>
+      </div>
+
+      <!-- Filter Panel (hidden by default) -->
+      <div
+        id="filterPanel"
+        class="bg-white dark:bg-luxury-charcoal rounded-lg p-4 mb-6 shadow-luxury dark:shadow-luxury-dark hidden fade-in"
+      >
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-playfair font-semibold text-lg">
+            Refine Your Search
+          </h3>
+          <button id="closeFilter" class="text-gray-500 hover:text-luxury-gold">
+            <i class="fas fa-times"></i>
+          </button>
         </div>
-        
-        <!-- Category Tabs -->
-        <div class="mb-6">
-            <div class="overflow-x-auto pb-2">
-                <div class="flex space-x-2">
-                    <button class="category-pill active px-4 py-2 rounded-full bg-gray-100 dark:bg-luxury-charcoal" data-category="all">All</button>
-                    <button class="category-pill px-4 py-2 rounded-full bg-gray-100 dark:bg-luxury-charcoal" data-category="fine-dining">Fine Dining</button>
-                    <button class="category-pill px-4 py-2 rounded-full bg-gray-100 dark:bg-luxury-charcoal" data-category="cafe">Café & Bistro</button>
-                    <button class="category-pill px-4 py-2 rounded-full bg-gray-100 dark:bg-luxury-charcoal" data-category="bar">Bars & Lounges</button>
-                    <button class="category-pill px-4 py-2 rounded-full bg-gray-100 dark:bg-luxury-charcoal" data-category="dessert">Dessert</button>
-                    <button class="category-pill px-4 py-2 rounded-full bg-gray-100 dark:bg-luxury-charcoal" data-category="international">International</button>
-                    <button class="category-pill px-4 py-2 rounded-full bg-gray-100 dark:bg-luxury-charcoal" data-category="fusion">Fusion</button>
-                </div>
+
+        <div class="space-y-4">
+          <!-- Price Range -->
+          <div>
+            <label class="block mb-2 text-sm font-medium">Price Range</label>
+            <div class="flex space-x-2">
+              <button
+                data-price="$"
+                class="price-filter flex-1 py-2 px-3 border border-gray-200 dark:border-gray-700 rounded-md text-center hover:border-luxury-gold hover:text-luxury-gold transition"
+              >
+                $
+              </button>
+              <button
+                data-price="$$"
+                class="price-filter flex-1 py-2 px-3 border border-gray-200 dark:border-gray-700 rounded-md text-center hover:border-luxury-gold hover:text-luxury-gold transition"
+              >
+                $$
+              </button>
+              <button
+                data-price="$$$"
+                class="price-filter flex-1 py-2 px-3 border border-gray-200 dark:border-gray-700 rounded-md text-center hover:border-luxury-gold hover:text-luxury-gold transition"
+              >
+                $$$
+              </button>
+              <button
+                data-price="$$$$"
+                class="price-filter flex-1 py-2 px-3 border border-gray-200 dark:border-gray-700 rounded-md text-center hover:border-luxury-gold hover:text-luxury-gold transition"
+              >
+                $$$$
+              </button>
             </div>
+          </div>
+
+          <!-- Rating -->
+          <div>
+            <label class="block mb-2 text-sm font-medium">Minimum Rating</label>
+            <div class="flex space-x-2">
+              <button
+                data-rating="3"
+                class="rating-filter flex-1 py-2 px-3 border border-gray-200 dark:border-gray-700 rounded-md text-center hover:border-luxury-gold hover:text-luxury-gold transition"
+              >
+                3+
+              </button>
+              <button
+                data-rating="4"
+                class="rating-filter flex-1 py-2 px-3 border border-gray-200 dark:border-gray-700 rounded-md text-center hover:border-luxury-gold hover:text-luxury-gold transition"
+              >
+                4+
+              </button>
+              <button
+                data-rating="4.5"
+                class="rating-filter flex-1 py-2 px-3 border border-gray-200 dark:border-gray-700 rounded-md text-center hover:border-luxury-gold hover:text-luxury-gold transition"
+              >
+                4.5+
+              </button>
+            </div>
+          </div>
+
+          <!-- Badges -->
+          <div>
+            <label class="block mb-2 text-sm font-medium">Special Badges</label>
+            <div class="flex flex-wrap gap-2">
+              <button
+                data-badge="luxury"
+                class="badge-filter py-1 px-3 border border-gray-200 dark:border-gray-700 rounded-full text-sm hover:border-luxury-gold hover:text-luxury-gold transition"
+              >
+                Luxury
+              </button>
+              <button
+                data-badge="trending"
+                class="badge-filter py-1 px-3 border border-gray-200 dark:border-gray-700 rounded-full text-sm hover:border-luxury-gold hover:text-luxury-gold transition"
+              >
+                Trending
+              </button>
+              <button
+                data-badge="special-offer"
+                class="badge-filter py-1 px-3 border border-gray-200 dark:border-gray-700 rounded-full text-sm hover:border-luxury-gold hover:text-luxury-gold transition"
+              >
+                Special Offer
+              </button>
+              <button
+                data-badge="exclusive"
+                class="badge-filter py-1 px-3 border border-gray-200 dark:border-gray-700 rounded-full text-sm hover:border-luxury-gold hover:text-luxury-gold transition"
+              >
+                Exclusive
+              </button>
+            </div>
+          </div>
+
+          <!-- Distance -->
+          <div>
+            <label class="block mb-2 text-sm font-medium"
+              >Maximum Distance</label
+            >
+            <input
+              type="range"
+              min="1"
+              max="10"
+              value="5"
+              class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-luxury-gold"
+              id="distanceRange"
+            />
+            <div class="flex justify-between text-xs text-gray-500 mt-1">
+              <span>1 km</span>
+              <span id="distanceValue">5 km</span>
+              <span>10 km</span>
+            </div>
+          </div>
+
+          <div class="flex justify-end mt-4">
+            <button
+              id="resetFilters"
+              class="mr-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-luxury-charcoal transition"
+            >
+              Reset
+            </button>
+            <button
+              id="applyFilters"
+              class="px-4 py-2 bg-luxury-gold text-white rounded-md hover:bg-luxury-darkGold transition shadow-sm"
+            >
+              Apply Filters
+            </button>
+          </div>
         </div>
-        
-        <!-- Featured Offers -->
-        <div class="mb-8">
-            <h2 class="font-playfair font-bold text-xl mb-4">Featured Offers</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Special offers will be populated here by JavaScript -->
-            </div>
+      </div>
+
+      <!-- Map View -->
+      <div class="mb-6 z-100">
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="font-playfair font-bold text-xl">Nearby Establishments</h2>
+          <button
+            id="toggleMapView"
+            class="text-sm text-luxury-gold hover:underline"
+          >
+            Show List
+          </button>
         </div>
-        
-        <!-- Restaurant Listings -->
-        <div class="mb-8">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="font-playfair font-bold text-xl">Premium Establishments</h2>
-                <div class="flex items-center">
-                    <span class="text-sm mr-2">Sort by:</span>
-                    <select id="sortOption" class="text-sm bg-gray-100 dark:bg-luxury-charcoal border-none rounded-md focus:ring-luxury-gold focus:outline-none">
-                        <option value="rating">Top Rated</option>
-                        <option value="distance">Nearest</option>
-                        <option value="price-low">Price: Low to High</option>
-                        <option value="price-high">Price: High to Low</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div id="restaurantList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <!-- Restaurant listings will be populated here by JavaScript -->
-            </div>
-            
-            <div id="loadMoreContainer" class="text-center mt-8">
-                <button id="loadMoreBtn" class="px-6 py-2 border border-luxury-gold text-luxury-gold rounded-md hover:bg-luxury-gold hover:text-white transition">Load More</button>
-            </div>
+
+        <div id="mapView" class="map-container"></div>
+
+        <div id="listView" class="hidden space-y-4 mt-3">
+          <!-- Business list will be populated here by JavaScript -->
         </div>
+      </div>
+
+      <!-- Category Tabs -->
+      <div class="mb-6">
+        <div class="overflow-x-auto pb-2">
+          <div class="flex space-x-2">
+            <button
+              class="category-pill active px-4 py-2 rounded-full bg-gray-100 dark:bg-luxury-charcoal"
+              data-category="all"
+            >
+              All
+            </button>
+            <button
+              class="category-pill px-4 py-2 rounded-full bg-gray-100 dark:bg-luxury-charcoal"
+              data-category="fine-dining"
+            >
+              Fine Dining
+            </button>
+            <button
+              class="category-pill px-4 py-2 rounded-full bg-gray-100 dark:bg-luxury-charcoal"
+              data-category="ethiopian"
+            >
+              Ethiopian
+            </button>
+            <button
+              class="category-pill px-4 py-2 rounded-full bg-gray-100 dark:bg-luxury-charcoal"
+              data-category="cafe"
+            >
+              Café & Bistro
+            </button>
+            <button
+              class="category-pill px-4 py-2 rounded-full bg-gray-100 dark:bg-luxury-charcoal"
+              data-category="bar"
+            >
+              Bars & Lounges
+            </button>
+            <button
+              class="category-pill px-4 py-2 rounded-full bg-gray-100 dark:bg-luxury-charcoal"
+              data-category="dessert"
+            >
+              Dessert
+            </button>
+            <button
+              class="category-pill px-4 py-2 rounded-full bg-gray-100 dark:bg-luxury-charcoal"
+              data-category="pizza"
+            >
+              Pizza
+            </button>
+            <button
+              class="category-pill px-4 py-2 rounded-full bg-gray-100 dark:bg-luxury-charcoal"
+              data-category="fusion"
+            >
+              Fusion
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Featured Offers -->
+      <div class="mb-8">
+        <h2 class="font-playfair font-bold text-xl mb-4">Featured Offers</h2>
+        <div
+          id="featuredOffersList"
+          class="grid grid-cols-1 md:grid-cols-2 gap-4"
+        >
+          <!-- Special offers will be populated here by JavaScript -->
+        </div>
+      </div>
+
+      <!-- Restaurant Listings -->
+      <div class="mb-8">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="font-playfair font-bold text-xl">
+            Premium Establishments
+          </h2>
+          <div class="flex items-center">
+            <span class="text-sm mr-2">Sort by:</span>
+            <select
+              id="sortOption"
+              class="text-sm bg-gray-100 dark:bg-luxury-charcoal border-none rounded-md focus:ring-luxury-gold focus:outline-none"
+            >
+              <option value="rating">Top Rated</option>
+              <option value="distance">Nearest</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+            </select>
+          </div>
+        </div>
+
+        <div
+          id="restaurantList"
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+        >
+          <!-- Restaurant listings will be populated here by JavaScript -->
+        </div>
+
+        <div id="loadMoreContainer" class="text-center mt-8">
+          <button
+            id="loadMoreBtn"
+            class="px-6 py-2 border border-luxury-gold text-luxury-gold rounded-md hover:bg-luxury-gold hover:text-white transition"
+          >
+            Load More
+          </button>
+        </div>
+      </div>
     </main>
-    
+
     <!-- Bottom Navigation -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-white dark:bg-luxury-black border-t border-gray-200 dark:border-luxury-charcoal shadow-lg z-40">
-        <div class="flex justify-around">
-            <button class="nav-item active flex flex-col items-center py-2 px-4 w-1/5" data-target="home">
-                <i class="fas fa-home text-luxury-gold"></i>
-                <span class="text-xs mt-1">Home</span>
-            </button>
-            <button class="nav-item flex flex-col items-center py-2 px-4 w-1/5" data-target="explore">
-                <i class="fas fa-compass"></i>
-                <span class="text-xs mt-1">Explore</span>
-            </button>
-            <button class="nav-item flex flex-col items-center py-2 px-4 w-1/5" data-target="favorites">
-                <i class="fas fa-heart"></i>
-                <span class="text-xs mt-1">Favorites</span>
-            </button>
-            <button class="nav-item flex flex-col items-center py-2 px-4 w-1/5" data-target="reservations">
-                <i class="fas fa-calendar-alt"></i>
-                <span class="text-xs mt-1">Bookings</span>
-            </button>
-            <button class="nav-item flex flex-col items-center py-2 px-4 w-1/5" data-target="community">
-                <i class="fas fa-users"></i>
-                <span class="text-xs mt-1">Community</span>
-            </button>
-        </div>
+    <nav
+      class="fixed bottom-0 left-0 right-0 bg-white dark:bg-luxury-black border-t border-gray-200 dark:border-luxury-charcoal shadow-lg z-40"
+    >
+      <div class="flex justify-around">
+        <button
+          class="nav-item active flex flex-col items-center py-2 px-4 w-1/5"
+          data-target="home"
+        >
+          <i class="fas fa-home text-luxury-gold"></i>
+          <span class="text-xs mt-1">Home</span>
+        </button>
+        <button
+          class="nav-item flex flex-col items-center py-2 px-4 w-1/5"
+          data-target="explore"
+        >
+          <i class="fas fa-compass"></i>
+          <span class="text-xs mt-1">Explore</span>
+        </button>
+        <button
+          class="nav-item flex flex-col items-center py-2 px-4 w-1/5"
+          data-target="favorites"
+        >
+          <i class="fas fa-heart"></i>
+          <span class="text-xs mt-1">Favorites</span>
+        </button>
+        <button
+          class="nav-item flex flex-col items-center py-2 px-4 w-1/5"
+          data-target="reservations"
+        >
+          <i class="fas fa-calendar-alt"></i>
+          <span class="text-xs mt-1">Bookings</span>
+        </button>
+        <button
+          class="nav-item flex flex-col items-center py-2 px-4 w-1/5"
+          data-target="community"
+        >
+          <i class="fas fa-users"></i>
+          <span class="text-xs mt-1">Community</span>
+        </button>
+      </div>
     </nav>
-    
+
     <!-- Detail Modal -->
-    <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white dark:bg-luxury-charcoal rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto mx-4">
-            <div id="modalContent" class="p-4">
-                <!-- Modal content will be populated by JavaScript -->
-            </div>
+    <div
+      id="detailModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden"
+    >
+      <div
+        class="bg-white dark:bg-luxury-charcoal rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto mx-4"
+      >
+        <div id="modalContent" class="p-4">
+          <!-- Modal content will be populated by JavaScript -->
         </div>
+      </div>
     </div>
-    
+
     <!-- Business Edit Modal -->
-    <div id="businessEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white dark:bg-luxury-charcoal rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto mx-4">
-            <div class="p-4">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-playfair font-bold text-xl">Edit Business</h3>
-                    <button class="close-modal text-gray-500 hover:text-luxury-gold">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <form id="businessEditForm" class="space-y-4">
-                    <input type="hidden" id="businessId">
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Business Name</label>
-                        <input type="text" id="businessName" class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Description</label>
-                        <textarea id="businessDescription" rows="3" class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base"></textarea>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Address</label>
-                        <input type="text" id="businessAddress" class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Category</label>
-                        <select id="businessCategory" class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base">
-                            <option value="fine-dining">Fine Dining</option>
-                            <option value="cafe">Café & Bistro</option>
-                            <option value="bar">Bars & Lounges</option>
-                            <option value="dessert">Dessert</option>
-                            <option value="international">International</option>
-                            <option value="fusion">Fusion</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Price Range</label>
-                        <select id="businessPrice" class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base">
-                            <option value="$">$</option>
-                            <option value="$$">$$</option>
-                            <option value="$$$">$$$</option>
-                            <option value="$$$$">$$$$</option>
-                        </select>
-                    </div>
-                    <div class="flex justify-end mt-4">
-                        <button type="button" class="close-modal mr-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-luxury-black">Cancel</button>
-                        <button type="submit" class="px-4 py-2 bg-luxury-gold text-white rounded-md hover:bg-luxury-darkGold">Save Changes</button>
-                    </div>
-                </form>
+    <div
+      id="businessEditModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden"
+    >
+      <div
+        class="bg-white dark:bg-luxury-charcoal rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto mx-4"
+      >
+        <div class="p-4">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-playfair font-bold text-xl">Edit Business</h3>
+            <button class="close-modal text-gray-500 hover:text-luxury-gold">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <form id="businessEditForm" class="space-y-4">
+            <input type="hidden" id="businessId" />
+            <div>
+              <label class="block text-sm font-medium mb-1"
+                >Business Name</label
+              >
+              <input
+                type="text"
+                id="businessName"
+                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base"
+              />
             </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Description</label>
+              <textarea
+                id="businessDescription"
+                rows="3"
+                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base"
+              ></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Address</label>
+              <input
+                type="text"
+                id="businessAddress"
+                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Category</label>
+              <select
+                id="businessCategory"
+                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base"
+              >
+                <option value="fine-dining">Fine Dining</option>
+                <option value="ethiopian">Ethiopian</option>
+                <option value="cafe">Café & Bistro</option>
+                <option value="bar">Bars & Lounges</option>
+                <option value="dessert">Dessert</option>
+                <option value="pizza">Pizza</option>
+                <option value="fusion">Fusion</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Price Range</label>
+              <select
+                id="businessPrice"
+                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base"
+              >
+                <option value="$">$</option>
+                <option value="$$">$$</option>
+                <option value="$$$">$$$</option>
+                <option value="$$$$">$$$$</option>
+              </select>
+            </div>
+            <div class="flex justify-end mt-4">
+              <button
+                type="button"
+                class="close-modal mr-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-luxury-black"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                class="px-4 py-2 bg-luxury-gold text-white rounded-md hover:bg-luxury-darkGold"
+              >
+                Save Changes
+              </button>
+            </div>
+          </form>
         </div>
+      </div>
     </div>
-    
+
     <!-- Menu Item Edit Modal -->
-    <div id="menuEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white dark:bg-luxury-charcoal rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto mx-4">
-            <div class="p-4">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-playfair font-bold text-xl">Edit Menu Item</h3>
-                    <button class="close-modal text-gray-500 hover:text-luxury-gold">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <form id="menuEditForm" class="space-y-4">
-                    <input type="hidden" id="menuItemId">
-                    <input type="hidden" id="menuBusinessId">
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Item Name</label>
-                        <input type="text" id="menuItemName" class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Description</label>
-                        <textarea id="menuItemDescription" rows="3" class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base"></textarea>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Price ($)</label>
-                        <input type="number" id="menuItemPrice" step="0.01" class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Category</label>
-                        <select id="menuItemCategory" class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base">
-                            <option value="appetizer">Appetizer</option>
-                            <option value="main">Main Course</option>
-                            <option value="dessert">Dessert</option>
-                            <option value="beverage">Beverage</option>
-                            <option value="special">Chef's Special</option>
-                        </select>
-                    </div>
-                    <div class="flex items-center">
-                        <input type="checkbox" id="menuItemSpecialOffer" class="mr-2 accent-luxury-gold">
-                        <label for="menuItemSpecialOffer" class="text-sm font-medium">Special Offer</label>
-                    </div>
-                    <div class="flex justify-end mt-4">
-                        <button type="button" class="close-modal mr-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-luxury-black">Cancel</button>
-                        <button type="submit" class="px-4 py-2 bg-luxury-gold text-white rounded-md hover:bg-luxury-darkGold">Save Changes</button>
-                    </div>
-                </form>
+    <div
+      id="menuEditModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden"
+    >
+      <div
+        class="bg-white dark:bg-luxury-charcoal rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto mx-4"
+      >
+        <div class="p-4">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-playfair font-bold text-xl">Edit Menu Item</h3>
+            <button class="close-modal text-gray-500 hover:text-luxury-gold">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <form id="menuEditForm" class="space-y-4">
+            <input type="hidden" id="menuItemId" />
+            <input type="hidden" id="menuBusinessId" />
+            <div>
+              <label class="block text-sm font-medium mb-1">Item Name</label>
+              <input
+                type="text"
+                id="menuItemName"
+                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base"
+              />
             </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Description</label>
+              <textarea
+                id="menuItemDescription"
+                rows="3"
+                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base"
+              ></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Price ($)</label>
+              <input
+                type="number"
+                id="menuItemPrice"
+                step="0.01"
+                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Category</label>
+              <select
+                id="menuItemCategory"
+                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base"
+              >
+                <option value="appetizer">Appetizer</option>
+                <option value="main">Main Course</option>
+                <option value="dessert">Dessert</option>
+                <option value="beverage">Beverage</option>
+                <option value="special">Chef's Special</option>
+              </select>
+            </div>
+            <div class="flex items-center">
+              <input
+                type="checkbox"
+                id="menuItemSpecialOffer"
+                class="mr-2 accent-luxury-gold"
+              />
+              <label for="menuItemSpecialOffer" class="text-sm font-medium"
+                >Special Offer</label
+              >
+            </div>
+            <div class="flex justify-end mt-4">
+              <button
+                type="button"
+                class="close-modal mr-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-luxury-black"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                class="px-4 py-2 bg-luxury-gold text-white rounded-md hover:bg-luxury-darkGold"
+              >
+                Save Changes
+              </button>
+            </div>
+          </form>
         </div>
+      </div>
     </div>
-    
+
     <!-- Review Modal -->
-    <div id="reviewModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white dark:bg-luxury-charcoal rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto mx-4">
-            <div class="p-4">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-playfair font-bold text-xl">Write a Review</h3>
-                    <button class="close-modal text-gray-500 hover:text-luxury-gold">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <form id="reviewForm" class="space-y-4">
-                    <input type="hidden" id="reviewBusinessId">
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Your Rating</label>
-                        <div class="flex space-x-1" id="ratingStars">
-                            <i class="fas fa-star text-gray-300 hover:text-luxury-gold cursor-pointer text-xl" data-rating="1"></i>
-                            <i class="fas fa-star text-gray-300 hover:text-luxury-gold cursor-pointer text-xl" data-rating="2"></i>
-                            <i class="fas fa-star text-gray-300 hover:text-luxury-gold cursor-pointer text-xl" data-rating="3"></i>
-                            <i class="fas fa-star text-gray-300 hover:text-luxury-gold cursor-pointer text-xl" data-rating="4"></i>
-                            <i class="fas fa-star text-gray-300 hover:text-luxury-gold cursor-pointer text-xl" data-rating="5"></i>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Your Review</label>
-                        <textarea id="reviewContent" rows="4" placeholder="Share your experience..." class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base"></textarea>
-                    </div>
-                    <div class="flex justify-end mt-4">
-                        <button type="button" class="close-modal mr-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-luxury-black">Cancel</button>
-                        <button type="submit" class="px-4 py-2 bg-luxury-gold text-white rounded-md hover:bg-luxury-darkGold">Submit Review</button>
-                    </div>
-                </form>
+    <div
+      id="reviewModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden"
+    >
+      <div
+        class="bg-white dark:bg-luxury-charcoal rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto mx-4"
+      >
+        <div class="p-4">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-playfair font-bold text-xl">Write a Review</h3>
+            <button class="close-modal text-gray-500 hover:text-luxury-gold">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <form id="reviewForm" class="space-y-4">
+            <input type="hidden" id="reviewBusinessId" />
+            <div>
+              <label class="block text-sm font-medium mb-1">Your Rating</label>
+              <div class="flex space-x-1" id="ratingStars">
+                <i
+                  class="fas fa-star text-gray-300 hover:text-luxury-gold cursor-pointer text-xl"
+                  data-rating="1"
+                ></i>
+                <i
+                  class="fas fa-star text-gray-300 hover:text-luxury-gold cursor-pointer text-xl"
+                  data-rating="2"
+                ></i>
+                <i
+                  class="fas fa-star text-gray-300 hover:text-luxury-gold cursor-pointer text-xl"
+                  data-rating="3"
+                ></i>
+                <i
+                  class="fas fa-star text-gray-300 hover:text-luxury-gold cursor-pointer text-xl"
+                  data-rating="4"
+                ></i>
+                <i
+                  class="fas fa-star text-gray-300 hover:text-luxury-gold cursor-pointer text-xl"
+                  data-rating="5"
+                ></i>
+              </div>
             </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Your Review</label>
+              <textarea
+                id="reviewContent"
+                rows="4"
+                placeholder="Share your experience..."
+                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base"
+              ></textarea>
+            </div>
+            <div class="flex justify-end mt-4">
+              <button
+                type="button"
+                class="close-modal mr-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-luxury-black"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                class="px-4 py-2 bg-luxury-gold text-white rounded-md hover:bg-luxury-darkGold"
+              >
+                Submit Review
+              </button>
+            </div>
+          </form>
         </div>
+      </div>
     </div>
-    
+
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
+
     <script>
-        // Check for dark mode preference
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            document.documentElement.classList.add('dark');
-        }
-        
-        // Listen for changes in color scheme preference
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+      // Check for dark mode preference
+      if (
+        localStorage.getItem("darkMode") === "true" ||
+        (window.matchMedia &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches &&
+          !localStorage.getItem("darkMode"))
+      ) {
+        document.documentElement.classList.add("dark");
+      }
+
+      // Listen for changes in color scheme preference
+      window
+        .matchMedia("(prefers-color-scheme: dark)")
+        .addEventListener("change", (event) => {
+          if (!localStorage.getItem("darkMode")) {
+            // Only if no manual toggle override
             if (event.matches) {
-                document.documentElement.classList.add('dark');
+              document.documentElement.classList.add("dark");
             } else {
-                document.documentElement.classList.remove('dark');
+              document.documentElement.classList.remove("dark");
             }
+          }
         });
-        
-        // Data Store (Mock Database)
-        const appData = {
-            user: {
-                id: 'user123',
-                name: 'John Doe',
-                badges: ['Foodie Level 3', 'Top Reviewer', 'Connoisseur'],
-                favorites: []
+
+      // Data Store (Mock Database) - Addis Ababa Data
+      const appData = {
+        user: {
+          id: "user123",
+          name: "John Doe", // Generic user
+          badges: ["Foodie Level 3", "Top Reviewer", "Connoisseur"],
+          favorites: [],
+        },
+        businesses: [
+          {
+            id: "b1",
+            name: "Yod Abyssinia Cultural Restaurant",
+            description:
+              "Experience authentic Ethiopian culture with traditional music, dance, and a wide array of delicious national dishes served in a vibrant atmosphere.",
+            address: "Bole Medhanealem Area, Addis Ababa",
+            lat: 9.005,
+            lng: 38.791,
+            distance: 2.5,
+            category: "ethiopian",
+            price: "$$$",
+            rating: 4.7,
+            reviews: 150,
+            badges: ["luxury", "trending"],
+            specialOffer: "Complimentary Tej (honey wine) tasting with dinner",
+            images: [],
+            cuisine: "Ethiopian Traditional",
+          },
+          {
+            id: "b2",
+            name: "Tomoca Coffee",
+            description:
+              "A historic Addis Ababa institution, serving rich, aromatic Ethiopian coffee roasted on-site. Enjoy a classic coffee ceremony experience.",
+            address: "Wawel St, Piazza, Addis Ababa",
+            lat: 9.033,
+            lng: 38.75,
+            distance: 1.0,
+            category: "cafe",
+            price: "$$",
+            rating: 4.9,
+            reviews: 210,
+            badges: ["trending", "exclusive"],
+            specialOffer: "Buy 1kg of coffee beans, get a free espresso",
+            images: [],
+            cuisine: "Ethiopian Coffee",
+          },
+          {
+            id: "b3",
+            name: "Gusto Ristorante",
+            description:
+              "An upscale Italian restaurant offering a sophisticated dining experience with authentic Italian cuisine, fine wines, and elegant decor.",
+            address: "Olympia, Meskel Flower Road, Addis Ababa",
+            lat: 9.012,
+            lng: 38.765,
+            distance: 1.8,
+            category: "fine-dining",
+            price: "$$$$",
+            rating: 4.6,
+            reviews: 95,
+            badges: ["luxury"],
+            specialOffer: "Chef's Special Pasta of the Day - 15% off",
+            images: [],
+            cuisine: "Italian",
+          },
+          {
+            id: "b4",
+            name: "Kategna Restaurant",
+            description:
+              "A popular spot for modern yet traditional Ethiopian cuisine, known for its delicious food, stylish ambiance, and excellent service.",
+            address: "Atlas Area, Near Bole, Addis Ababa",
+            lat: 9.015,
+            lng: 38.77,
+            distance: 1.5,
+            category: "ethiopian",
+            price: "$$$",
+            rating: 4.5,
+            reviews: 180,
+            badges: ["trending"],
+            specialOffer:
+              "Kategna Special Platter for two at a promotional price",
+            images: [],
+            cuisine: "Ethiopian Modern",
+          },
+          {
+            id: "b5",
+            name: "The Oriental",
+            description:
+              "Indulge in a fusion of exquisite Asian flavors, from sushi to Thai curries, in a chic and contemporary setting.",
+            address: "Boston Day Spa Building, Bole, Addis Ababa",
+            lat: 9.008,
+            lng: 38.795,
+            distance: 2.8,
+            category: "fusion",
+            price: "$$$$",
+            rating: 4.4,
+            reviews: 70,
+            badges: ["luxury", "exclusive"],
+            specialOffer: "Sushi Happy Hour: 5-7 PM weekdays",
+            images: [],
+            cuisine: "Asian Fusion",
+          },
+          {
+            id: "b6",
+            name: "Effoi Pizza",
+            description:
+              "Famous for its unique Ethiopian-style pizzas with creative toppings and a relaxed, artsy atmosphere. A local favorite.",
+            address: "Near Chechnya, CMC Road, Addis Ababa",
+            lat: 9.02,
+            lng: 38.82,
+            distance: 4.5,
+            category: "pizza",
+            price: "$$",
+            rating: 4.3,
+            reviews: 120,
+            badges: [],
+            specialOffer: "Two-for-One Pizza on Tuesdays",
+            images: [],
+            cuisine: "Pizza / Ethiopian Fusion",
+          },
+        ],
+        menuItems: [
+          {
+            id: "m1",
+            businessId: "b1",
+            name: "Doro Wat",
+            description:
+              "Spicy chicken stew served with injera and a hard-boiled egg. A national delicacy.",
+            price: 15.0,
+            category: "main",
+            special: true,
+          },
+          {
+            id: "m2",
+            businessId: "b1",
+            name: "Kitfo",
+            description:
+              "Minced raw beef marinated in mitmita (spicy chili powder) and niter kibbeh (clarified butter).",
+            price: 18.0,
+            category: "main",
+            special: false,
+          },
+          {
+            id: "m3",
+            businessId: "b1",
+            name: "Vegetarian Beyaynetu",
+            description:
+              "A platter of various vegan stews and salads served on injera.",
+            price: 12.0,
+            category: "main",
+            special: false,
+          },
+          {
+            id: "m4",
+            businessId: "b2",
+            name: "Macchiato",
+            description:
+              "Strong Ethiopian coffee with a dollop of foamed milk.",
+            price: 2.0,
+            category: "beverage",
+            special: false,
+          },
+          {
+            id: "m5",
+            businessId: "b2",
+            name: "Full Coffee Ceremony",
+            description: "Traditional Ethiopian coffee ceremony experience.",
+            price: 10.0,
+            category: "special",
+            special: true,
+          },
+          {
+            id: "m6",
+            businessId: "b2",
+            name: "Samosa (Sambusa)",
+            description: "Crispy pastry filled with lentils or minced meat.",
+            price: 1.5,
+            category: "appetizer",
+            special: false,
+          },
+          {
+            id: "m7",
+            businessId: "b3",
+            name: "Lasagna Bolognese",
+            description:
+              "Classic baked lasagna with rich meat sauce and béchamel.",
+            price: 20.0,
+            category: "main",
+            special: false,
+          },
+          {
+            id: "m8",
+            businessId: "b3",
+            name: "Tiramisu",
+            description:
+              "Traditional Italian dessert made with mascarpone, coffee, and ladyfingers.",
+            price: 8.0,
+            category: "dessert",
+            special: true,
+          },
+          {
+            id: "m9",
+            businessId: "b4",
+            name: "Special Tibs Firfir",
+            description:
+              "Sautéed meat mixed with pieces of injera, berbere, and spices.",
+            price: 16.0,
+            category: "main",
+            special: true,
+          },
+          {
+            id: "m10",
+            businessId: "b4",
+            name: "Shiro Wat",
+            description:
+              "Smooth chickpea or broad bean flour stew, often vegan.",
+            price: 10.0,
+            category: "main",
+            special: false,
+          },
+          {
+            id: "m11",
+            businessId: "b5",
+            name: "Dragon Roll Sushi",
+            description: "Eel and cucumber topped with avocado and tobiko.",
+            price: 22.0,
+            category: "main",
+            special: false,
+          },
+          {
+            id: "m12",
+            businessId: "b5",
+            name: "Green Curry Chicken",
+            description: "Thai green curry with chicken and bamboo shoots.",
+            price: 18.0,
+            category: "main",
+            special: false,
+          },
+          {
+            id: "m13",
+            businessId: "b6",
+            name: "Effoi Special Pizza",
+            description:
+              "Unique pizza with local spices and toppings, often with a doro wat base.",
+            price: 14.0,
+            category: "main",
+            special: true,
+          },
+          {
+            id: "m14",
+            businessId: "b6",
+            name: "Veggie Delight Pizza",
+            description: "Pizza loaded with fresh local vegetables.",
+            price: 12.0,
+            category: "main",
+            special: false,
+          },
+        ],
+        reviews: [
+          {
+            id: "r1",
+            businessId: "b1",
+            userId: "userAbebe",
+            userName: "Abebe T.",
+            rating: 5,
+            content:
+              "Yod Abyssinia is a fantastic place for tourists and locals alike! The music and dance are incredible. Doro Wat was perfect.",
+            date: "2024-03-10",
+            likes: 25,
+          },
+          {
+            id: "r2",
+            businessId: "b2",
+            userId: "userHana",
+            userName: "Hana G.",
+            rating: 5,
+            content:
+              "Tomoca is the best coffee in Addis, period. I buy my beans here every week. The macchiato is legendary.",
+            date: "2024-03-15",
+            likes: 30,
+          },
+          {
+            id: "r3",
+            businessId: "b3",
+            userId: "userChris",
+            userName: "Chris B.",
+            rating: 4,
+            content:
+              "Gusto offers a very good Italian fine dining experience. A bit pricey for Addis, but worth it for a special occasion. Great wine list.",
+            date: "2024-02-20",
+            likes: 12,
+          },
+          {
+            id: "r4",
+            businessId: "b4",
+            userId: "userSofia",
+            userName: "Sofia M.",
+            rating: 4,
+            content:
+              "Kategna is consistently good. Their tibs firfir is amazing. Can get crowded, so book ahead.",
+            date: "2024-03-05",
+            likes: 18,
+          },
+        ],
+        filters: {
+          price: null,
+          rating: null,
+          badges: [],
+          distance: 5,
+          category: "all",
+        },
+      };
+
+      // DOM Elements
+      const currentLocationEl = document.getElementById("currentLocation");
+      const mapView = document.getElementById("mapView");
+      const listView = document.getElementById("listView");
+      const toggleMapViewBtn = document.getElementById("toggleMapView");
+      const darkModeToggleBtn = document.getElementById("darkModeToggle");
+      const filterButton = document.getElementById("filterButton");
+      const filterPanel = document.getElementById("filterPanel");
+      const closeFilterBtn = document.getElementById("closeFilter");
+      const distanceRange = document.getElementById("distanceRange");
+      const distanceValue = document.getElementById("distanceValue");
+      const categoryPills = document.querySelectorAll(".category-pill");
+      const detailModal = document.getElementById("detailModal");
+      const modalContent = document.getElementById("modalContent");
+      const restaurantList = document.getElementById("restaurantList");
+      const featuredOffersList = document.getElementById("featuredOffersList");
+      const searchInput = document.getElementById("searchInput");
+      const applyFiltersBtn = document.getElementById("applyFilters");
+      const resetFiltersBtn = document.getElementById("resetFilters");
+      const priceFilters = document.querySelectorAll(".price-filter");
+      const ratingFilters = document.querySelectorAll(".rating-filter");
+      const badgeFilters = document.querySelectorAll(".badge-filter");
+      const businessEditModal = document.getElementById("businessEditModal");
+      const menuEditModal = document.getElementById("menuEditModal");
+      const reviewModal = document.getElementById("reviewModal");
+      const toast = document.getElementById("toast");
+      const loadMoreBtn = document.getElementById("loadMoreBtn");
+
+      // State Variables
+      let map;
+      let markers = [];
+      let currentPosition = { lat: 9.02497, lng: 38.74689 }; // Default to Addis Ababa
+      let isMapView = true;
+      let currentPage = 1;
+      let itemsPerPage = 6;
+      let selectedRating = 0;
+      let currentBusinessDetail = null;
+
+      // Initialize App
+      function initApp() {
+        initMap();
+        setupEventListeners();
+        loadRestaurants();
+        loadFeaturedOffers();
+        getCurrentLocation();
+      }
+
+      // Initialize Leaflet Map
+      function initMap() {
+        const defaultLocation = [9.02497, 38.74689]; // Addis Ababa
+        const defaultZoom = 13;
+
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              currentPosition = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+              };
+              map = L.map(mapView).setView(
+                [currentPosition.lat, currentPosition.lng],
+                defaultZoom
+              );
+              L.tileLayer(
+                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+                  attribution:
+                    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                }
+              ).addTo(map);
+              addBusinessMarkers();
             },
-            businesses: [
+            () => {
+              console.error(
+                "Geolocation failed. Using default location Addis Ababa."
+              );
+              currentPosition = {
+                lat: defaultLocation[0],
+                lng: defaultLocation[1],
+              };
+              map = L.map(mapView).setView(defaultLocation, defaultZoom);
+              L.tileLayer(
+                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                 {
-                    id: 'b1',
-                    name: 'The Golden Spoon',
-                    description: 'An exquisite fine dining experience featuring innovative fusion cuisine made with locally sourced ingredients. Our award-winning chef creates seasonal menus inspired by global flavors.',
-                    address: '123 Luxury Lane, Metropolis',
-                    lat: 51.505,
-                    lng: -0.09,
-                    distance: 0.8,
-                    category: 'fine-dining',
-                    price: '$$$$',
-                    rating: 4.8,
-                    reviews: 124,
-                    badges: ['luxury', 'exclusive'],
-                    specialOffer: 'Complimentary champagne with dinner reservation',
-                    images: [],
-                    cuisine: 'Modern European'
-                },
-                {
-                    id: 'b2',
-                    name: 'Café Lumière',
-                    description: 'A sophisticated café serving artisanal coffee and French-inspired pastries in an elegant atmosphere with floor-to-ceiling windows overlooking the city park.',
-                    address: '45 Boulevard St., Downtown',
-                    lat: 51.51,
-                    lng: -0.1,
-                    distance: 1.2,
-                    category: 'cafe',
-                    price: '$$$',
-                    rating: 4.6,
-                    reviews: 98,
-                    badges: ['trending'],
-                    specialOffer: '20% off pastries between 3-5pm daily',
-                    images: [],
-                    cuisine: 'French Café'
-                },
-                {
-                    id: 'b3',
-                    name: 'Sapphire Lounge',
-                    description: 'An upscale cocktail lounge offering premium spirits, craft cocktails, and small plates in a sophisticated, intimate setting with live jazz on weekends.',
-                    address: '78 Night Avenue, Uptown',
-                    lat: 51.515,
-                    lng: -0.12,
-                    distance: 1.7,
-                    category: 'bar',
-                    price: '$$$',
-                    rating: 4.7,
-                    reviews: 76,
-                    badges: ['luxury', 'trending'],
-                    specialOffer: 'Signature cocktail tasting flight for two',
-                    images: [],
-                    cuisine: 'Craft Cocktails & Tapas'
-                },
-                {
-                    id: 'b4',
-                    name: 'Sweet Indulgence',
-                    description: 'A boutique patisserie specializing in handcrafted desserts, artisanal chocolates, and specialty cakes made with premium ingredients and artistic presentation.',
-                    address: '14 Sugar Street, Eastside',
-                    lat: 51.502,
-                    lng: -0.085,
-                    distance: 0.9,
-                    category: 'dessert',
-                    price: '$$$',
-                    rating: 4.9,
-                    reviews: 65,
-                    badges: ['special-offer'],
-                    specialOffer: 'Buy 4 macarons, get 2 free with any purchase',
-                    images: [],
-                    cuisine: 'French Patisserie'
-                },
-                {
-                    id: 'b5',
-                    name: 'Maharaja Palace',
-                    description: 'An opulent dining experience featuring authentic royal Indian cuisine served in a lavish setting inspired by the palaces of Rajasthan.',
-                    address: '35 Spice Road, Westside',
-                    lat: 51.507,
-                    lng: -0.11,
-                    distance: 2.1,
-                    category: 'international',
-                    price: '$$$$',
-                    rating: 4.5,
-                    reviews: 112,
-                    badges: ['luxury'],
-                    specialOffer: 'Royal Feast for 2 at $149 (save $50)',
-                    images: [],
-                    cuisine: 'North Indian'
-                },
-                {
-                    id: 'b6',
-                    name: 'Fusion 42',
-                    description: 'An avant-garde dining destination where Asian and Mediterranean flavors meet in unexpected and delightful ways, creating a truly unique culinary journey.',
-                    address: '42 Innovation Blvd, Arts District',
-                    lat: 51.513,
-                    lng: -0.08,
-                    distance: 1.5,
-                    category: 'fusion',
-                    price: '$$$$',
-                    rating: 4.4,
-                    reviews: 87,
-                    badges: ['trending', 'exclusive'],
-                    specialOffer: 'Chef\'s surprise 7-course tasting menu',
-                    images: [],
-                    cuisine: 'Asian-Mediterranean Fusion'
+                  attribution:
+                    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
                 }
-            ],
-            menuItems: [
-                // The Golden Spoon
-                {
-                    id: 'm1',
-                    businessId: 'b1',
-                    name: 'Truffle-Infused Risotto',
-                    description: 'Arborio rice cooked to perfection with wild mushrooms, finished with black truffle and aged Parmigiano-Reggiano',
-                    price: 42.00,
-                    category: 'main',
-                    special: true
-                },
-                {
-                    id: 'm2',
-                    businessId: 'b1',
-                    name: 'Wagyu Beef Tartare',
-                    description: 'Hand-cut A5 Wagyu beef, quail egg, capers, cornichons, and house-made potato crisps',
-                    price: 36.00,
-                    category: 'appetizer',
-                    special: false
-                },
-                {
-                    id: 'm3',
-                    businessId: 'b1',
-                    name: 'Champagne Poached Lobster',
-                    description: 'Maine lobster poached in Dom Pérignon, served with caviar butter and seasonal microgreens',
-                    price: 68.00,
-                    category: 'main',
-                    special: true
-                },
-                
-                // Café Lumière
-                {
-                    id: 'm4',
-                    businessId: 'b2',
-                    name: 'Artisanal Croissant',
-                    description: 'Handcrafted butter croissant made with French butter and traditional lamination techniques',
-                    price: 6.50,
-                    category: 'appetizer',
-                    special: false
-                },
-                {
-                    id: 'm5',
-                    businessId: 'b2',
-                    name: 'Eggs Benedict Royale',
-                    description: 'Poached organic eggs, house-cured salmon, and hollandaise on brioche with caviar garnish',
-                    price: 24.00,
-                    category: 'main',
-                    special: true
-                },
-                {
-                    id: 'm6',
-                    businessId: 'b2',
-                    name: 'Single Origin Pour-Over',
-                    description: 'Hand-selected, small-batch coffee beans prepared using precision pour-over method',
-                    price: 8.00,
-                    category: 'beverage',
-                    special: false
-                },
-                
-                // Other businesses would have similar menu items...
-            ],
-            reviews: [
-                {
-                    id: 'r1',
-                    businessId: 'b1',
-                    userId: 'user456',
-                    userName: 'Emma Wilson',
-                    rating: 5,
-                    content: 'Absolutely exquisite dining experience. The truffle risotto was divine, and the service was impeccable. Worth every penny for a special occasion.',
-                    date: '2023-11-15',
-                    likes: 12
-                },
-                {
-                    id: 'r2',
-                    businessId: 'b1',
-                    userId: 'user789',
-                    userName: 'Robert Chen',
-                    rating: 4,
-                    content: 'Exceptional food and ambiance. Would have given 5 stars but had to wait a bit for our reservation despite arriving on time. The Wagyu tartare was outstanding.',
-                    date: '2023-10-22',
-                    likes: 8
-                },
-                {
-                    id: 'r3',
-                    businessId: 'b2',
-                    userId: 'user321',
-                    userName: 'Sophia Martinez',
-                    rating: 5,
-                    content: 'The perfect spot for a sophisticated breakfast. Their croissants are the closest I\'ve found to Paris, and the coffee selection is extraordinary.',
-                    date: '2023-11-03',
-                    likes: 15
-                }
-            ],
-            filters: {
-                price: null,
-                rating: null,
-                badges: [],
-                distance: 5,
-                category: 'all'
+              ).addTo(map);
+              addBusinessMarkers();
             }
-        };
-        
-        // DOM Elements
-        const currentLocationEl = document.getElementById('currentLocation');
-        const mapView = document.getElementById('mapView');
-        const listView = document.getElementById('listView');
-        const toggleMapViewBtn = document.getElementById('toggleMapView');
-        const darkModeToggleBtn = document.getElementById('darkModeToggle');
-        const filterButton = document.getElementById('filterButton');
-        const filterPanel = document.getElementById('filterPanel');
-        const closeFilterBtn = document.getElementById('closeFilter');
-        const distanceRange = document.getElementById('distanceRange');
-        const distanceValue = document.getElementById('distanceValue');
-        const categoryPills = document.querySelectorAll('.category-pill');
-        const detailModal = document.getElementById('detailModal');
-        const modalContent = document.getElementById('modalContent');
-        const restaurantList = document.getElementById('restaurantList');
-        const searchInput = document.getElementById('searchInput');
-        const applyFiltersBtn = document.getElementById('applyFilters');
-        const resetFiltersBtn = document.getElementById('resetFilters');
-        const priceFilters = document.querySelectorAll('.price-filter');
-        const ratingFilters = document.querySelectorAll('.rating-filter');
-        const badgeFilters = document.querySelectorAll('.badge-filter');
-        const businessEditModal = document.getElementById('businessEditModal');
-        const menuEditModal = document.getElementById('menuEditModal');
-        const reviewModal = document.getElementById('reviewModal');
-        const toast = document.getElementById('toast');
-        const loadMoreBtn = document.getElementById('loadMoreBtn');
-        
-        // State Variables
-        let map;
-        let markers = [];
-        let currentPosition = { lat: 51.505, lng: -0.09 }; // Default to London
-        let isMapView = true;
-        let currentPage = 1;
-        let itemsPerPage = 6;
-        let selectedRating = 0;
-        let currentBusinessDetail = null;
-        
-        // Initialize App
-        function initApp() {
-            // Initialize map
-            initMap();
-            
-            // Set event listeners
-            setupEventListeners();
-            
-            // Load initial data
+          );
+        } else {
+          console.error(
+            "Geolocation not supported. Using default location Addis Ababa."
+          );
+          currentPosition = {
+            lat: defaultLocation[0],
+            lng: defaultLocation[1],
+          };
+          map = L.map(mapView).setView(defaultLocation, defaultZoom);
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution:
+              '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          }).addTo(map);
+          addBusinessMarkers();
+        }
+      }
+
+      // Add business markers to map
+      function addBusinessMarkers() {
+        markers.forEach((marker) => map.removeLayer(marker));
+        markers = [];
+        const filteredBusinesses = filterBusinesses();
+
+        filteredBusinesses.forEach((business) => {
+          const marker = L.marker([business.lat, business.lng]).addTo(map);
+          marker.bindPopup(`
+            <div class="p-2">
+                <h3 class="font-bold">${business.name}</h3>
+                <div class="text-sm text-gray-500">${business.category.replace(
+                  "-",
+                  " "
+                )}</div>
+                <div class="text-sm">${business.price} · ${
+            business.rating
+          } ★</div>
+                <button onclick="openBusinessDetail('${
+                  business.id
+                }')" class="mt-2 text-sm text-blue-500 hover:underline">View Details</button>
+            </div>
+          `);
+          markers.push(marker);
+        });
+
+        if (currentPosition.lat && currentPosition.lng) {
+          const userMarker = L.marker(
+            [currentPosition.lat, currentPosition.lng],
+            {
+              icon: L.divIcon({
+                className: "custom-div-icon",
+                html: `<div class="w-4 h-4 bg-blue-500 rounded-full border-2 border-white"></div>`,
+                iconSize: [20, 20],
+              }),
+            }
+          ).addTo(map);
+          userMarker.bindPopup("Your location");
+          markers.push(userMarker);
+        }
+      }
+
+      // Setup Event Listeners
+      function setupEventListeners() {
+        darkModeToggleBtn.addEventListener("click", () => {
+          const isDark = document.documentElement.classList.toggle("dark");
+          localStorage.setItem("darkMode", isDark);
+        });
+
+        toggleMapViewBtn.addEventListener("click", () => {
+          isMapView = !isMapView;
+          toggleMapViewBtn.textContent = isMapView ? "Show List" : "Show Map";
+          mapView.classList.toggle("hidden", !isMapView);
+          listView.classList.toggle("hidden", isMapView);
+          if (isMapView && map) {
+            setTimeout(() => map.invalidateSize(), 10);
+          }
+        });
+
+        filterButton.addEventListener("click", () =>
+          filterPanel.classList.toggle("hidden")
+        );
+        closeFilterBtn.addEventListener("click", () =>
+          filterPanel.classList.add("hidden")
+        );
+
+        distanceRange.addEventListener("input", (e) => {
+          distanceValue.textContent = `${e.target.value} km`;
+          appData.filters.distance = parseInt(e.target.value);
+        });
+
+        categoryPills.forEach((pill) => {
+          pill.addEventListener("click", () => {
+            categoryPills.forEach((p) => p.classList.remove("active"));
+            pill.classList.add("active");
+            appData.filters.category = pill.dataset.category;
             loadRestaurants();
-            loadFeaturedOffers();
-            
-            // Simulate getting user location
-            getCurrentLocation();
-        }
-        
-        // Initialize Leaflet Map
-        function initMap() {
-            map = L.map(mapView).setView([currentPosition.lat, currentPosition.lng], 14);
-            
-            // Use OpenStreetMap tiles
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(map);
-            
-            // Add markers for businesses
+            if (map) addBusinessMarkers();
+          });
+        });
+
+        detailModal.addEventListener("click", (e) => {
+          if (e.target === detailModal) closeModal();
+        });
+
+        searchInput.addEventListener(
+          "input",
+          debounce(() => {
+            loadRestaurants();
+            if (map) addBusinessMarkers();
+          }, 300)
+        );
+
+        priceFilters.forEach((btn) => {
+          btn.addEventListener("click", () => {
+            priceFilters.forEach((b) =>
+              b.classList.remove("bg-luxury-gold", "text-white")
+            );
+            if (appData.filters.price === btn.dataset.price) {
+              appData.filters.price = null;
+            } else {
+              btn.classList.add("bg-luxury-gold", "text-white");
+              appData.filters.price = btn.dataset.price;
+            }
+          });
+        });
+
+        ratingFilters.forEach((btn) => {
+          btn.addEventListener("click", () => {
+            ratingFilters.forEach((b) =>
+              b.classList.remove("bg-luxury-gold", "text-white")
+            );
+            if (appData.filters.rating === parseFloat(btn.dataset.rating)) {
+              appData.filters.rating = null;
+            } else {
+              btn.classList.add("bg-luxury-gold", "text-white");
+              appData.filters.rating = parseFloat(btn.dataset.rating);
+            }
+          });
+        });
+
+        badgeFilters.forEach((btn) => {
+          btn.addEventListener("click", () => {
+            btn.classList.toggle("bg-luxury-gold");
+            btn.classList.toggle("text-white");
+            const badge = btn.dataset.badge;
+            if (appData.filters.badges.includes(badge)) {
+              appData.filters.badges = appData.filters.badges.filter(
+                (b) => b !== badge
+              );
+            } else {
+              appData.filters.badges.push(badge);
+            }
+          });
+        });
+
+        applyFiltersBtn.addEventListener("click", () => {
+          filterPanel.classList.add("hidden");
+          loadRestaurants();
+          if (map) addBusinessMarkers();
+        });
+
+        resetFiltersBtn.addEventListener("click", () => {
+          appData.filters = {
+            price: null,
+            rating: null,
+            badges: [],
+            distance: 5,
+            category: "all",
+          };
+          priceFilters.forEach((b) =>
+            b.classList.remove("bg-luxury-gold", "text-white")
+          );
+          ratingFilters.forEach((b) =>
+            b.classList.remove("bg-luxury-gold", "text-white")
+          );
+          badgeFilters.forEach((b) =>
+            b.classList.remove("bg-luxury-gold", "text-white")
+          );
+          distanceRange.value = 5;
+          distanceValue.textContent = "5 km";
+          categoryPills.forEach((p) => p.classList.remove("active"));
+          document
+            .querySelector('[data-category="all"]')
+            .classList.add("active");
+          loadRestaurants();
+          if (map) addBusinessMarkers();
+        });
+
+        document.querySelectorAll(".close-modal").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            businessEditModal.classList.add("hidden");
+            menuEditModal.classList.add("hidden");
+            reviewModal.classList.add("hidden");
+          });
+        });
+
+        document
+          .getElementById("businessEditForm")
+          .addEventListener("submit", (e) => {
+            e.preventDefault();
+            updateBusiness();
+          });
+        document
+          .getElementById("menuEditForm")
+          .addEventListener("submit", (e) => {
+            e.preventDefault();
+            updateMenuItem();
+          });
+        document
+          .getElementById("reviewForm")
+          .addEventListener("submit", (e) => {
+            e.preventDefault();
+            submitReview();
+          });
+
+        const stars = document.querySelectorAll("#ratingStars i");
+        stars.forEach((star) => {
+          star.addEventListener("click", () => {
+            selectedRating = parseInt(star.dataset.rating);
+            stars.forEach((s, index) => {
+              s.classList.toggle("text-luxury-gold", index < selectedRating);
+              s.classList.toggle("text-gray-300", index >= selectedRating);
+            });
+          });
+        });
+
+        loadMoreBtn.addEventListener("click", () => {
+          currentPage++;
+          loadMoreRestaurants();
+        });
+
+        document.querySelectorAll(".nav-item").forEach((item) => {
+          item.addEventListener("click", () => {
+            document.querySelectorAll(".nav-item").forEach((i) => {
+              i.classList.remove("active");
+              i.querySelector("i").classList.remove("text-luxury-gold");
+            });
+            item.classList.add("active");
+            item.querySelector("i").classList.add("text-luxury-gold");
+            showToast(
+              `${
+                item.dataset.target.charAt(0).toUpperCase() +
+                item.dataset.target.slice(1)
+              } section would be displayed`,
+              "success"
+            );
+          });
+        });
+        document
+          .getElementById("refreshLocation")
+          .addEventListener("click", getCurrentLocation);
+      }
+
+      // Get current location
+      function getCurrentLocation() {
+        currentLocationEl.textContent = "Detecting location...";
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              currentPosition = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+              };
+              // For simulation, let's try to reverse geocode or use a generic name
+              // This is a complex task, so we'll keep it simple
+              currentLocationEl.textContent = `Lat: ${currentPosition.lat.toFixed(
+                2
+              )}, Lng: ${currentPosition.lng.toFixed(2)}`;
+              if (map) {
+                map.setView([currentPosition.lat, currentPosition.lng], 13);
+                addBusinessMarkers(); // Re-add markers, including user's new location
+              }
+              showToast("Location updated!", "success");
+            },
+            () => {
+              // Fallback to Addis if detection fails after initial load
+              currentPosition = { lat: 9.02497, lng: 38.74689 };
+              currentLocationEl.textContent = "Addis Ababa, Ethiopia (Default)";
+              if (map) {
+                map.setView([currentPosition.lat, currentPosition.lng], 13);
+                addBusinessMarkers();
+              }
+              showToast(
+                "Could not get precise location, using default.",
+                "error"
+              );
+            }
+          );
+        } else {
+          // Geolocation not supported, fallback to default location
+          currentPosition = { lat: 9.02497, lng: 38.74689 }; // Addis Ababa center
+          currentLocationEl.textContent =
+            "Addis Ababa, Ethiopia (Geolocation not supported)";
+          if (map) {
+            map.setView([currentPosition.lat, currentPosition.lng], 13);
             addBusinessMarkers();
+          }
         }
-        
-        // Add business markers to map
-        function addBusinessMarkers() {
-            // Clear existing markers
-            markers.forEach(marker => map.removeLayer(marker));
-            markers = [];
-            
-            // Filter businesses based on current filters
-            const filteredBusinesses = filterBusinesses();
-            
-            // Add new markers
-            filteredBusinesses.forEach(business => {
-                const marker = L.marker([business.lat, business.lng]).addTo(map);
-                marker.bindPopup(`
-                    <div class="p-2">
-                        <h3 class="font-bold">${business.name}</h3>
-                        <div class="text-sm text-gray-500">${business.category.replace('-', ' ')}</div>
-                        <div class="text-sm">${business.price} · ${business.rating} ★</div>
-                        <button onclick="openBusinessDetail('${business.id}')" class="mt-2 text-sm text-blue-500 hover:underline">View Details</button>
-                    </div>
-                `);
-                markers.push(marker);
-            });
-            
-            // Add current location marker
-            const userMarker = L.marker([currentPosition.lat, currentPosition.lng], {
-                icon: L.divIcon({
-                    className: 'custom-div-icon',
-                    html: `<div class="w-4 h-4 bg-blue-500 rounded-full border-2 border-white"></div>`,
-                    iconSize: [20, 20]
-                })
-            }).addTo(map);
-            userMarker.bindPopup('Your location');
-            markers.push(userMarker);
+      }
+
+      // Filter businesses
+      function filterBusinesses() {
+        let filtered = [...appData.businesses];
+        const searchQuery = searchInput.value.toLowerCase();
+
+        if (searchQuery) {
+          filtered = filtered.filter(
+            (business) =>
+              business.name.toLowerCase().includes(searchQuery) ||
+              business.description.toLowerCase().includes(searchQuery) ||
+              business.cuisine.toLowerCase().includes(searchQuery)
+          );
         }
-        
-        // Setup Event Listeners
-        function setupEventListeners() {
-            // Toggle dark mode
-            darkModeToggleBtn.addEventListener('click', () => {
-                document.documentElement.classList.toggle('dark');
-            });
-            
-            // Toggle map/list view
-            toggleMapViewBtn.addEventListener('click', () => {
-                isMapView = !isMapView;
-                toggleMapViewBtn.textContent = isMapView ? 'Show List' : 'Show Map';
-                mapView.classList.toggle('hidden', !isMapView);
-                listView.classList.toggle('hidden', isMapView);
-                
-                if (isMapView) {
-                    // Refresh map when showing it again
-                    setTimeout(() => {
-                        map.invalidateSize();
-                    }, 10);
+        if (appData.filters.category && appData.filters.category !== "all") {
+          filtered = filtered.filter(
+            (business) => business.category === appData.filters.category
+          );
+        }
+        if (appData.filters.price) {
+          filtered = filtered.filter(
+            (business) => business.price === appData.filters.price
+          );
+        }
+        if (appData.filters.rating) {
+          filtered = filtered.filter(
+            (business) => business.rating >= appData.filters.rating
+          );
+        }
+        if (appData.filters.badges.length > 0) {
+          filtered = filtered.filter((business) =>
+            appData.filters.badges.some((badge) =>
+              business.badges.includes(badge)
+            )
+          );
+        }
+        if (appData.filters.distance) {
+          filtered = filtered.filter(
+            (business) => business.distance <= appData.filters.distance
+          );
+        }
+        return filtered;
+      }
+
+      // Load restaurants
+      function loadRestaurants() {
+        const filteredBusinesses = filterBusinesses();
+        currentPage = 1;
+        renderBusinessList(filteredBusinesses);
+        loadMoreBtn.parentElement.classList.toggle(
+          "hidden",
+          filteredBusinesses.length <= itemsPerPage
+        );
+      }
+
+      // Load more restaurants
+      function loadMoreRestaurants() {
+        const filteredBusinesses = filterBusinesses();
+        const displayBusinesses = filteredBusinesses.slice(
+          0,
+          currentPage * itemsPerPage
+        );
+        renderBusinessList(displayBusinesses, true); // Pass true to append
+        loadMoreBtn.parentElement.classList.toggle(
+          "hidden",
+          currentPage * itemsPerPage >= filteredBusinesses.length
+        );
+      }
+
+      // Render business list
+      function renderBusinessList(businesses, append = false) {
+        if (!append) {
+          restaurantList.innerHTML = "";
+          listView.innerHTML = "";
+        }
+
+        const startIndex = append ? (currentPage - 1) * itemsPerPage : 0;
+        const businessesToRender = businesses.slice(startIndex);
+
+        if (businesses.length === 0 && !append) {
+          restaurantList.innerHTML = `
+            <div class="col-span-full text-center py-8">
+                <i class="fas fa-search text-4xl text-gray-300 mb-3"></i>
+                <p class="text-gray-500">No establishments found matching your criteria</p>
+                <button id="clearFilters" class="mt-3 px-4 py-2 text-luxury-gold border border-luxury-gold rounded-md hover:bg-luxury-gold hover:text-white transition">Clear Filters</button>
+            </div>`;
+          document
+            .getElementById("clearFilters")
+            ?.addEventListener("click", () => resetFiltersBtn.click());
+          return;
+        }
+
+        businessesToRender.forEach((business) => {
+          const businessCard = document.createElement("div");
+          businessCard.className =
+            "bg-white dark:bg-luxury-charcoal rounded-lg overflow-hidden shadow-luxury dark:shadow-luxury-dark transition-transform hover:scale-[1.02] cursor-pointer";
+          businessCard.innerHTML = `
+            <div class="relative h-48 bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                <div class="absolute inset-0 flex items-center justify-center"><div class="text-4xl text-gray-400">${business.name.charAt(
+                  0
+                )}</div></div>
+                <div class="absolute top-0 right-0 p-2 flex space-x-1">
+                    ${business.badges
+                      .map(
+                        (badge) => `
+                        <span class="badge badge-${
+                          badge === "luxury"
+                            ? "gold"
+                            : badge === "exclusive"
+                            ? "special"
+                            : "silver"
+                        }">
+                            <i class="fas fa-${
+                              badge === "luxury"
+                                ? "crown"
+                                : badge === "trending"
+                                ? "fire"
+                                : badge === "special-offer"
+                                ? "tag"
+                                : "gem"
+                            } mr-1"></i>
+                            ${badge.replace("-", " ")}
+                        </span>`
+                      )
+                      .join("")}
+                </div>
+            </div>
+            <div class="p-4">
+                <div class="flex justify-between items-start">
+                    <h3 class="font-playfair font-bold text-lg">${
+                      business.name
+                    }</h3>
+                    <span class="text-luxury-gold font-medium">${
+                      business.price
+                    }</span>
+                </div>
+                <div class="flex items-center mt-1 mb-2">
+                    <div class="stars">${Array.from(
+                      { length: 5 },
+                      (_, i) =>
+                        `<i class="fas fa-star${
+                          i < Math.floor(business.rating)
+                            ? ""
+                            : i < business.rating
+                            ? "-half-alt"
+                            : " text-gray-300"
+                        }"></i>`
+                    ).join("")}</div>
+                    <span class="ml-1 text-sm">${business.rating}</span>
+                    <span class="mx-1 text-gray-400">•</span>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">${
+                      business.reviews
+                    } reviews</span>
+                </div>
+                <div class="text-sm text-gray-600 dark:text-gray-400 mb-2"><i class="fas fa-map-marker-alt text-luxury-gold mr-1"></i> ${
+                  business.distance
+                } km away</div>
+                <div class="text-sm text-gray-600 dark:text-gray-400 mb-2"><i class="fas fa-utensils text-luxury-gold mr-1"></i> ${
+                  business.cuisine
+                }</div>
+                <p class="text-sm line-clamp-2 mb-3">${business.description}</p>
+                <div class="flex justify-between items-center">
+                    <button class="text-sm text-luxury-gold hover:underline view-details-btn" data-business-id="${
+                      business.id
+                    }">View Details</button>
+                    <button class="favorite-btn text-gray-400 hover:text-luxury-gold ${
+                      appData.user.favorites.includes(business.id)
+                        ? "text-luxury-gold"
+                        : ""
+                    }" data-business-id="${business.id}">
+                        <i class="${
+                          appData.user.favorites.includes(business.id)
+                            ? "fas"
+                            : "far"
+                        } fa-heart"></i>
+                    </button>
+                </div>
+            </div>`;
+          businessCard.addEventListener("click", (e) => {
+            if (e.target.closest(".favorite-btn")) {
+              e.stopPropagation();
+              toggleFavorite(
+                business.id,
+                e.target.closest(".favorite-btn").querySelector("i")
+              );
+              return;
+            }
+            if (e.target.closest(".view-details-btn")) {
+              openBusinessDetail(business.id);
+            } else {
+              // Click on card itself
+              openBusinessDetail(business.id);
+            }
+          });
+          restaurantList.appendChild(businessCard);
+
+          const listItem = document.createElement("div");
+          listItem.className =
+            "bg-white dark:bg-luxury-charcoal rounded-lg p-3 shadow-sm flex items-center cursor-pointer";
+          listItem.innerHTML = `
+            <div class="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center mr-3"><div class="text-2xl text-gray-400">${business.name.charAt(
+              0
+            )}</div></div>
+            <div class="flex-1">
+                <div class="flex justify-between"><h3 class="font-medium">${
+                  business.name
+                }</h3><span class="text-luxury-gold">${
+            business.price
+          }</span></div>
+                <div class="flex items-center text-sm">
+                    <div class="stars">${Array.from(
+                      { length: 5 },
+                      (_, i) =>
+                        `<i class="fas fa-star${
+                          i < Math.floor(business.rating)
+                            ? ""
+                            : i < business.rating
+                            ? "-half-alt"
+                            : " text-gray-300"
+                        }"></i>`
+                    ).join("")}</div>
+                    <span class="ml-1">${business.rating}</span>
+                </div>
+                <div class="text-xs text-gray-600 dark:text-gray-400">${
+                  business.distance
+                } km • ${business.cuisine}</div>
+            </div>`;
+          listItem.addEventListener("click", () =>
+            openBusinessDetail(business.id)
+          );
+          listView.appendChild(listItem);
+        });
+      }
+
+      // Load featured offers
+      function loadFeaturedOffers() {
+        featuredOffersList.innerHTML = "";
+        const specialOffers = appData.businesses
+          .filter((b) => b.specialOffer)
+          .slice(0, 4);
+        specialOffers.forEach((business) => {
+          const offerCard = document.createElement("div");
+          offerCard.className =
+            "bg-white dark:bg-luxury-charcoal rounded-lg overflow-hidden shadow-luxury dark:shadow-luxury-dark cursor-pointer";
+          offerCard.innerHTML = `
+            <div class="relative h-40 bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                <div class="absolute inset-0 flex items-center justify-center"><div class="text-4xl text-gray-400">${business.name.charAt(
+                  0
+                )}</div></div>
+                <div class="absolute top-0 left-0 bg-luxury-gold text-white px-3 py-1 rounded-br-lg"><i class="fas fa-gift mr-1"></i> Special Offer</div>
+            </div>
+            <div class="p-4">
+                <h3 class="font-playfair font-bold text-lg mb-2">${
+                  business.name
+                }</h3>
+                <p class="text-sm mb-3">${business.specialOffer}</p>
+                <div class="flex justify-between items-center">
+                    <div><span class="text-xs text-gray-600 dark:text-gray-400">${business.category.replace(
+                      "-",
+                      " "
+                    )} • ${business.price}</span></div>
+                    <button class="text-sm text-luxury-gold hover:underline" data-business-id="${
+                      business.id
+                    }">View Details</button>
+                </div>
+            </div>`;
+          offerCard.addEventListener("click", () =>
+            openBusinessDetail(business.id)
+          );
+          featuredOffersList.appendChild(offerCard);
+        });
+      }
+
+      // Open business detail
+      function openBusinessDetail(businessId) {
+        const business = appData.businesses.find((b) => b.id === businessId);
+        if (!business) return;
+        currentBusinessDetail = business;
+        const menuItems = appData.menuItems.filter(
+          (item) => item.businessId === businessId
+        );
+        const reviews = appData.reviews.filter(
+          (review) => review.businessId === businessId
+        );
+
+        modalContent.innerHTML = `
+            <div class="relative overflow-hidden">
+                <div class="flex justify-between items-start mb-4">
+                    <h2 class="font-playfair font-bold text-2xl">${
+                      business.name
+                    }</h2>
+                    <button class="text-gray-500 hover:text-luxury-gold" onclick="closeModal()"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="flex items-center mb-2">
+                    <div class="stars">${Array.from(
+                      { length: 5 },
+                      (_, i) =>
+                        `<i class="fas fa-star${
+                          i < Math.floor(business.rating)
+                            ? ""
+                            : i < business.rating
+                            ? "-half-alt"
+                            : " text-gray-300"
+                        }"></i>`
+                    ).join("")}</div>
+                    <span class="ml-1">${
+                      business.rating
+                    }</span><span class="mx-1 text-gray-400">•</span><span class="text-gray-600 dark:text-gray-400">${
+          business.reviews
+        } reviews</span>
+                </div>
+                <div class="flex flex-wrap gap-1 mb-3">
+                    ${business.badges
+                      .map(
+                        (badge) =>
+                          `<span class="badge badge-${
+                            badge === "luxury"
+                              ? "gold"
+                              : badge === "exclusive"
+                              ? "special"
+                              : "silver"
+                          }"><i class="fas fa-${
+                            badge === "luxury"
+                              ? "crown"
+                              : badge === "trending"
+                              ? "fire"
+                              : badge === "special-offer"
+                              ? "tag"
+                              : "gem"
+                          } mr-1"></i> ${badge.replace("-", " ")}</span>`
+                      )
+                      .join("")}
+                    <span class="badge bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"><i class="fas fa-tag mr-1"></i> ${
+                      business.price
+                    }</span>
+                    <span class="badge bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"><i class="fas fa-utensils mr-1"></i> ${
+                      business.cuisine
+                    }</span>
+                </div>
+                <p class="mb-4">${business.description}</p>
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
+                    <div class="flex items-center"><i class="fas fa-map-marker-alt text-luxury-gold mr-2"></i><span>${
+                      business.address
+                    }</span></div>
+                    <div class="flex items-center sm:ml-4"><i class="fas fa-route text-luxury-gold mr-2"></i><span>${
+                      business.distance
+                    } km away</span></div>
+                </div>
+                ${
+                  business.specialOffer
+                    ? `<div class="bg-luxury-lightGold dark:bg-luxury-darkGold bg-opacity-20 dark:bg-opacity-20 border-l-4 border-luxury-gold p-3 rounded mb-4"><div class="flex items-center"><i class="fas fa-gift text-luxury-gold mr-2"></i><span class="font-medium">Special Offer:</span></div><p class="text-sm mt-1">${business.specialOffer}</p></div>`
+                    : ""
                 }
-            });
-            
-            // Filter panel toggle
-            filterButton.addEventListener('click', () => {
-                filterPanel.classList.toggle('hidden');
-            });
-            
-            closeFilterBtn.addEventListener('click', () => {
-                filterPanel.classList.add('hidden');
-            });
-            
-            // Distance slider
-            distanceRange.addEventListener('input', (e) => {
-                const value = e.target.value;
-                distanceValue.textContent = `${value} km`;
-                appData.filters.distance = parseInt(value);
-            });
-            
-            // Category selection
-            categoryPills.forEach(pill => {
-                pill.addEventListener('click', () => {
-                    // Remove active class from all pills
-                    categoryPills.forEach(p => p.classList.remove('active'));
-                    
-                    // Add active class to clicked pill
-                    pill.classList.add('active');
-                    
-                    // Update filter
-                    appData.filters.category = pill.dataset.category;
-                    
-                    // Reload restaurants
-                    loadRestaurants();
-                    addBusinessMarkers();
-                });
-            });
-            
-            // Close modal when clicking outside or on close button
-            document.addEventListener('click', (e) => {
-                if (e.target === detailModal) {
-                    closeModal();
-                }
-            });
-            
-            // Business detail modal events will be added dynamically
-            
-            // Search input
-            searchInput.addEventListener('input', debounce(() => {
-                loadRestaurants();
-                addBusinessMarkers();
-            }, 300));
-            
-            // Price filters
-            priceFilters.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    priceFilters.forEach(b => b.classList.remove('bg-luxury-gold', 'text-white'));
-                    
-                    if (appData.filters.price === btn.dataset.price) {
-                        appData.filters.price = null;
-                    } else {
-                        btn.classList.add('bg-luxury-gold', 'text-white');
-                        appData.filters.price = btn.dataset.price;
-                    }
-                });
-            });
-            
-            // Rating filters
-            ratingFilters.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    ratingFilters.forEach(b => b.classList.remove('bg-luxury-gold', 'text-white'));
-                    
-                    if (appData.filters.rating === parseFloat(btn.dataset.rating)) {
-                        appData.filters.rating = null;
-                    } else {
-                        btn.classList.add('bg-luxury-gold', 'text-white');
-                        appData.filters.rating = parseFloat(btn.dataset.rating);
-                    }
-                });
-            });
-            
-            // Badge filters
-            badgeFilters.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    btn.classList.toggle('bg-luxury-gold');
-                    btn.classList.toggle('text-white');
-                    
-                    const badge = btn.dataset.badge;
-                    if (appData.filters.badges.includes(badge)) {
-                        appData.filters.badges = appData.filters.badges.filter(b => b !== badge);
-                    } else {
-                        appData.filters.badges.push(badge);
-                    }
-                });
-            });
-            
-            // Apply filters
-            applyFiltersBtn.addEventListener('click', () => {
-                filterPanel.classList.add('hidden');
-                loadRestaurants();
-                addBusinessMarkers();
-            });
-            
-            // Reset filters
-            resetFiltersBtn.addEventListener('click', () => {
-                appData.filters = {
-                    price: null,
-                    rating: null,
-                    badges: [],
-                    distance: 5,
-                    category: 'all'
-                };
-                
-                // Reset UI
-                priceFilters.forEach(b => b.classList.remove('bg-luxury-gold', 'text-white'));
-                ratingFilters.forEach(b => b.classList.remove('bg-luxury-gold', 'text-white'));
-                badgeFilters.forEach(b => b.classList.remove('bg-luxury-gold', 'text-white'));
-                distanceRange.value = 5;
-                distanceValue.textContent = '5 km';
-                
-                // Reset category pills
-                categoryPills.forEach(p => p.classList.remove('active'));
-                document.querySelector('[data-category="all"]').classList.add('active');
-                
-                loadRestaurants();
-                addBusinessMarkers();
-            });
-            
-            // Close modals
-            document.querySelectorAll('.close-modal').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    businessEditModal.classList.add('hidden');
-                    menuEditModal.classList.add('hidden');
-                    reviewModal.classList.add('hidden');
-                });
-            });
-            
-            // Form submissions
-            document.getElementById('businessEditForm').addEventListener('submit', (e) => {
-                e.preventDefault();
-                updateBusiness();
-            });
-            
-            document.getElementById('menuEditForm').addEventListener('submit', (e) => {
-                e.preventDefault();
-                updateMenuItem();
-            });
-            
-            document.getElementById('reviewForm').addEventListener('submit', (e) => {
-                e.preventDefault();
-                submitReview();
-            });
-            
-            // Rating stars
-            const stars = document.querySelectorAll('#ratingStars i');
-            stars.forEach(star => {
-                star.addEventListener('click', () => {
-                    const rating = parseInt(star.dataset.rating);
-                    selectedRating = rating;
-                    
-                    // Update stars UI
-                    stars.forEach((s, index) => {
-                        if (index < rating) {
-                            s.classList.remove('text-gray-300');
-                            s.classList.add('text-luxury-gold');
-                        } else {
-                            s.classList.add('text-gray-300');
-                            s.classList.remove('text-luxury-gold');
-                        }
-                    });
-                });
-            });
-            
-            // Load more button
-            loadMoreBtn.addEventListener('click', () => {
-                currentPage++;
-                loadMoreRestaurants();
-            });
-            
-            // Bottom nav
-            document.querySelectorAll('.nav-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    document.querySelectorAll('.nav-item').forEach(i => {
-                        i.classList.remove('active');
-                        i.querySelector('i').classList.remove('text-luxury-gold');
-                    });
-                    
-                    item.classList.add('active');
-                    item.querySelector('i').classList.add('text-luxury-gold');
-                    
-                    // In a real app, we would switch screens here
-                    showToast(`${item.dataset.target.charAt(0).toUpperCase() + item.dataset.target.slice(1)} section would be displayed`, 'success');
-                });
-            });
-        }
-        
-        // Get current location
-        function getCurrentLocation() {
-            // In a real app, we would use the Geolocation API
-            // Since we're simulating, we'll just set a timeout
-            
-            currentLocationEl.textContent = 'Detecting location...';
-            
-            setTimeout(() => {
-                // Simulate location data
-                currentPosition = { lat: 51.505, lng: -0.09 };
-                currentLocationEl.textContent = 'London, United Kingdom';
-                
-                // Update map center
-                map.setView([currentPosition.lat, currentPosition.lng], 14);
-                
-                // Update markers
-                addBusinessMarkers();
-            }, 1500);
-        }
-        
-        // Filter businesses based on current filters
-        function filterBusinesses() {
-            let filtered = [...appData.businesses];
-            const searchQuery = searchInput.value.toLowerCase();
-            
-            if (searchQuery) {
-                filtered = filtered.filter(business => 
-                    business.name.toLowerCase().includes(searchQuery) || 
-                    business.description.toLowerCase().includes(searchQuery) ||
-                    business.cuisine.toLowerCase().includes(searchQuery)
-                );
-            }
-            
-            if (appData.filters.category && appData.filters.category !== 'all') {
-                filtered = filtered.filter(business => business.category === appData.filters.category);
-            }
-            
-            if (appData.filters.price) {
-                filtered = filtered.filter(business => business.price === appData.filters.price);
-            }
-            
-            if (appData.filters.rating) {
-                filtered = filtered.filter(business => business.rating >= appData.filters.rating);
-            }
-            
-            if (appData.filters.badges.length > 0) {
-                filtered = filtered.filter(business => 
-                    appData.filters.badges.some(badge => business.badges.includes(badge))
-                );
-            }
-            
-            if (appData.filters.distance) {
-                filtered = filtered.filter(business => business.distance <= appData.filters.distance);
-            }
-            
-            return filtered;
-        }
-        
-        // Load restaurants
-        function loadRestaurants() {
-            const filteredBusinesses = filterBusinesses();
-            
-            // Reset to first page
-            currentPage = 1;
-            
-            // Render businesses
-            renderBusinessList(filteredBusinesses);
-            
-            // Show/hide load more button
-            loadMoreBtn.parentElement.classList.toggle('hidden', filteredBusinesses.length <= itemsPerPage);
-        }
-        
-        // Load more restaurants
-        function loadMoreRestaurants() {
-            const filteredBusinesses = filterBusinesses();
-            
-            // Get businesses for the current page
-            const start = 0;
-            const end = currentPage * itemsPerPage;
-            const pagedBusinesses = filteredBusinesses.slice(start, end);
-            
-            // Render businesses
-            renderBusinessList(pagedBusinesses);
-            
-            // Show/hide load more button
-            loadMoreBtn.parentElement.classList.toggle('hidden', end >= filteredBusinesses.length);
-        }
-        
-        // Render business list
-        function renderBusinessList(businesses) {
-            // Clear existing list
-            restaurantList.innerHTML = '';
-            
-            // Calculate how many businesses to show
-            const end = currentPage * itemsPerPage;
-            const displayBusinesses = businesses.slice(0, end);
-            
-            if (displayBusinesses.length === 0) {
-                restaurantList.innerHTML = `
-                    <div class="col-span-full text-center py-8">
-                        <i class="fas fa-search text-4xl text-gray-300 mb-3"></i>
-                        <p class="text-gray-500">No establishments found matching your criteria</p>
-                        <button id="clearFilters" class="mt-3 px-4 py-2 text-luxury-gold border border-luxury-gold rounded-md hover:bg-luxury-gold hover:text-white transition">Clear Filters</button>
-                    </div>
-                `;
-                
-                document.getElementById('clearFilters').addEventListener('click', () => {
-                    resetFiltersBtn.click();
-                });
-                
-                return;
-            }
-            
-            // Generate HTML for each business
-            displayBusinesses.forEach(business => {
-                const businessCard = document.createElement('div');
-                businessCard.className = 'bg-white dark:bg-luxury-charcoal rounded-lg overflow-hidden shadow-luxury dark:shadow-luxury-dark transition-transform hover:scale-[1.02] cursor-pointer';
-                businessCard.innerHTML = `
-                    <div class="relative h-48 bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                        <div class="absolute inset-0 flex items-center justify-center">
-                            <div class="text-4xl text-gray-400">${business.name.charAt(0)}</div>
-                        </div>
-                        <div class="absolute top-0 right-0 p-2 flex space-x-1">
-                            ${business.badges.map(badge => `
-                                <span class="badge badge-${badge === 'luxury' ? 'gold' : badge === 'exclusive' ? 'special' : 'silver'}">
-                                    <i class="fas fa-${badge === 'luxury' ? 'crown' : badge === 'trending' ? 'fire' : badge === 'special-offer' ? 'tag' : 'gem'} mr-1"></i>
-                                    ${badge.replace('-', ' ')}
-                                </span>
-                            `).join('')}
-                        </div>
-                    </div>
-                    <div class="p-4">
-                        <div class="flex justify-between items-start">
-                            <h3 class="font-playfair font-bold text-lg">${business.name}</h3>
-                            <span class="text-luxury-gold font-medium">${business.price}</span>
-                        </div>
-                        <div class="flex items-center mt-1 mb-2">
-                            <div class="stars">
-                                ${Array.from({length: 5}, (_, i) => `
-                                    <i class="fas fa-star${i < Math.floor(business.rating) ? '' : (i < business.rating ? '-half-alt' : ' text-gray-300')}"></i>
-                                `).join('')}
-                            </div>
-                            <span class="ml-1 text-sm">${business.rating}</span>
-                            <span class="mx-1 text-gray-400">•</span>
-                            <span class="text-sm text-gray-600 dark:text-gray-400">${business.reviews} reviews</span>
-                        </div>
-                        <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                            <i class="fas fa-map-marker-alt text-luxury-gold mr-1"></i> ${business.distance} km away
-                        </div>
-                        <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                            <i class="fas fa-utensils text-luxury-gold mr-1"></i> ${business.cuisine}
-                        </div>
-                        <p class="text-sm line-clamp-2 mb-3">${business.description}</p>
-                        <div class="flex justify-between items-center">
-                            <button class="text-sm text-luxury-gold hover:underline" data-business-id="${business.id}">View Details</button>
-                            <button class="favorite-btn text-gray-400 hover:text-luxury-gold" data-business-id="${business.id}">
-                                <i class="far fa-heart"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-                
-                // Add event listener to the card
-                businessCard.addEventListener('click', (e) => {
-                    // Ignore if clicking on favorite button
-                    if (e.target.closest('.favorite-btn')) {
-                        e.stopPropagation();
-                        toggleFavorite(business.id);
-                        return;
-                    }
-                    
-                    openBusinessDetail(business.id);
-                });
-                
-                restaurantList.appendChild(businessCard);
-            });
-            
-            // Update list view as well
-            listView.innerHTML = '';
-            displayBusinesses.forEach(business => {
-                const listItem = document.createElement('div');
-                listItem.className = 'bg-white dark:bg-luxury-charcoal rounded-lg p-3 shadow-sm flex items-center';
-                listItem.innerHTML = `
-                    <div class="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center mr-3">
-                        <div class="text-2xl text-gray-400">${business.name.charAt(0)}</div>
-                    </div>
-                    <div class="flex-1">
-                        <div class="flex justify-between">
-                            <h3 class="font-medium">${business.name}</h3>
-                            <span class="text-luxury-gold">${business.price}</span>
-                        </div>
-                        <div class="flex items-center text-sm">
-                            <div class="stars">
-                                ${Array.from({length: 5}, (_, i) => `
-                                    <i class="fas fa-star${i < Math.floor(business.rating) ? '' : (i < business.rating ? '-half-alt' : ' text-gray-300')}"></i>
-                                `).join('')}
-                            </div>
-                            <span class="ml-1">${business.rating}</span>
-                        </div>
-                        <div class="text-xs text-gray-600 dark:text-gray-400">
-                            ${business.distance} km • ${business.cuisine}
-                        </div>
-                    </div>
-                `;
-                
-                listItem.addEventListener('click', () => {
-                    openBusinessDetail(business.id);
-                });
-                
-                listView.appendChild(listItem);
-            });
-        }
-        
-        // Load featured offers
-        function loadFeaturedOffers() {
-            const offersContainer = document.querySelector('.grid.gap-4');
-            offersContainer.innerHTML = '';
-            
-            // Get businesses with special offers
-            const specialOffers = appData.businesses.filter(business => business.specialOffer);
-            
-            // Show up to 4 offers
-            const displayOffers = specialOffers.slice(0, 4);
-            
-            // Generate HTML for each offer
-            displayOffers.forEach(business => {
-                const offerCard = document.createElement('div');
-                offerCard.className = 'bg-white dark:bg-luxury-charcoal rounded-lg overflow-hidden shadow-luxury dark:shadow-luxury-dark';
-                offerCard.innerHTML = `
-                    <div class="relative h-40 bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                        <div class="absolute inset-0 flex items-center justify-center">
-                            <div class="text-4xl text-gray-400">${business.name.charAt(0)}</div>
-                        </div>
-                        <div class="absolute top-0 left-0 bg-luxury-gold text-white px-3 py-1 rounded-br-lg">
-                            <i class="fas fa-gift mr-1"></i> Special Offer
-                        </div>
-                    </div>
-                    <div class="p-4">
-                        <h3 class="font-playfair font-bold text-lg mb-2">${business.name}</h3>
-                        <p class="text-sm mb-3">${business.specialOffer}</p>
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <span class="text-xs text-gray-600 dark:text-gray-400">${business.category.replace('-', ' ')} • ${business.price}</span>
-                            </div>
-                            <button class="text-sm text-luxury-gold hover:underline" data-business-id="${business.id}">View Details</button>
-                        </div>
-                    </div>
-                `;
-                
-                offerCard.addEventListener('click', () => {
-                    openBusinessDetail(business.id);
-                });
-                
-                offersContainer.appendChild(offerCard);
-            });
-        }
-        
-        // Open business detail
-        function openBusinessDetail(businessId) {
-            const business = appData.businesses.find(b => b.id === businessId);
-            
-            if (!business) return;
-            
-            // Store current business for other functions
-            currentBusinessDetail = business;
-            
-            // Get menu items for this business
-            const menuItems = appData.menuItems.filter(item => item.businessId === businessId);
-            
-            // Get reviews for this business
-            const reviews = appData.reviews.filter(review => review.businessId === businessId);
-            
-            // Build modal content
-            modalContent.innerHTML = `
-                <div class="relative overflow-hidden">
-                    <div class="flex justify-between items-start mb-4">
-                        <h2 class="font-playfair font-bold text-2xl">${business.name}</h2>
-                        <button class="text-gray-500 hover:text-luxury-gold" onclick="closeModal()">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    
-                    <div class="flex items-center mb-2">
-                        <div class="stars">
-                            ${Array.from({length: 5}, (_, i) => `
-                                <i class="fas fa-star${i < Math.floor(business.rating) ? '' : (i < business.rating ? '-half-alt' : ' text-gray-300')}"></i>
-                            `).join('')}
-                        </div>
-                        <span class="ml-1">${business.rating}</span>
-                        <span class="mx-1 text-gray-400">•</span>
-                        <span class="text-gray-600 dark:text-gray-400">${business.reviews} reviews</span>
-                    </div>
-                    
-                    <div class="flex flex-wrap gap-1 mb-3">
-                        ${business.badges.map(badge => `
-                            <span class="badge badge-${badge === 'luxury' ? 'gold' : badge === 'exclusive' ? 'special' : 'silver'}">
-                                <i class="fas fa-${badge === 'luxury' ? 'crown' : badge === 'trending' ? 'fire' : badge === 'special-offer' ? 'tag' : 'gem'} mr-1"></i>
-                                ${badge.replace('-', ' ')}
-                            </span>
-                        `).join('')}
-                        <span class="badge bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                            <i class="fas fa-tag mr-1"></i> ${business.price}
-                        </span>
-                        <span class="badge bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                            <i class="fas fa-utensils mr-1"></i> ${business.cuisine}
-                        </span>
-                    </div>
-                    
-                    <p class="mb-4">${business.description}</p>
-                    
-                    <div class="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
-                        <div class="flex items-center">
-                            <i class="fas fa-map-marker-alt text-luxury-gold mr-2"></i>
-                            <span>${business.address}</span>
-                        </div>
-                        <div class="flex items-center sm:ml-4">
-                            <i class="fas fa-route text-luxury-gold mr-2"></i>
-                            <span>${business.distance} km away</span>
-                        </div>
-                    </div>
-                    
-                    ${business.specialOffer ? `
-                        <div class="bg-luxury-lightGold dark:bg-luxury-darkGold bg-opacity-20 dark:bg-opacity-20 border-l-4 border-luxury-gold p-3 rounded mb-4">
-                            <div class="flex items-center">
-                                <i class="fas fa-gift text-luxury-gold mr-2"></i>
-                                <span class="font-medium">Special Offer:</span>
-                            </div>
-                            <p class="text-sm mt-1">${business.specialOffer}</p>
-                        </div>
-                    ` : ''}
-                    
-                    <div class="flex flex-wrap gap-2 mb-4">
-                        <button id="showMenuBtn" class="px-4 py-2 bg-luxury-gold text-white rounded-md hover:bg-luxury-darkGold transition">
-                            <i class="fas fa-utensils mr-1"></i> View Menu
-                        </button>
-                        <button id="showReviewsBtn" class="px-4 py-2 border border-luxury-gold text-luxury-gold rounded-md hover:bg-luxury-gold hover:text-white transition">
-                            <i class="fas fa-star mr-1"></i> Reviews
-                        </button>
-                        <button id="writeReviewBtn" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-luxury-black transition">
-                            <i class="fas fa-pen mr-1"></i> Write Review
-                        </button>
-                    </div>
-                    
-                    <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mb-4">
-                        <h3 class="font-playfair font-bold text-xl mb-3">Available Menu</h3>
-                        
-                        ${menuItems.length > 0 ? `
-                            <div class="space-y-3">
-                                ${menuItems.map(item => `
-                                    <div class="bg-gray-50 dark:bg-luxury-black p-3 rounded-lg">
-                                        <div class="flex justify-between items-start">
-                                            <div>
-                                                <h4 class="font-medium">${item.name}</h4>
-                                                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">${item.description}</p>
-                                            </div>
-                                            <div class="font-medium text-luxury-gold">$${item.price.toFixed(2)}</div>
-                                        </div>
-                                        ${item.special ? `
-                                            <div class="mt-2">
-                                                <span class="badge badge-special">
-                                                    <i class="fas fa-star mr-1"></i> Chef's Special
-                                                </span>
-                                            </div>
-                                        ` : ''}
-                                        <div class="flex justify-end mt-2">
-                                            <button class="edit-menu-item text-sm text-luxury-gold hover:underline" data-item-id="${item.id}">
-                                                <i class="fas fa-edit mr-1"></i> Edit
-                                            </button>
-                                        </div>
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <button id="showMenuBtn" class="px-4 py-2 bg-luxury-gold text-white rounded-md hover:bg-luxury-darkGold transition"><i class="fas fa-utensils mr-1"></i> View Menu</button>
+                    <button id="showReviewsBtn" class="px-4 py-2 border border-luxury-gold text-luxury-gold rounded-md hover:bg-luxury-gold hover:text-white transition"><i class="fas fa-star mr-1"></i> Reviews</button>
+                    <button id="writeReviewBtn" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-luxury-black transition"><i class="fas fa-pen mr-1"></i> Write Review</button>
+                </div>
+                <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mb-4">
+                    <h3 class="font-playfair font-bold text-xl mb-3">Available Menu</h3>
+                    ${
+                      menuItems.length > 0
+                        ? `
+                        <div class="space-y-3">
+                            ${menuItems
+                              .map(
+                                (item) => `
+                                <div class="bg-gray-50 dark:bg-luxury-black p-3 rounded-lg">
+                                    <div class="flex justify-between items-start">
+                                        <div><h4 class="font-medium">${
+                                          item.name
+                                        }</h4><p class="text-sm text-gray-600 dark:text-gray-400 mt-1">${
+                                  item.description
+                                }</p></div>
+                                        <div class="font-medium text-luxury-gold">$${item.price.toFixed(
+                                          2
+                                        )}</div>
                                     </div>
-                                `).join('')}
-                            </div>
-                            <button id="addMenuItemBtn" class="mt-4 w-full py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-md text-gray-500 hover:text-luxury-gold hover:border-luxury-gold transition">
-                                <i class="fas fa-plus mr-1"></i> Add Menu Item
-                            </button>
-                        ` : `
-                            <div class="text-center py-6">
-                                <i class="fas fa-utensils text-gray-300 text-4xl mb-2"></i>
-                                <p class="text-gray-500 mb-3">No menu items available yet</p>
-                                <button id="addMenuItemBtn" class="px-4 py-2 border border-luxury-gold text-luxury-gold rounded-md hover:bg-luxury-gold hover:text-white transition">
-                                    <i class="fas fa-plus mr-1"></i> Add First Menu Item
-                                </button>
-                            </div>
-                        `}
-                    </div>
-                    
-                    <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mb-4">
-                        <div class="flex justify-between items-center mb-3">
-                            <h3 class="font-playfair font-bold text-xl">Customer Reviews</h3>
-                            <button id="seeAllReviewsBtn" class="text-sm text-luxury-gold hover:underline">See All</button>
+                                    ${
+                                      item.special
+                                        ? `<div class="mt-2"><span class="badge badge-special"><i class="fas fa-star mr-1"></i> Chef's Special</span></div>`
+                                        : ""
+                                    }
+                                    <div class="flex justify-end mt-2"><button class="edit-menu-item text-sm text-luxury-gold hover:underline" data-item-id="${
+                                      item.id
+                                    }"><i class="fas fa-edit mr-1"></i> Edit</button></div>
+                                </div>`
+                              )
+                              .join("")}
                         </div>
-                        
-                        ${reviews.length > 0 ? `
-                            <div class="space-y-4">
-                                ${reviews.slice(0, 2).map(review => `
-                                    <div class="bg-gray-50 dark:bg-luxury-black p-3 rounded-lg">
-                                        <div class="flex justify-between items-start">
-                                            <div class="flex items-start">
-                                                <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center mr-2">
-                                                    <span class="text-gray-600 dark:text-gray-400">${review.userName.charAt(0)}</span>
-                                                </div>
-                                                <div>
-                                                    <div class="font-medium">${review.userName}</div>
-                                                    <div class="stars mt-1">
-                                                        ${Array.from({length: 5}, (_, i) => `
-                                                            <i class="fas fa-star${i < review.rating ? '' : ' text-gray-300'}"></i>
-                                                        `).join('')}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="text-xs text-gray-500">${review.date}</div>
+                        <button id="addMenuItemBtn" class="mt-4 w-full py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-md text-gray-500 hover:text-luxury-gold hover:border-luxury-gold transition"><i class="fas fa-plus mr-1"></i> Add Menu Item</button>
+                    `
+                        : `
+                        <div class="text-center py-6">
+                            <i class="fas fa-utensils text-gray-300 text-4xl mb-2"></i><p class="text-gray-500 mb-3">No menu items available yet</p>
+                            <button id="addMenuItemBtn" class="px-4 py-2 border border-luxury-gold text-luxury-gold rounded-md hover:bg-luxury-gold hover:text-white transition"><i class="fas fa-plus mr-1"></i> Add First Menu Item</button>
+                        </div>`
+                    }
+                </div>
+                <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mb-4">
+                    <div class="flex justify-between items-center mb-3"><h3 class="font-playfair font-bold text-xl">Customer Reviews</h3><button id="seeAllReviewsBtn" class="text-sm text-luxury-gold hover:underline">See All</button></div>
+                    ${
+                      reviews.length > 0
+                        ? `
+                        <div class="space-y-4">
+                            ${reviews
+                              .slice(0, 2)
+                              .map(
+                                (review) => `
+                                <div class="bg-gray-50 dark:bg-luxury-black p-3 rounded-lg">
+                                    <div class="flex justify-between items-start">
+                                        <div class="flex items-start">
+                                            <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center mr-2"><span class="text-gray-600 dark:text-gray-400">${review.userName.charAt(
+                                              0
+                                            )}</span></div>
+                                            <div><div class="font-medium">${
+                                              review.userName
+                                            }</div><div class="stars mt-1">${Array.from(
+                                  { length: 5 },
+                                  (_, i) =>
+                                    `<i class="fas fa-star${
+                                      i < review.rating ? "" : " text-gray-300"
+                                    }"></i>`
+                                ).join("")}</div></div>
                                         </div>
-                                        <p class="text-sm mt-2">${review.content}</p>
-                                        <div class="flex justify-end mt-2">
-                                            <button class="like-review text-sm text-gray-500 hover:text-luxury-gold">
-                                                <i class="far fa-thumbs-up mr-1"></i> ${review.likes}
-                                            </button>
-                                        </div>
+                                        <div class="text-xs text-gray-500">${
+                                          review.date
+                                        }</div>
                                     </div>
-                                `).join('')}
-                            </div>
-                        ` : `
-                            <div class="text-center py-6">
-                                <i class="fas fa-comments text-gray-300 text-4xl mb-2"></i>
-                                <p class="text-gray-500 mb-3">No reviews available yet</p>
-                                <button id="firstReviewBtn" class="px-4 py-2 border border-luxury-gold text-luxury-gold rounded-md hover:bg-luxury-gold hover:text-white transition">
-                                    <i class="fas fa-star mr-1"></i> Be the First to Review
-                                </button>
-                            </div>
-                        `}
-                    </div>
-                    
-                    <div class="flex justify-between border-t border-gray-200 dark:border-gray-700 pt-4">
-                        <button id="editBusinessBtn" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-luxury-gold transition">
-                            <i class="fas fa-edit mr-1"></i> Edit Business
+                                    <p class="text-sm mt-2">${
+                                      review.content
+                                    }</p>
+                                    <div class="flex justify-end mt-2"><button class="like-review text-sm text-gray-500 hover:text-luxury-gold"><i class="far fa-thumbs-up mr-1"></i> ${
+                                      review.likes
+                                    }</button></div>
+                                </div>`
+                              )
+                              .join("")}
+                        </div>`
+                        : `
+                        <div class="text-center py-6">
+                            <i class="fas fa-comments text-gray-300 text-4xl mb-2"></i><p class="text-gray-500 mb-3">No reviews available yet</p>
+                            <button id="firstReviewBtn" class="px-4 py-2 border border-luxury-gold text-luxury-gold rounded-md hover:bg-luxury-gold hover:text-white transition"><i class="fas fa-star mr-1"></i> Be the First to Review</button>
+                        </div>`
+                    }
+                </div>
+                <div class="flex justify-between border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <button id="editBusinessBtn" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-luxury-gold transition"><i class="fas fa-edit mr-1"></i> Edit Business</button>
+                    <div>
+                        <button class="share-business px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-luxury-gold transition"><i class="fas fa-share-alt mr-1"></i> Share</button>
+                        <button class="favorite-btn-detail px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-luxury-gold transition ${
+                          appData.user.favorites.includes(business.id)
+                            ? "text-luxury-gold"
+                            : ""
+                        }" data-business-id="${business.id}">
+                            <i class="${
+                              appData.user.favorites.includes(business.id)
+                                ? "fas"
+                                : "far"
+                            } fa-heart mr-1"></i> Save
                         </button>
-                        
-                        <div>
-                            <button class="share-business px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-luxury-gold transition">
-                                <i class="fas fa-share-alt mr-1"></i> Share
-                            </button>
-                            <button class="favorite-btn-detail px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-luxury-gold transition" data-business-id="${business.id}">
-                                <i class="far fa-heart mr-1"></i> Save
-                            </button>
-                        </div>
                     </div>
                 </div>
-            `;
-            
-            // Show modal
-            detailModal.classList.remove('hidden');
-            
-            // Add event listeners
-            setupDetailModalEvents(business, menuItems);
+            </div>`;
+        detailModal.classList.remove("hidden");
+        setupDetailModalEvents(business, menuItems);
+      }
+
+      // Setup detail modal events
+      function setupDetailModalEvents(business, menuItems) {
+        document
+          .getElementById("showMenuBtn")
+          ?.addEventListener("click", () =>
+            showToast("Menu view toggled", "success")
+          );
+        document
+          .getElementById("showReviewsBtn")
+          ?.addEventListener("click", () =>
+            showToast("Showing all reviews", "success")
+          );
+        document
+          .getElementById("writeReviewBtn")
+          ?.addEventListener("click", () => openReviewModal(business.id));
+        document
+          .getElementById("firstReviewBtn")
+          ?.addEventListener("click", () => openReviewModal(business.id));
+        document
+          .getElementById("editBusinessBtn")
+          ?.addEventListener("click", () => openBusinessEditModal(business));
+        document
+          .getElementById("addMenuItemBtn")
+          ?.addEventListener("click", () =>
+            openMenuEditModal(null, business.id)
+          );
+        document.querySelectorAll(".edit-menu-item").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const itemId = btn.dataset.itemId;
+            const menuItem = menuItems.find((item) => item.id === itemId);
+            if (menuItem) openMenuEditModal(menuItem);
+          });
+        });
+        const favBtnDetail = document.querySelector(".favorite-btn-detail");
+        if (favBtnDetail) {
+          favBtnDetail.addEventListener("click", (e) => {
+            toggleFavorite(business.id, e.currentTarget.querySelector("i"));
+          });
         }
-        
-        // Setup detail modal events
-        function setupDetailModalEvents(business, menuItems) {
-            // Menu toggle
-            document.getElementById('showMenuBtn').addEventListener('click', () => {
-                // This would toggle menu view in a real app
-                showToast('Menu view toggled', 'success');
-            });
-            
-            // Reviews toggle
-            document.getElementById('showReviewsBtn').addEventListener('click', () => {
-                // This would show all reviews in a real app
-                showToast('Showing all reviews', 'success');
-            });
-            
-            // Write review
-            document.getElementById('writeReviewBtn').addEventListener('click', () => {
-                openReviewModal(business.id);
-            });
-            
-            // First review button if exists
-            const firstReviewBtn = document.getElementById('firstReviewBtn');
-            if (firstReviewBtn) {
-                firstReviewBtn.addEventListener('click', () => {
-                    openReviewModal(business.id);
-                });
+        document
+          .querySelector(".share-business")
+          ?.addEventListener("click", () =>
+            showToast("Sharing functionality would open here", "success")
+          );
+      }
+
+      // Open business edit modal
+      function openBusinessEditModal(business) {
+        document.getElementById("businessId").value = business.id;
+        document.getElementById("businessName").value = business.name;
+        document.getElementById("businessDescription").value =
+          business.description;
+        document.getElementById("businessAddress").value = business.address;
+        document.getElementById("businessCategory").value = business.category;
+        document.getElementById("businessPrice").value = business.price;
+        businessEditModal.classList.remove("hidden");
+      }
+
+      // Open menu edit modal
+      function openMenuEditModal(menuItem, businessId = null) {
+        if (menuItem) {
+          document.getElementById("menuItemId").value = menuItem.id;
+          document.getElementById("menuBusinessId").value = menuItem.businessId;
+          document.getElementById("menuItemName").value = menuItem.name;
+          document.getElementById("menuItemDescription").value =
+            menuItem.description;
+          document.getElementById("menuItemPrice").value = menuItem.price;
+          document.getElementById("menuItemCategory").value = menuItem.category;
+          document.getElementById("menuItemSpecialOffer").checked =
+            menuItem.special;
+        } else {
+          document.getElementById("menuItemId").value =
+            "m" +
+            (appData.menuItems.length + 1 + Date.now()).toString().slice(-5); // More unique ID
+          document.getElementById("menuBusinessId").value = businessId;
+          document.getElementById("menuEditForm").reset(); // Reset form for new item
+          document.getElementById("menuItemCategory").value = "main"; // Default
+        }
+        menuEditModal.classList.remove("hidden");
+      }
+
+      // Open review modal
+      function openReviewModal(businessId) {
+        document.getElementById("reviewBusinessId").value = businessId;
+        document.getElementById("reviewForm").reset();
+        const stars = document.querySelectorAll("#ratingStars i");
+        stars.forEach((star) => {
+          star.classList.add("text-gray-300");
+          star.classList.remove("text-luxury-gold");
+        });
+        selectedRating = 0;
+        reviewModal.classList.remove("hidden");
+      }
+
+      // Close modal
+      function closeModal() {
+        detailModal.classList.add("hidden");
+        modalContent.innerHTML = ""; // Clear content to prevent issues
+      }
+
+      // Update business
+      function updateBusiness() {
+        const businessId = document.getElementById("businessId").value;
+        const name = document.getElementById("businessName").value;
+        const description = document.getElementById(
+          "businessDescription"
+        ).value;
+        const address = document.getElementById("businessAddress").value;
+        const category = document.getElementById("businessCategory").value;
+        const price = document.getElementById("businessPrice").value;
+        const businessIndex = appData.businesses.findIndex(
+          (b) => b.id === businessId
+        );
+
+        if (businessIndex !== -1) {
+          appData.businesses[businessIndex] = {
+            ...appData.businesses[businessIndex],
+            name,
+            description,
+            address,
+            category,
+            price,
+          };
+          businessEditModal.classList.add("hidden");
+          loadRestaurants();
+          if (map) addBusinessMarkers();
+          openBusinessDetail(businessId);
+          showToast("Business updated successfully", "success");
+        }
+      }
+
+      // Update menu item
+      function updateMenuItem() {
+        const itemId = document.getElementById("menuItemId").value;
+        const businessId = document.getElementById("menuBusinessId").value;
+        const name = document.getElementById("menuItemName").value;
+        const description = document.getElementById(
+          "menuItemDescription"
+        ).value;
+        const price = parseFloat(
+          document.getElementById("menuItemPrice").value
+        );
+        const category = document.getElementById("menuItemCategory").value;
+        const special = document.getElementById("menuItemSpecialOffer").checked;
+        const itemIndex = appData.menuItems.findIndex(
+          (item) => item.id === itemId
+        );
+
+        if (itemIndex !== -1) {
+          appData.menuItems[itemIndex] = {
+            ...appData.menuItems[itemIndex],
+            name,
+            description,
+            price,
+            category,
+            special,
+          };
+          showToast("Menu item updated successfully", "success");
+        } else {
+          appData.menuItems.push({
+            id: itemId,
+            businessId,
+            name,
+            description,
+            price,
+            category,
+            special,
+          });
+          showToast("Menu item added successfully", "success");
+        }
+        menuEditModal.classList.add("hidden");
+        if (currentBusinessDetail && currentBusinessDetail.id === businessId) {
+          openBusinessDetail(businessId);
+        }
+      }
+
+      // Submit review
+      function submitReview() {
+        const businessId = document.getElementById("reviewBusinessId").value;
+        const content = document.getElementById("reviewContent").value;
+
+        if (selectedRating === 0) {
+          showToast("Please select a rating", "error");
+          return;
+        }
+        if (!content.trim()) {
+          showToast("Please enter a review", "error");
+          return;
+        }
+
+        const newReview = {
+          id:
+            "r" +
+            (appData.reviews.length + 1 + Date.now()).toString().slice(-5), // More unique ID
+          businessId,
+          userId: appData.user.id,
+          userName: appData.user.name,
+          rating: selectedRating,
+          content,
+          date: new Date().toISOString().split("T")[0],
+          likes: 0,
+        };
+        appData.reviews.push(newReview);
+
+        const businessReviews = appData.reviews.filter(
+          (r) => r.businessId === businessId
+        );
+        const totalRating = businessReviews.reduce(
+          (sum, r) => sum + r.rating,
+          0
+        );
+        const averageRating = totalRating / businessReviews.length;
+        const businessIndex = appData.businesses.findIndex(
+          (b) => b.id === businessId
+        );
+
+        if (businessIndex !== -1) {
+          appData.businesses[businessIndex].rating = parseFloat(
+            averageRating.toFixed(1)
+          );
+          appData.businesses[businessIndex].reviews = businessReviews.length;
+        }
+        reviewModal.classList.add("hidden");
+        loadRestaurants(); // Refresh list view to show updated rating/review count
+        if (currentBusinessDetail && currentBusinessDetail.id === businessId) {
+          openBusinessDetail(businessId); // Refresh detail modal
+        }
+        showToast("Review submitted successfully", "success");
+      }
+
+      // Toggle favorite
+      function toggleFavorite(businessId, iconElement = null) {
+        const index = appData.user.favorites.indexOf(businessId);
+        if (index === -1) {
+          appData.user.favorites.push(businessId);
+          showToast("Added to favorites", "success");
+        } else {
+          appData.user.favorites.splice(index, 1);
+          showToast("Removed from favorites", "success");
+        }
+
+        // Update all relevant favorite buttons (list, detail modal)
+        document
+          .querySelectorAll(
+            `.favorite-btn[data-business-id="${businessId}"], .favorite-btn-detail[data-business-id="${businessId}"]`
+          )
+          .forEach((btn) => {
+            const icon = btn.querySelector("i");
+            if (icon) {
+              const isFavorited = appData.user.favorites.includes(businessId);
+              icon.classList.toggle("fas", isFavorited);
+              icon.classList.toggle("far", !isFavorited);
+              icon.classList.toggle("text-luxury-gold", isFavorited);
             }
-            
-            // Edit business
-            document.getElementById('editBusinessBtn').addEventListener('click', () => {
-                openBusinessEditModal(business);
-            });
-            
-            // Add menu item
-            document.getElementById('addMenuItemBtn').addEventListener('click', () => {
-                openMenuEditModal(null, business.id);
-            });
-            
-            // Edit menu items
-            document.querySelectorAll('.edit-menu-item').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const itemId = btn.dataset.itemId;
-                    const menuItem = menuItems.find(item => item.id === itemId);
-                    
-                    if (menuItem) {
-                        openMenuEditModal(menuItem);
-                    }
-                });
-            });
-            
-            // Favorite button
-            document.querySelector('.favorite-btn-detail').addEventListener('click', (e) => {
-                toggleFavorite(business.id);
-                
-                // Toggle heart icon
-                const icon = e.currentTarget.querySelector('i');
-                icon.classList.toggle('far');
-                icon.classList.toggle('fas');
-                icon.classList.toggle('text-luxury-gold');
-            });
-            
-            // Share business
-            document.querySelector('.share-business').addEventListener('click', () => {
-                // In a real app, this would open a share dialog
-                showToast('Sharing functionality would open here', 'success');
-            });
-        }
-        
-        // Open business edit modal
-        function openBusinessEditModal(business) {
-            // Fill form with business data
-            document.getElementById('businessId').value = business.id;
-            document.getElementById('businessName').value = business.name;
-            document.getElementById('businessDescription').value = business.description;
-            document.getElementById('businessAddress').value = business.address;
-            document.getElementById('businessCategory').value = business.category;
-            document.getElementById('businessPrice').value = business.price;
-            
-            // Show modal
-            businessEditModal.classList.remove('hidden');
-        }
-        
-        // Open menu edit modal
-        function openMenuEditModal(menuItem, businessId = null) {
-            if (menuItem) {
-                // Edit existing item
-                document.getElementById('menuItemId').value = menuItem.id;
-                document.getElementById('menuBusinessId').value = menuItem.businessId;
-                document.getElementById('menuItemName').value = menuItem.name;
-                document.getElementById('menuItemDescription').value = menuItem.description;
-                document.getElementById('menuItemPrice').value = menuItem.price;
-                document.getElementById('menuItemCategory').value = menuItem.category;
-                document.getElementById('menuItemSpecialOffer').checked = menuItem.special;
-            } else {
-                // Add new item
-                document.getElementById('menuItemId').value = 'm' + (appData.menuItems.length + 1);
-                document.getElementById('menuBusinessId').value = businessId;
-                document.getElementById('menuItemName').value = '';
-                document.getElementById('menuItemDescription').value = '';
-                document.getElementById('menuItemPrice').value = '';
-                document.getElementById('menuItemCategory').value = 'main';
-                document.getElementById('menuItemSpecialOffer').checked = false;
-            }
-            
-            // Show modal
-            menuEditModal.classList.remove('hidden');
-        }
-        
-        // Open review modal
-        function openReviewModal(businessId) {
-            // Reset form
-            document.getElementById('reviewBusinessId').value = businessId;
-            document.getElementById('reviewContent').value = '';
-            
-            // Reset stars
-            const stars = document.querySelectorAll('#ratingStars i');
-            stars.forEach(star => {
-                star.classList.add('text-gray-300');
-                star.classList.remove('text-luxury-gold');
-            });
-            
-            selectedRating = 0;
-            
-            // Show modal
-            reviewModal.classList.remove('hidden');
-        }
-        
-        // Close modal
-        function closeModal() {
-            detailModal.classList.add('hidden');
-        }
-        
-        // Update business
-        function updateBusiness() {
-            const businessId = document.getElementById('businessId').value;
-            const name = document.getElementById('businessName').value;
-            const description = document.getElementById('businessDescription').value;
-            const address = document.getElementById('businessAddress').value;
-            const category = document.getElementById('businessCategory').value;
-            const price = document.getElementById('businessPrice').value;
-            
-            // Find business in data
-            const businessIndex = appData.businesses.findIndex(b => b.id === businessId);
-            
-            if (businessIndex !== -1) {
-                // Update business data
-                appData.businesses[businessIndex].name = name;
-                appData.businesses[businessIndex].description = description;
-                appData.businesses[businessIndex].address = address;
-                appData.businesses[businessIndex].category = category;
-                appData.businesses[businessIndex].price = price;
-                
-                // Hide modal
-                businessEditModal.classList.add('hidden');
-                
-                // Refresh data
-                loadRestaurants();
-                addBusinessMarkers();
-                
-                // Re-open detail modal with updated data
-                openBusinessDetail(businessId);
-                
-                // Show success toast
-                showToast('Business updated successfully', 'success');
-            }
-        }
-        
-        // Update menu item
-        function updateMenuItem() {
-            const itemId = document.getElementById('menuItemId').value;
-            const businessId = document.getElementById('menuBusinessId').value;
-            const name = document.getElementById('menuItemName').value;
-            const description = document.getElementById('menuItemDescription').value;
-            const price = parseFloat(document.getElementById('menuItemPrice').value);
-            const category = document.getElementById('menuItemCategory').value;
-            const special = document.getElementById('menuItemSpecialOffer').checked;
-            
-            // Find if item exists
-            const itemIndex = appData.menuItems.findIndex(item => item.id === itemId);
-            
-            if (itemIndex !== -1) {
-                // Update existing item
-                appData.menuItems[itemIndex].name = name;
-                appData.menuItems[itemIndex].description = description;
-                appData.menuItems[itemIndex].price = price;
-                appData.menuItems[itemIndex].category = category;
-                appData.menuItems[itemIndex].special = special;
-                
-                showToast('Menu item updated successfully', 'success');
-            } else {
-                // Add new item
-                appData.menuItems.push({
-                    id: itemId,
-                    businessId,
-                    name,
-                    description,
-                    price,
-                    category,
-                    special
-                });
-                
-                showToast('Menu item added successfully', 'success');
-            }
-            
-            // Hide modal
-            menuEditModal.classList.add('hidden');
-            
-            // Re-open detail modal with updated data
-            openBusinessDetail(businessId);
-        }
-        
-        // Submit review
-        function submitReview() {
-            const businessId = document.getElementById('reviewBusinessId').value;
-            const content = document.getElementById('reviewContent').value;
-            
-            if (selectedRating === 0) {
-                showToast('Please select a rating', 'error');
-                return;
-            }
-            
-            if (!content.trim()) {
-                showToast('Please enter a review', 'error');
-                return;
-            }
-            
-            // Create new review
-            const newReview = {
-                id: 'r' + (appData.reviews.length + 1),
-                businessId,
-                userId: appData.user.id,
-                userName: appData.user.name,
-                rating: selectedRating,
-                content,
-                date: new Date().toISOString().split('T')[0],
-                likes: 0
-            };
-            
-            // Add review to data
-            appData.reviews.push(newReview);
-            
-            // Update business rating
-            const businessReviews = appData.reviews.filter(review => review.businessId === businessId);
-            const totalRating = businessReviews.reduce((sum, review) => sum + review.rating, 0);
-            const averageRating = totalRating / businessReviews.length;
-            
-            // Find business
-            const businessIndex = appData.businesses.findIndex(b => b.id === businessId);
-            
-            if (businessIndex !== -1) {
-                // Update rating and review count
-                appData.businesses[businessIndex].rating = parseFloat(averageRating.toFixed(1));
-                appData.businesses[businessIndex].reviews = businessReviews.length;
-            }
-            
-            // Hide modal
-            reviewModal.classList.add('hidden');
-            
-            // Refresh data
-            loadRestaurants();
-            
-            // Re-open detail modal with updated data
-            openBusinessDetail(businessId);
-            
-            // Show success toast
-            showToast('Review submitted successfully', 'success');
-        }
-        
-        // Toggle favorite
-        function toggleFavorite(businessId) {
-            const index = appData.user.favorites.indexOf(businessId);
-            
-            if (index === -1) {
-                // Add to favorites
-                appData.user.favorites.push(businessId);
-                showToast('Added to favorites', 'success');
-            } else {
-                // Remove from favorites
-                appData.user.favorites.splice(index, 1);
-                showToast('Removed from favorites', 'success');
-            }
-            
-            // Update favorite buttons
-            document.querySelectorAll(`.favorite-btn[data-business-id="${businessId}"]`).forEach(btn => {
-                const icon = btn.querySelector('i');
-                icon.classList.toggle('far');
-                icon.classList.toggle('fas');
-                icon.classList.toggle('text-luxury-gold');
-            });
-        }
-        
-        // Show toast
-        function showToast(message, type) {
-            toast.textContent = message;
-            toast.className = `toast ${type}`;
-            toast.classList.add('show');
-            
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
-        }
-        
-        // Debounce function
-        function debounce(func, delay) {
-            let timeout;
-            return function() {
-                const context = this;
-                const args = arguments;
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func.apply(context, args), delay);
-            };
-        }
-        
-        // Initialize app when page loads
-        document.addEventListener('DOMContentLoaded', initApp);
-        
-        // Make openBusinessDetail available globally for map popups
-        window.openBusinessDetail = openBusinessDetail;
-        window.closeModal = closeModal;
+          });
+      }
+
+      // Show toast
+      function showToast(message, type) {
+        toast.textContent = message;
+        toast.className = `toast ${type} show`;
+        setTimeout(() => toast.classList.remove("show"), 3000);
+      }
+
+      // Debounce function
+      function debounce(func, delay) {
+        let timeout;
+        return function (...args) {
+          clearTimeout(timeout);
+          timeout = setTimeout(() => func.apply(this, args), delay);
+        };
+      }
+
+      // Initialize app when page loads
+      document.addEventListener("DOMContentLoaded", initApp);
+
+      // Make globally available for map popups and inline onclicks
+      window.openBusinessDetail = openBusinessDetail;
+      window.closeModal = closeModal;
     </script>
-</body>
+  </body>
 </html>
