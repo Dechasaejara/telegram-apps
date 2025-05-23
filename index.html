@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Web Pages Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        'primary-dark': '#4A49B7',
+                        'gray-dark': '#181818',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .modal {
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-content {
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+    </style>
+</head>
+<body class="bg-white dark:bg-gray-dark text-gray-800 dark:text-gray-100 min-h-screen transition-colors duration-200">
+    <div class="container mx-auto p-4 max-w-6xl">
+        <!-- App Header -->
+        <header class="py-4 border-b dark:border-gray-700 mb-6">
+            <h1 class="text-2xl font-bold text-primary dark:text-primary flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Web Pages Manager
+            </h1>
+        </header>
+
+        <!-- Main Content -->
+        <div class="flex flex-col md:flex-row gap-6">
+            <!-- Categories Sidebar -->
+            <div class="w-full md:w-1/3 lg:w-1/4">
+                <div class="bg-gray-50 dark:bg-gray-800 rounded-lg shadow p-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-semibold">Categories</h2>
+                        <button id="add-category-btn" class="bg-primary hover:bg-primary-dark text-white rounded-full p-1" title="Add Category">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                        </button>
+                    </div>
+                    <ul id="categories-list" class="space-y-2">
+                        <!-- Categories will be inserted here -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Web Pages Content -->
+            <div class="w-full md:w-2/3 lg:w-3/4">
+                <div id="no-category-selected" class="bg-gray-50 dark:bg-gray-800 rounded-lg shadow p-6 text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <h3 class="mt-4 text-lg font-medium text-gray-600 dark:text-gray-300">No Category Selected</h3>
+                    <p class="mt-2 text-gray-500 dark:text-gray-400">Select a category from the sidebar or create a new one to manage web pages.</p>
+                </div>
+
+                <div id="web-pages-container" class="bg-gray-50 dark:bg-gray-800 rounded-lg shadow p-4 hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 id="current-category-name" class="text-lg font-semibold">Web Pages</h2>
+                        <button id="add-webpage-btn" class="bg-primary hover:bg-primary-dark text-white rounded-full p-1" title="Add Web Page">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="web-pages-list" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Web pages will be inserted here -->
+                    </div>
+                    <div id="no-webpages" class="text-center py-8 hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <p class="mt-4 text-gray-500 dark:text-gray-400">No web pages in this category yet.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modals -->
+        <!-- Category Modal -->
+        <div id="category-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 opacity-0 invisible">
+            <div class="modal-content bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full mx-4">
+                <div class="p-6">
+                    <h3 id="category-modal-title" class="text-xl font-semibold mb-4">Add Category</h3>
+                    <form id="category-form">
+                        <input type="hidden" id="category-id">
+                        <div class="mb-4">
+                            <label for="category-name" class="block text-gray-700 dark:text-gray-300 mb-2">Category Name</label>
+                            <input type="text" id="category-name" class="w-full px-4 py-2 border rounded-lg text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" class="close-modal px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg">Cancel</button>
+                            <button type="submit" class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Web Page Modal -->
+        <div id="webpage-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 opacity-0 invisible">
+            <div class="modal-content bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full mx-4">
+                <div class="p-6">
+                    <h3 id="webpage-modal-title" class="text-xl font-semibold mb-4">Add Web Page</h3>
+                    <form id="webpage-form">
+                        <input type="hidden" id="webpage-id">
+                        <div class="mb-4">
+                            <label for="webpage-title" class="block text-gray-700 dark:text-gray-300 mb-2">Title</label>
+                            <input type="text" id="webpage-title" class="w-full px-4 py-2 border rounded-lg text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="webpage-url" class="block text-gray-700 dark:text-gray-300 mb-2">URL</label>
+                            <input type="url" id="webpage-url" class="w-full px-4 py-2 border rounded-lg text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="webpage-description" class="block text-gray-700 dark:text-gray-300 mb-2">Description</label>
+                            <textarea id="webpage-description" class="w-full px-4 py-2 border rounded-lg text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" rows="3"></textarea>
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" class="close-modal px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg">Cancel</button>
+                            <button type="submit" class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Web Page View Modal -->
+        <div id="webpage-view-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 opacity-0 invisible">
+            <div class="modal-content bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-2xl w-full mx-4">
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 id="view-webpage-title" class="text-xl font-semibold">Web Page Title</h3>
+                        <button class="close-modal text-gray-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="mb-4">
+                        <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">URL:</div>
+                        <a id="view-webpage-url" href="#" target="_blank" class="text-primary break-all"></a>
+                    </div>
+                    <div class="mb-6">
+                        <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">Description:</div>
+                        <p id="view-webpage-description" class="text-gray-700 dark:text-gray-300"></p>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button id="view-edit-btn" class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg">Edit</button>
+                        <a id="view-open-link" href="#" target="_blank" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg">Open Link</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div id="delete-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 opacity-0 invisible">
+            <div class="modal-content bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full mx-4">
+                <div class="p-6">
+                    <h3 class="text-xl font-semibold mb-2">Confirm Delete</h3>
+                    <p id="delete-message" class="text-gray-600 dark:text-gray-300 mb-6">Are you sure you want to delete this item?</p>
+                    <div class="flex justify-end space-x-3">
+                        <button class="close-modal px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg">Cancel</button>
+                        <button id="confirm-delete-btn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Check for dark mode preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        // Sample data (in-memory storage)
+        let categories = [
+            { id: 1, name: 'Social Media' },
+            { id: 2, name: 'News Sites' },
+            { id: 3, name: 'Development Resources' }
+        ];
+
+        let webPages = [
+            { id: 1, categoryId: 1, title: 'Facebook', url: 'https://www.facebook.com', description: 'Global social networking site.' },
+            { id: 2, categoryId: 1, title: 'Twitter', url: 'https://www.twitter.com', description: 'Platform for short messages and updates.' },
+            { id: 3, categoryId: 2, title: 'CNN', url: 'https://www.cnn.com', description: 'International news network.' },
+            { id: 4, categoryId: 3, title: 'GitHub', url: 'https://www.github.com', description: 'Web-based platform for version control using Git.' }
+        ];
+
+        // App state
+        let selectedCategoryId = null;
+        let deleteItemId = null;
+        let deleteItemType = null;
+
+        // DOM Elements
+        const categoriesList = document.getElementById('categories-list');
+        const webPagesContainer = document.getElementById('web-pages-container');
+        const noCategorySelected = document.getElementById('no-category-selected');
+        const webPagesList = document.getElementById('web-pages-list');
+        const noWebpages = document.getElementById('no-webpages');
+        const currentCategoryName = document.getElementById('current-category-name');
+
+        // Modal Elements
+        const categoryModal = document.getElementById('category-modal');
+        const webpageModal = document.getElementById('webpage-modal');
+        const webpageViewModal = document.getElementById('webpage-view-modal');
+        const deleteModal = document.getElementById('delete-modal');
+
+        // Form Elements
+        const categoryForm = document.getElementById('category-form');
+        const webpageForm = document.getElementById('webpage-form');
+        
+        // Utility Functions
+        function getNextId(collection) {
+            return Math.max(0, ...collection.map(item => item.id)) + 1;
+        }
+
+        function showModal(modal) {
+            modal.classList.remove('opacity-0', 'invisible');
+            modal.classList.add('active');
+            setTimeout(() => {
+                modal.querySelector('input')?.focus();
+            }, 300);
+        }
+
+        function hideModal(modal) {
+            modal.classList.remove('active');
+            modal.classList.add('opacity-0', 'invisible');
+        }
+
+        // Close modals when clicking on close buttons
+        document.querySelectorAll('.close-modal').forEach(button => {
+            button.addEventListener('click', () => {
+                hideModal(categoryModal);
+                hideModal(webpageModal);
+                hideModal(webpageViewModal);
+                hideModal(deleteModal);
+            });
+        });
+
+        // Render Functions
+        function renderCategories() {
+            categoriesList.innerHTML = '';
+            categories.forEach(category => {
+                const item = document.createElement('li');
+                const isSelected = category.id === selectedCategoryId;
+                
+                item.className = `flex justify-between items-center rounded-lg p-2 cursor-pointer ${isSelected ? 'bg-primary text-white' : 'hover:bg-gray-200 dark:hover:bg-gray-700'}`;
+                item.innerHTML = `
+                    <span class="truncate">${category.name}</span>
+                    <div class="flex space-x-1 opacity-80 hover:opacity-100">
+                        <button class="edit-category p-1 rounded hover:bg-black hover:bg-opacity-10" data-id="${category.id}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                        </button>
+                        <button class="delete-category p-1 rounded hover:bg-black hover:bg-opacity-10" data-id="${category.id}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                
+                categoriesList.appendChild(item);
+                
+                // Add event listener to select the category
+                item.addEventListener('click', (e) => {
+                    if (!e.target.closest('button')) {
+                        selectCategory(category.id);
+                    }
+                });
+            });
+            
+            // Add event listeners for edit and delete buttons
+            document.querySelectorAll('.edit-category').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = parseInt(button.dataset.id);
+                    editCategory(id);
+                });
+            });
+            
+            document.querySelectorAll('.delete-category').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = parseInt(button.dataset.id);
+                    confirmDeleteCategory(id);
+                });
+            });
+        }
+
+        function renderWebPages() {
+            if (!selectedCategoryId) {
+                webPagesContainer.classList.add('hidden');
+                noCategorySelected.classList.remove('hidden');
+                return;
+            }
+            
+            webPagesContainer.classList.remove('hidden');
+            noCategorySelected.classList.add('hidden');
+            
+            const category = categories.find(c => c.id === selectedCategoryId);
+            currentCategoryName.textContent = `${category.name} - Web Pages`;
+            
+            const categoryWebPages = webPages.filter(wp => wp.categoryId === selectedCategoryId);
+            webPagesList.innerHTML = '';
+            
+            if (categoryWebPages.length === 0) {
+                noWebpages.classList.remove('hidden');
+            } else {
+                noWebpages.classList.add('hidden');
+                
+                categoryWebPages.forEach(webpage => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-white dark:bg-gray-700 rounded-lg shadow p-4 hover:shadow-md transition-shadow';
+                    card.innerHTML = `
+                        <h3 class="font-medium text-lg truncate mb-2">${webpage.title}</h3>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm truncate mb-3">${webpage.url}</p>
+                        <div class="flex justify-end space-x-2">
+                            <button class="view-webpage p-1 rounded bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500" data-id="${webpage.id}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </button>
+                            <button class="edit-webpage p-1 rounded bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500" data-id="${webpage.id}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                            </button>
+                            <button class="delete-webpage p-1 rounded bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500" data-id="${webpage.id}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </div>
+                    `;
+                    webPagesList.appendChild(card);
+                });
+                
+                // Add event listeners
+                document.querySelectorAll('.view-webpage').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const id = parseInt(button.dataset.id);
+                        viewWebPage(id);
+                    });
+                });
+                
+                document.querySelectorAll('.edit-webpage').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const id = parseInt(button.dataset.id);
+                        editWebPage(id);
+                    });
+                });
+                
+                document.querySelectorAll('.delete-webpage').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const id = parseInt(button.dataset.id);
+                        confirmDeleteWebPage(id);
+                    });
+                });
+            }
+        }
+
+        // Action Functions
+        function selectCategory(categoryId) {
+            selectedCategoryId = categoryId;
+            renderCategories();
+            renderWebPages();
+        }
+
+        function addCategory() {
+            document.getElementById('category-modal-title').textContent = 'Add Category';
+            document.getElementById('category-id').value = '';
+            document.getElementById('category-name').value = '';
+            showModal(categoryModal);
+        }
+
+        function editCategory(categoryId) {
+            const category = categories.find(c => c.id === categoryId);
+            if (category) {
+                document.getElementById('category-modal-title').textContent = 'Edit Category';
+                document.getElementById('category-id').value = category.id;
+                document.getElementById('category-name').value = category.name;
+                showModal(categoryModal);
+            }
+        }
+
+        function confirmDeleteCategory(categoryId) {
+            const category = categories.find(c => c.id === categoryId);
+            if (category) {
+                const webPagesCount = webPages.filter(wp => wp.categoryId === categoryId).length;
+                document.getElementById('delete-message').textContent = 
+                    `Are you sure you want to delete the category "${category.name}"? This will also delete ${webPagesCount} associated web pages.`;
+                deleteItemId = categoryId;
+                deleteItemType = 'category';
+                showModal(deleteModal);
+            }
+        }
+
+        function addWebPage() {
+            document.getElementById('webpage-modal-title').textContent = 'Add Web Page';
+            document.getElementById('webpage-id').value = '';
+            document.getElementById('webpage-title').value = '';
+            document.getElementById('webpage-url').value = '';
+            document.getElementById('webpage-description').value = '';
+            showModal(webpageModal);
+        }
+
+        function editWebPage(webpageId) {
+            const webpage = webPages.find(wp => wp.id === webpageId);
+            if (webpage) {
+                document.getElementById('webpage-modal-title').textContent = 'Edit Web Page';
+                document.getElementById('webpage-id').value = webpage.id;
+                document.getElementById('webpage-title').value = webpage.title;
+                document.getElementById('webpage-url').value = webpage.url;
+                document.getElementById('webpage-description').value = webpage.description || '';
+                showModal(webpageModal);
+            }
+        }
+
+        function viewWebPage(webpageId) {
+            const webpage = webPages.find(wp => wp.id === webpageId);
+            if (webpage) {
+                document.getElementById('view-webpage-title').textContent = webpage.title;
+                document.getElementById('view-webpage-url').textContent = webpage.url;
+                document.getElementById('view-webpage-url').href = webpage.url;
+                document.getElementById('view-webpage-description').textContent = webpage.description || 'No description available.';
+                document.getElementById('view-open-link').href = webpage.url;
+                
+                // Set up the edit button
+                document.getElementById('view-edit-btn').onclick = () => {
+                    hideModal(webpageViewModal);
+                    editWebPage(webpageId);
+                };
+                
+                showModal(webpageViewModal);
+            }
+        }
+
+        function confirmDeleteWebPage(webpageId) {
+            const webpage = webPages.find(wp => wp.id === webpageId);
+            if (webpage) {
+                document.getElementById('delete-message').textContent = 
+                    `Are you sure you want to delete the web page "${webpage.title}"?`;
+                deleteItemId = webpageId;
+                deleteItemType = 'webpage';
+                showModal(deleteModal);
+            }
+        }
+
+        // Form Submissions
+        categoryForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = document.getElementById('category-id').value;
+            const name = document.getElementById('category-name').value.trim();
+            
+            if (id) {
+                // Update existing category
+                const index = categories.findIndex(c => c.id === parseInt(id));
+                if (index !== -1) {
+                    categories[index].name = name;
+                }
+            } else {
+                // Add new category
+                const newCategory = {
+                    id: getNextId(categories),
+                    name: name
+                };
+                categories.push(newCategory);
+                selectedCategoryId = newCategory.id;
+            }
+            
+            hideModal(categoryModal);
+            renderCategories();
+            renderWebPages();
+        });
+
+        webpageForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = document.getElementById('webpage-id').value;
+            const title = document.getElementById('webpage-title').value.trim();
+            const url = document.getElementById('webpage-url').value.trim();
+            const description = document.getElementById('webpage-description').value.trim();
+            
+            if (id) {
+                // Update existing webpage
+                const index = webPages.findIndex(wp => wp.id === parseInt(id));
+                if (index !== -1) {
+                    webPages[index].title = title;
+                    webPages[index].url = url;
+                    webPages[index].description = description;
+                }
+            } else {
+                // Add new webpage
+                const newWebPage = {
+                    id: getNextId(webPages),
+                    categoryId: selectedCategoryId,
+                    title: title,
+                    url: url,
+                    description: description
+                };
+                webPages.push(newWebPage);
+            }
+            
+            hideModal(webpageModal);
+            renderWebPages();
+        });
+
+        // Delete Confirmation
+        document.getElementById('confirm-delete-btn').addEventListener('click', () => {
+            if (deleteItemType === 'category') {
+                // Delete category and its webpages
+                categories = categories.filter(c => c.id !== deleteItemId);
+                webPages = webPages.filter(wp => wp.categoryId !== deleteItemId);
+                
+                if (selectedCategoryId === deleteItemId) {
+                    selectedCategoryId = categories.length > 0 ? categories[0].id : null;
+                }
+            } else if (deleteItemType === 'webpage') {
+                // Delete webpage
+                webPages = webPages.filter(wp => wp.id !== deleteItemId);
+            }
+            
+            hideModal(deleteModal);
+            renderCategories();
+            renderWebPages();
+        });
+
+        // Button Event Listeners
+        document.getElementById('add-category-btn').addEventListener('click', addCategory);
+        document.getElementById('add-webpage-btn').addEventListener('click', addWebPage);
+
+        // Initialize the app
+        renderCategories();
+        if (categories.length > 0) {
+            selectCategory(categories[0].id);
+        } else {
+            renderWebPages();
+        }
+    </script>
+</body>
+</html>
