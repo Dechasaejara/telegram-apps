@@ -3,1053 +3,1292 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Food Finder</title>
+    <title>Haute Cuisine Finder</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#5D5CDE',
-                        'primary-dark': '#4A49B7',
-                        'telegram': '#0088cc',
-                        'telegram-dark': '#0077b5',
-                        'yellow-rating': '#FFCA28',
-                    },
-                    spacing: {
-                        '128': '32rem',
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" xintegrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        body {
+            font-family: 'Inter', sans-serif; /* Using Inter as a placeholder for a luxury font */
+            overscroll-behavior: none; /* Prevents pull-to-refresh issues in webview */
+        }
+        /* Custom scrollbar for a more refined look */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c4b5fd; /* A muted, luxurious purple */
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a78bfa;
+        }
+        .luxury-gradient-bg {
+            background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%); /* Deep indigo to royal blue */
+        }
+        .luxury-accent-bg {
+            background-color: #facc15; /* Gold accent */
+        }
+        .luxury-accent-text {
+            color: #facc15; /* Gold accent text */
+        }
+        .luxury-button {
+            @apply px-6 py-3 rounded-lg shadow-md transition-all duration-300 ease-in-out text-white font-semibold;
+            background: linear-gradient(135deg, #c5a059, #e6c270); /* Gold gradient */
+            border: 1px solid #b08d4a;
+        }
+        .luxury-button:hover {
+            @apply shadow-lg;
+            filter: brightness(1.1);
+        }
+        .luxury-input {
+            @apply w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-colors duration-300 bg-white shadow-sm;
+        }
+        .luxury-card {
+            @apply bg-white rounded-xl shadow-xl overflow-hidden transition-all duration-300 ease-in-out hover:shadow-2xl;
+        }
+        .badge {
+            @apply px-3 py-1 text-xs font-semibold rounded-full;
+        }
+        .badge-gold {
+            @apply bg-yellow-400 text-yellow-800;
+        }
+        .badge-silver {
+            @apply bg-gray-300 text-gray-700;
+        }
+        .badge-bronze {
+            @apply bg-orange-300 text-orange-700;
+        }
+        .tab {
+            @apply px-4 py-2 cursor-pointer text-gray-600 hover:text-yellow-600 border-b-2 border-transparent hover:border-yellow-500 transition-all duration-300;
+        }
+        .tab.active {
+            @apply text-yellow-600 border-yellow-500 font-semibold;
+        }
+        #map { height: 300px; border-radius: 0.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+
+        /* Custom modal styling */
         .modal {
-            transition: opacity 0.3s ease, visibility 0.3s ease;
+            @apply fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 transition-opacity duration-300;
         }
         .modal-content {
-            transform: scale(0.95);
-            transition: transform 0.3s ease;
+            @apply bg-white p-6 sm:p-8 rounded-xl shadow-2xl w-11/12 max-w-lg transform transition-all duration-300 scale-95 opacity-0;
         }
-        .modal.active .modal-content {
-            transform: scale(1);
+        .modal.open .modal-content {
+            @apply scale-100 opacity-100;
         }
-        .rating-stars {
-            display: inline-flex;
-            direction: rtl;
+        .modal.open {
+            @apply opacity-100;
         }
-        .rating-stars input {
-            display: none;
-        }
-        .rating-stars label {
-            cursor: pointer;
-            color: #ccc;
-            transition: color 0.2s;
-        }
-        .rating-stars label:hover,
-        .rating-stars label:hover ~ label,
-        .rating-stars input:checked ~ label {
-            color: #FFCA28;
-        }
-        
-        /* Restaurant image effects */
-        .restaurant-image {
-            position: relative;
-            overflow: hidden;
-        }
-        .restaurant-image img {
-            transition: transform 0.3s ease;
-        }
-        .restaurant-image:hover img {
-            transform: scale(1.05);
-        }
-        
-        /* Slide in animation for restaurant list */
-        @keyframes slideInFromBottom {
-            0% {
-                transform: translateY(20px);
-                opacity: 0;
-            }
-            100% {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-        .restaurant-card {
-            animation: slideInFromBottom 0.3s ease forwards;
-        }
-        
-        /* Skeleton loading */
-        .skeleton {
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-        }
-        @keyframes shimmer {
-            0% {
-                background-position: -200% 0;
-            }
-            100% {
-                background-position: 200% 0;
-            }
-        }
-        
-        .dark .skeleton {
-            background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
-            background-size: 200% 100%;
+        .close-button {
+            @apply absolute top-4 right-4 text-gray-500 hover:text-red-600 transition-colors;
         }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen transition-colors duration-200">
-    <div id="app">
-        <!-- Main screen (Restaurant List) -->
-        <div id="main-screen" class="block">
-            <!-- Header with location -->
-            <header class="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-10">
-                <div class="container mx-auto px-4 py-3">
-                    <div class="flex items-center justify-between">
-                        <h1 class="text-xl font-bold text-telegram dark:text-blue-400">Food Finder</h1>
-                        <div class="flex items-center">
-                            <div id="location-display" class="flex items-center text-sm mr-2">
-                                <i class="fas fa-location-dot text-primary mr-1"></i>
-                                <span id="current-location">Loading location...</span>
+<body class="bg-gray-100 text-gray-800">
+
+    <div id="app-container" class="min-h-screen">
+
+        <div id="loading-screen" class="fixed inset-0 luxury-gradient-bg flex flex-col items-center justify-center z-[100]">
+            <i class="fas fa-utensils fa-spin fa-3x text-yellow-400 mb-4"></i>
+            <h1 class="text-3xl font-bold text-white">Haute Cuisine Finder</h1>
+            <p class="text-yellow-300 mt-2">Discovering culinary excellence...</p>
+        </div>
+
+        <header id="app-header" class="luxury-gradient-bg text-white p-4 shadow-lg sticky top-0 z-40 hidden">
+            <div class="container mx-auto flex justify-between items-center">
+                <h1 class="text-2xl font-bold tracking-tight">Haute Cuisine</h1>
+                <div class="flex items-center space-x-3">
+                    <button id="user-profile-btn" class="focus:outline-none">
+                        <i class="fas fa-user-circle fa-2x hover:text-yellow-300 transition-colors"></i>
+                    </button>
+                    <button id="manage-business-nav-btn" class="text-sm luxury-accent-text hover:underline">Manage My Business</button>
+                </div>
+            </div>
+        </header>
+
+        <main id="screens-container" class="container mx-auto p-4 pb-20">
+            <div id="home-screen" class="screen hidden">
+                <div class="mb-6 p-4 bg-white rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold text-gray-700 mb-3">Find Your Next Exquisite Meal</h2>
+                    <div class="flex space-x-2 mb-4">
+                        <input type="text" id="search-query" placeholder="Search by name, cuisine..." class="luxury-input flex-grow">
+                        <button id="filter-btn" class="p-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition">
+                            <i class="fas fa-filter"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="map" class="mb-6"></div>
+
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3">Categories</h3>
+                    <div id="category-tabs" class="flex space-x-1 sm:space-x-2 overflow-x-auto pb-2">
+                        </div>
+                </div>
+
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3">Nearby Establishments</h3>
+                    <div id="business-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        </div>
+                    <p id="no-results-message" class="text-center text-gray-500 mt-8 hidden">No establishments found matching your criteria.</p>
+                </div>
+            </div>
+
+            <div id="business-detail-screen" class="screen hidden">
+                <button class="back-to-home mb-4 text-yellow-600 hover:underline"><i class="fas fa-arrow-left mr-2"></i>Back to List</button>
+                <div class="luxury-card p-6">
+                    <img id="business-detail-img" src="https://placehold.co/600x300/e2e8f0/333333?text=Restaurant+Image" alt="Business Image" class="w-full h-48 object-cover rounded-lg mb-4 shadow-md">
+                    <h2 id="business-detail-name" class="text-3xl font-bold text-gray-800 mb-2"></h2>
+                    <p id="business-detail-cuisine" class="text-yellow-600 font-semibold mb-1"></p>
+                    <p id="business-detail-address" class="text-gray-600 mb-1"><i class="fas fa-map-marker-alt mr-2 text-yellow-500"></i></p>
+                    <div class="flex items-center mb-3">
+                        <div id="business-detail-rating" class="text-yellow-500 mr-2">
                             </div>
-                            <button id="refresh-location" class="p-2 text-primary dark:text-primary-dark">
-                                <i class="fas fa-arrow-rotate-right"></i>
-                            </button>
+                        <span id="business-detail-review-count" class="text-sm text-gray-500"></span>
+                    </div>
+                    <div id="business-detail-badges" class="flex space-x-2 mb-4">
                         </div>
-                    </div>
-                    
-                    <!-- Search Box -->
-                    <div class="relative mt-2">
-                        <input type="text" id="search-input" 
-                            class="w-full pl-10 pr-4 py-2 rounded-full border border-gray-300 dark:border-gray-600 
-                            dark:bg-gray-700 text-base focus:outline-none focus:ring-2 focus:ring-primary" 
-                            placeholder="Search restaurants, cuisines...">
-                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                    </div>
-                    
-                    <!-- Filter options -->
-                    <div class="flex space-x-2 mt-3 pb-1 overflow-x-auto hide-scrollbar">
-                        <button class="filter-btn active whitespace-nowrap px-3 py-1 rounded-full text-sm bg-primary text-white" data-filter="all">
-                            All
-                        </button>
-                        <button class="filter-btn whitespace-nowrap px-3 py-1 rounded-full text-sm bg-gray-200 dark:bg-gray-700" data-filter="fastfood">
-                            Fast Food
-                        </button>
-                        <button class="filter-btn whitespace-nowrap px-3 py-1 rounded-full text-sm bg-gray-200 dark:bg-gray-700" data-filter="italian">
-                            Italian
-                        </button>
-                        <button class="filter-btn whitespace-nowrap px-3 py-1 rounded-full text-sm bg-gray-200 dark:bg-gray-700" data-filter="asian">
-                            Asian
-                        </button>
-                        <button class="filter-btn whitespace-nowrap px-3 py-1 rounded-full text-sm bg-gray-200 dark:bg-gray-700" data-filter="cafe">
-                            Café
-                        </button>
-                        <button class="filter-btn whitespace-nowrap px-3 py-1 rounded-full text-sm bg-gray-200 dark:bg-gray-700" data-filter="desserts">
-                            Desserts
-                        </button>
-                    </div>
-                </div>
-            </header>
-            
-            <!-- Restaurant List -->
-            <div class="container mx-auto px-4 py-4">
-                <div id="restaurant-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <!-- Restaurants will be loaded here -->
-                    <!-- Loading Skeletons -->
-                    <div class="skeleton-card rounded-lg shadow-md overflow-hidden bg-white dark:bg-gray-800">
-                        <div class="skeleton h-48 w-full"></div>
-                        <div class="p-4">
-                            <div class="skeleton h-6 w-3/4 rounded mb-2"></div>
-                            <div class="skeleton h-4 w-1/2 rounded mb-3"></div>
-                            <div class="skeleton h-4 w-full rounded mb-2"></div>
-                            <div class="skeleton h-4 w-2/3 rounded"></div>
+                    <p id="business-detail-description" class="text-gray-700 mb-6"></p>
+
+                    <h3 class="text-xl font-semibold text-gray-700 mb-3">Menu Highlights</h3>
+                    <div id="business-detail-menu-list" class="space-y-3">
                         </div>
-                    </div>
-                    <div class="skeleton-card rounded-lg shadow-md overflow-hidden bg-white dark:bg-gray-800">
-                        <div class="skeleton h-48 w-full"></div>
-                        <div class="p-4">
-                            <div class="skeleton h-6 w-3/4 rounded mb-2"></div>
-                            <div class="skeleton h-4 w-1/2 rounded mb-3"></div>
-                            <div class="skeleton h-4 w-full rounded mb-2"></div>
-                            <div class="skeleton h-4 w-2/3 rounded"></div>
+                    <button id="view-full-menu-btn" class="mt-4 luxury-button w-full">View Full Menu</button>
+
+                    <h3 class="text-xl font-semibold text-gray-700 mt-8 mb-3">Reviews</h3>
+                    <div id="business-detail-reviews" class="space-y-4">
                         </div>
-                    </div>
-                </div>
-                
-                <!-- No results message -->
-                <div id="no-results" class="hidden text-center py-8">
-                    <i class="fas fa-search text-4xl text-gray-400 mb-3"></i>
-                    <p class="text-gray-500 dark:text-gray-400">No restaurants found matching your criteria.</p>
-                    <button id="clear-filters" class="mt-2 text-primary">Clear filters</button>
+                    <button id="add-review-btn" data-business-id="" class="mt-6 luxury-button w-full"><i class="fas fa-plus mr-2"></i>Add Your Review</button>
                 </div>
             </div>
-        </div>
-        
-        <!-- Restaurant Detail Screen -->
-        <div id="detail-screen" class="hidden">
-            <!-- Detail Header -->
-            <div class="relative">
-                <div id="restaurant-cover" class="h-48 md:h-72 bg-gray-300 dark:bg-gray-700 bg-center bg-cover">
-                    <!-- Restaurant cover image will be set via JS -->
-                </div>
-                <button id="back-to-list" class="absolute top-4 left-4 bg-black bg-opacity-50 text-white p-2 rounded-full">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-                <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4 text-white">
-                    <h1 id="detail-name" class="text-2xl font-bold mb-1">Restaurant Name</h1>
-                    <div class="flex items-center">
-                        <div id="detail-rating" class="flex items-center mr-3">
-                            <i class="fas fa-star text-yellow-rating mr-1"></i>
-                            <span>4.5</span>
-                        </div>
-                        <div id="detail-cuisine" class="text-sm">Cuisine</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Restaurant Info -->
-            <div class="container mx-auto px-4 py-4">
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-4">
-                    <div class="flex flex-wrap gap-4 mb-2">
-                        <div class="flex items-center">
-                            <i class="fas fa-location-dot text-primary mr-2"></i>
-                            <span id="detail-distance" class="text-sm">1.2 km away</span>
-                        </div>
-                        <div class="flex items-center">
-                            <i class="fas fa-clock text-primary mr-2"></i>
-                            <span id="detail-hours" class="text-sm">Open until 10:00 PM</span>
-                        </div>
-                        <div class="flex items-center">
-                            <i class="fas fa-phone text-primary mr-2"></i>
-                            <a id="detail-phone" href="tel:" class="text-sm">+1234567890</a>
-                        </div>
-                    </div>
-                    <p id="detail-description" class="text-gray-600 dark:text-gray-300 mb-3">
-                        Restaurant description will be placed here.
-                    </p>
-                    <div class="flex space-x-2">
-                        <button id="share-restaurant" class="flex-1 bg-telegram hover:bg-telegram-dark text-white py-2 px-4 rounded-md flex justify-center items-center">
-                            <i class="fas fa-share-alt mr-2"></i>Share
-                        </button>
-                        <button id="view-location" class="flex-1 bg-primary hover:bg-primary-dark text-white py-2 px-4 rounded-md flex justify-center items-center">
-                            <i class="fas fa-map-marker-alt mr-2"></i>View Map
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Menu Section -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-4">
-                    <h2 class="text-xl font-bold mb-3">Menu</h2>
-                    <div id="menu-categories" class="flex space-x-2 mb-3 overflow-x-auto pb-1">
-                        <!-- Menu categories will be added here -->
-                    </div>
-                    <div id="menu-items" class="space-y-3">
-                        <!-- Menu items will be added here -->
-                    </div>
-                </div>
-                
-                <!-- Reviews Section -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-4">
-                    <div class="flex justify-between items-center mb-3">
-                        <h2 class="text-xl font-bold">Reviews</h2>
-                        <button id="add-review" class="bg-primary hover:bg-primary-dark text-white py-1 px-3 rounded-md text-sm">
-                            Write a Review
-                        </button>
-                    </div>
-                    <div id="review-list" class="space-y-3">
-                        <!-- Reviews will be added here -->
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Review Form Modal -->
-        <div id="review-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 opacity-0 invisible">
-            <div class="modal-content bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full mx-4">
-                <div class="p-6">
-                    <h3 class="text-xl font-semibold mb-4">Write a Review</h3>
-                    <form id="review-form">
-                        <input type="hidden" id="review-restaurant-id">
-                        <input type="hidden" id="review-user-id">
-                        
-                        <div class="mb-4 text-center">
-                            <div class="text-base mb-2">Rate your experience</div>
-                            <div class="rating-stars text-2xl">
-                                <input type="radio" id="star5" name="rating" value="5" />
-                                <label for="star5" class="px-1"><i class="fas fa-star"></i></label>
-                                <input type="radio" id="star4" name="rating" value="4" />
-                                <label for="star4" class="px-1"><i class="fas fa-star"></i></label>
-                                <input type="radio" id="star3" name="rating" value="3" />
-                                <label for="star3" class="px-1"><i class="fas fa-star"></i></label>
-                                <input type="radio" id="star2" name="rating" value="2" />
-                                <label for="star2" class="px-1"><i class="fas fa-star"></i></label>
-                                <input type="radio" id="star1" name="rating" value="1" />
-                                <label for="star1" class="px-1"><i class="fas fa-star"></i></label>
+
+            <div id="menu-item-detail-screen" class="screen hidden">
+                 <button class="back-to-business-detail mb-4 text-yellow-600 hover:underline"><i class="fas fa-arrow-left mr-2"></i>Back to Menu</button>
+                <div class="luxury-card p-6">
+                    <img id="menu-item-detail-img" src="https://placehold.co/400x300/e2e8f0/333333?text=Dish+Image" alt="Menu Item Image" class="w-full h-40 object-cover rounded-lg mb-4 shadow-md">
+                    <h2 id="menu-item-detail-name" class="text-2xl font-bold text-gray-800 mb-2"></h2>
+                    <p id="menu-item-detail-price" class="text-xl text-yellow-600 font-semibold mb-3"></p>
+                    <p id="menu-item-detail-description" class="text-gray-700 mb-4"></p>
+                    <div class="flex items-center mb-3">
+                        <div id="menu-item-detail-rating" class="text-yellow-500 mr-2">
                             </div>
+                        <span id="menu-item-detail-review-count" class="text-sm text-gray-500"></span>
+                    </div>
+                     <div id="menu-item-detail-badges" class="flex space-x-2 mb-4">
                         </div>
-                        
-                        <div class="mb-4">
-                            <label for="review-title" class="block text-gray-700 dark:text-gray-300 mb-1">Title</label>
-                            <input type="text" id="review-title" class="w-full px-3 py-2 border rounded-md text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" required placeholder="Summarize your experience">
+                    </div>
+            </div>
+
+            <div id="add-edit-business-screen" class="screen hidden">
+                <button class="back-to-manage-business mb-4 text-yellow-600 hover:underline"><i class="fas fa-arrow-left mr-2"></i>Back to My Businesses</button>
+                <h2 id="business-form-title" class="text-2xl font-bold text-gray-800 mb-6">Manage Your Business</h2>
+                <form id="business-form" class="space-y-6 bg-white p-8 rounded-lg shadow-xl">
+                    <input type="hidden" id="business-form-id">
+                    <div>
+                        <label for="business-name" class="block text-sm font-medium text-gray-700 mb-1">Business Name</label>
+                        <input type="text" id="business-name" class="luxury-input" required>
+                    </div>
+                    <div>
+                        <label for="business-cuisine" class="block text-sm font-medium text-gray-700 mb-1">Cuisine Type (e.g., Italian, Fine Dining)</label>
+                        <input type="text" id="business-cuisine" class="luxury-input" required>
+                    </div>
+                    <div>
+                        <label for="business-address" class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                        <input type="text" id="business-address" class="luxury-input" required>
+                    </div>
+                    <div>
+                        <label for="business-latitude" class="block text-sm font-medium text-gray-700 mb-1">Latitude (auto-filled if possible)</label>
+                        <input type="text" id="business-latitude" class="luxury-input" placeholder="e.g., 40.7128">
+                    </div>
+                     <div>
+                        <label for="business-longitude" class="block text-sm font-medium text-gray-700 mb-1">Longitude (auto-filled if possible)</label>
+                        <input type="text" id="business-longitude" class="luxury-input" placeholder="e.g., -74.0060">
+                    </div>
+                    <div>
+                        <label for="business-description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea id="business-description" rows="4" class="luxury-input"></textarea>
+                    </div>
+                    <div>
+                        <label for="business-image-url" class="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+                        <input type="url" id="business-image-url" class="luxury-input" placeholder="https://example.com/image.jpg">
+                    </div>
+                     <div>
+                        <label for="business-category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                        <select id="business-category" class="luxury-input">
+                            <option value="fine-dining">Fine Dining</option>
+                            <option value="casual-dining">Casual Dining</option>
+                            <option value="cafe">Café</option>
+                            <option value="bistro">Bistro</option>
+                            <option value="specialty">Specialty Food</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="luxury-button w-full">Save Business Details</button>
+                </form>
+            </div>
+
+            <div id="manage-my-business-screen" class="screen hidden">
+                <button class="back-to-home mb-4 text-yellow-600 hover:underline"><i class="fas fa-arrow-left mr-2"></i>Back to Finder</button>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">My Establishments</h2>
+                    <button id="add-new-business-btn" class="luxury-button"><i class="fas fa-plus mr-2"></i>Add New Business</button>
+                </div>
+                <div id="my-business-list" class="space-y-4">
+                    <!-- Example:
+                    <div class="luxury-card p-4 flex justify-between items-center">
+                        <div>
+                            <h3 class="text-lg font-semibold">My Restaurant Name</h3>
+                            <p class="text-sm text-gray-500">123 Main St</p>
                         </div>
-                        
-                        <div class="mb-4">
-                            <label for="review-text" class="block text-gray-700 dark:text-gray-300 mb-1">Your Review</label>
-                            <textarea id="review-text" rows="4" class="w-full px-3 py-2 border rounded-md text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" required placeholder="Tell others about your experience"></textarea>
+                        <div class="space-x-2">
+                            <button class="text-blue-500 hover:underline edit-my-business-btn" data-business-id="1">Edit Info</button>
+                            <button class="text-green-500 hover:underline manage-my-menu-btn" data-business-id="1">Manage Menu</button>
+                            <button class="text-red-500 hover:underline delete-my-business-btn" data-business-id="1">Delete</button>
                         </div>
-                        
-                        <div class="flex justify-end space-x-3">
-                            <button type="button" class="close-modal px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg">Cancel</button>
-                            <button type="submit" class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg">Submit Review</button>
+                    </div>
+                    -->
+                </div>
+                 <p id="no-my-businesses-message" class="text-center text-gray-500 mt-8 hidden">You haven't added any businesses yet.</p>
+            </div>
+
+            <div id="manage-menu-screen" class="screen hidden">
+                <button class="back-to-manage-business-overview mb-4 text-yellow-600 hover:underline"><i class="fas fa-arrow-left mr-2"></i>Back to My Businesses</button>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 id="manage-menu-business-name" class="text-2xl font-bold text-gray-800">Manage Menu for [Business Name]</h2>
+                    <button id="add-new-menu-item-btn" class="luxury-button"><i class="fas fa-plus mr-2"></i>Add Menu Item</button>
+                </div>
+                <div id="menu-item-list-management" class="space-y-4">
+                    </div>
+                <p id="no-menu-items-message" class="text-center text-gray-500 mt-8 hidden">This menu is currently empty.</p>
+            </div>
+
+            <div id="add-edit-menu-item-screen" class="screen hidden">
+                <button class="back-to-manage-menu mb-4 text-yellow-600 hover:underline"><i class="fas fa-arrow-left mr-2"></i>Back to Menu Management</button>
+                <h2 id="menu-item-form-title" class="text-2xl font-bold text-gray-800 mb-6">Add/Edit Menu Item</h2>
+                <form id="menu-item-form" class="space-y-6 bg-white p-8 rounded-lg shadow-xl">
+                    <input type="hidden" id="menu-item-form-id">
+                    <input type="hidden" id="menu-item-form-business-id">
+                    <div>
+                        <label for="menu-item-name" class="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
+                        <input type="text" id="menu-item-name" class="luxury-input" required>
+                    </div>
+                    <div>
+                        <label for="menu-item-description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea id="menu-item-description" rows="3" class="luxury-input"></textarea>
+                    </div>
+                    <div>
+                        <label for="menu-item-price" class="block text-sm font-medium text-gray-700 mb-1">Price</label>
+                        <input type="number" id="menu-item-price" step="0.01" class="luxury-input" required>
+                    </div>
+                    <div>
+                        <label for="menu-item-category" class="block text-sm font-medium text-gray-700 mb-1">Category (e.g., Appetizer, Main Course)</label>
+                        <input type="text" id="menu-item-category" class="luxury-input">
+                    </div>
+                    <div>
+                        <label for="menu-item-image-url" class="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+                        <input type="url" id="menu-item-image-url" class="luxury-input" placeholder="https://example.com/dish.jpg">
+                    </div>
+                    <button type="submit" class="luxury-button w-full">Save Menu Item</button>
+                </form>
+            </div>
+
+            <div id="submit-review-screen" class="screen hidden">
+                <button class="back-to-business-from-review mb-4 text-yellow-600 hover:underline"><i class="fas fa-arrow-left mr-2"></i>Back to Business</button>
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Submit Your Review for <span id="review-business-name" class="text-yellow-600"></span></h2>
+                <form id="review-form" class="space-y-6 bg-white p-8 rounded-lg shadow-xl">
+                    <input type="hidden" id="review-form-business-id">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Your Rating</label>
+                        <div id="review-stars" class="flex space-x-1 text-3xl text-gray-300">
+                            <i class="fas fa-star cursor-pointer" data-value="1"></i>
+                            <i class="fas fa-star cursor-pointer" data-value="2"></i>
+                            <i class="fas fa-star cursor-pointer" data-value="3"></i>
+                            <i class="fas fa-star cursor-pointer" data-value="4"></i>
+                            <i class="fas fa-star cursor-pointer" data-value="5"></i>
                         </div>
-                    </form>
+                        <input type="hidden" id="review-rating-value" required>
+                    </div>
+                    <div>
+                        <label for="review-comment" class="block text-sm font-medium text-gray-700 mb-1">Your Comments</label>
+                        <textarea id="review-comment" rows="4" class="luxury-input" placeholder="Share your experience..."></textarea>
+                    </div>
+                    <button type="submit" class="luxury-button w-full">Submit Review</button>
+                </form>
+            </div>
+
+        </main>
+
+        <div id="filter-modal" class="modal opacity-0 pointer-events-none">
+            <div class="modal-content">
+                <button id="close-filter-modal-btn" class="close-button"><i class="fas fa-times fa-lg"></i></button>
+                <h3 class="text-xl font-semibold text-gray-800 mb-6">Filter Options</h3>
+                <div class="space-y-6">
+                    <div>
+                        <label for="filter-rating" class="block text-sm font-medium text-gray-700 mb-1">Minimum Rating</label>
+                        <select id="filter-rating" class="luxury-input">
+                            <option value="0">Any</option>
+                            <option value="1">1 Star & Up</option>
+                            <option value="2">2 Stars & Up</option>
+                            <option value="3">3 Stars & Up</option>
+                            <option value="4">4 Stars & Up</option>
+                            <option value="5">5 Stars</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="filter-price" class="block text-sm font-medium text-gray-700 mb-1">Price Range</label>
+                        <select id="filter-price" class="luxury-input">
+                            <option value="any">Any</option>
+                            <option value="budget">$ (Budget)</option>
+                            <option value="mid">$$ (Mid-range)</option>
+                            <option value="premium">$$$ (Premium)</option>
+                            <option value="luxury">$$$$ (Luxury)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Badges</label>
+                        <div id="filter-badges" class="space-y-2">
+                            <label class="flex items-center space-x-2"><input type="checkbox" value="top-rated" class="form-checkbox rounded text-yellow-500"><span>Top Rated</span></label>
+                             <label class="flex items-center space-x-2"><input type="checkbox" value="community-favorite" class="form-checkbox rounded text-yellow-500"><span>Community Favorite</span></label>
+                             <label class="flex items-center space-x-2"><input type="checkbox" value="new-gem" class="form-checkbox rounded text-yellow-500"><span>New Gem</span></label>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-8 flex justify-end space-x-3">
+                    <button id="reset-filters-btn" class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition">Reset</button>
+                    <button id="apply-filters-btn" class="luxury-button">Apply Filters</button>
                 </div>
             </div>
         </div>
+
+        <div id="message-modal" class="modal opacity-0 pointer-events-none">
+            <div class="modal-content max-w-sm text-center">
+                 <button id="close-message-modal-btn" class="close-button"><i class="fas fa-times fa-lg"></i></button>
+                <div id="message-modal-icon" class="text-4xl mb-4"></div>
+                <h3 id="message-modal-title" class="text-xl font-semibold text-gray-800 mb-2"></h3>
+                <p id="message-modal-text" class="text-gray-600 mb-6"></p>
+                <button id="message-modal-ok-btn" class="luxury-button w-full">OK</button>
+            </div>
+        </div>
+
     </div>
 
     <script>
-        // Check for dark mode preference
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            document.documentElement.classList.add('dark');
-        }
-        
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
-            if (event.matches) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-        });
+        // --- Telegram Mini App Initialization ---
+        const tg = window.Telegram.WebApp;
+        tg.ready(); // Inform Telegram that the app is ready
+        tg.expand(); // Expand the webview to full height
 
-        // App State
-        const appState = {
-            userLocation: null,
-            currentRestaurant: null,
-            userProfile: {
-                id: 'user123', // In a real app, this would come from Telegram
-                name: 'John Doe',
-                photo: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f466.png'
-            },
-            restaurants: [],
-            reviews: [],
-            activeFilter: 'all',
-            searchQuery: '',
-            activeMenuCategory: 'all'
+        // --- Global State & Mock Data ---
+        let map;
+        let userLocation = null; // { lat: ..., lng: ... }
+        let currentScreen = 'loading-screen';
+        let currentBusinessId = null; // For detail views
+        let currentMenuItemId = null; // For menu item detail/edit
+        let currentManagingBusinessId = null; // For managing a specific business's menu
+
+        // Mock data (replace with API calls)
+        let mockBusinesses = [
+            { id: 'b1', name: 'The Gilded Spoon', cuisine: 'Modern European, Fine Dining', address: '123 Elegance Ave, Gourmet City', lat: 9.02195, lng: 38.75771, rating: 4.8, reviewCount: 150, description: 'An exquisite dining experience with a focus on seasonal ingredients and artistic presentation. Perfect for special occasions.', imageUrl: 'https://placehold.co/600x300/d1c4e9/4527a0?text=The+Gilded+Spoon', category: 'fine-dining', priceRange: '$$$$', badges: ['top-rated', 'luxury-pick'] },
+            { id: 'b2', name: 'Bella Vista Trattoria', cuisine: 'Authentic Italian', address: '45 Market Plaza, Gourmet City', lat: 9.02500, lng: 38.76000, rating: 4.5, reviewCount: 230, description: 'Classic Italian dishes served in a warm, inviting atmosphere. Features a curated wine list.', imageUrl: 'https://placehold.co/600x300/ffcc80/e65100?text=Bella+Vista', category: 'casual-dining', priceRange: '$$$', badges: ['community-favorite'] },
+            { id: 'b3', name: 'Zen Garden Sushi', cuisine: 'Japanese, Sushi', address: '78 Serenity Blvd, Gourmet City', lat: 9.01980, lng: 38.75120, rating: 4.6, reviewCount: 180, description: 'Masterfully crafted sushi and sashimi using the freshest seafood. Tranquil ambiance.', imageUrl: 'https://placehold.co/600x300/a5d6a7/2e7d32?text=Zen+Garden', category: 'specialty', priceRange: '$$$', badges: ['new-gem'] },
+            { id: 'b4', name: 'Le Petit Café', cuisine: 'French Patisserie, Coffee', address: '90 Artisan Alley, Gourmet City', lat: 9.02880, lng: 38.76550, rating: 4.3, reviewCount: 95, description: 'Charming café offering delightful pastries, artisanal coffee, and light lunches.', imageUrl: 'https://placehold.co/600x300/f8bbd0/c2185b?text=Le+Petit+Café', category: 'cafe', priceRange: '$$', badges: [] },
+        ];
+
+        let mockMenus = {
+            'b1': [
+                { id: 'm1-1', name: 'Seared Scallops with Saffron Risotto', description: 'Pan-seared jumbo scallops served on a bed of creamy saffron risotto.', price: 32.00, category: 'Main Course', imageUrl: 'https://placehold.co/200x150/e1bee7/6a1b9a?text=Scallops', rating: 4.9, reviewCount: 25, badges: ['chef-special'] },
+                { id: 'm1-2', name: 'Filet Mignon with Truffle Jus', description: 'Prime cut filet mignon, perfectly cooked, with a rich truffle reduction.', price: 45.00, category: 'Main Course', imageUrl: 'https://placehold.co/200x150/d7ccc8/4e342e?text=Filet+Mignon', rating: 4.7, reviewCount: 30, badges: [] },
+                { id: 'm1-3', name: 'Lavender Crème brûlée', description: 'Classic crème brûlée infused with a hint of lavender.', price: 15.00, category: 'Dessert', imageUrl: 'https://placehold.co/200x150/fff9c4/f57f17?text=Crème+Brûlée', rating: 4.8, reviewCount: 18, badges: [] },
+            ],
+            'b2': [
+                { id: 'm2-1', name: 'Margherita Pizza Classica', description: 'Traditional Neapolitan pizza with San Marzano tomatoes, fresh mozzarella, and basil.', price: 18.00, category: 'Pizza', imageUrl: 'https://placehold.co/200x150/ffcdd2/c62828?text=Margherita', rating: 4.6, reviewCount: 50, badges: ['best-seller'] },
+                { id: 'm2-2', name: 'Lasagna Bolognese', description: 'Layers of fresh pasta, rich meat sauce, béchamel, and Parmesan cheese.', price: 22.00, category: 'Pasta', imageUrl: 'https://placehold.co/200x150/ffecb3/ff8f00?text=Lasagna', rating: 4.7, reviewCount: 40, badges: [] },
+            ],
+             // Add more menus for b3, b4 if needed
         };
 
-        // Simulate loading restaurants near the user
-        function loadSampleData() {
-            // Sample data for restaurants
-            appState.restaurants = [
-                {
-                    id: 1,
-                    name: "Burger King",
-                    cuisine: "Fast Food",
-                    cuisineType: "fastfood",
-                    description: "Classic burger joint offering flame-grilled burgers, fries, and milkshakes in a casual setting.",
-                    distance: 0.3,
-                    rating: 4.2,
-                    reviewCount: 128,
-                    hours: "09:00 AM - 11:00 PM",
-                    phone: "+1-555-123-4567",
-                    image: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f354.png",
-                    location: { lat: 40.7128, lng: -74.0060 },
-                    menu: [
-                        { category: "Burgers", items: [
-                            { name: "Whopper", price: 5.99, description: "Flame-grilled beef patty topped with tomatoes, lettuce, mayo, ketchup, pickles, and onions." },
-                            { name: "Bacon King", price: 7.99, description: "Double flame-grilled beef patties with bacon, cheese, ketchup and mayo." },
-                            { name: "Chicken Royale", price: 6.49, description: "Crispy chicken patty with lettuce and mayo in a long sesame seed bun." }
-                        ]},
-                        { category: "Sides", items: [
-                            { name: "French Fries", price: 2.99, description: "Crispy, golden french fries." },
-                            { name: "Onion Rings", price: 3.49, description: "Crispy, fried onion rings." }
-                        ]},
-                        { category: "Drinks", items: [
-                            { name: "Soft Drink", price: 1.99, description: "Choice of soft drinks." },
-                            { name: "Milkshake", price: 3.99, description: "Creamy milkshakes in various flavors." }
-                        ]}
-                    ]
-                },
-                {
-                    id: 2,
-                    name: "Pizza Paradise",
-                    cuisine: "Italian",
-                    cuisineType: "italian",
-                    description: "Authentic Italian pizzas made in a wood-fired oven with fresh, locally-sourced ingredients.",
-                    distance: 0.7,
-                    rating: 4.8,
-                    reviewCount: 205,
-                    hours: "11:00 AM - 10:00 PM",
-                    phone: "+1-555-678-9012",
-                    image: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f355.png",
-                    location: { lat: 40.7228, lng: -74.0060 },
-                    menu: [
-                        { category: "Pizzas", items: [
-                            { name: "Margherita", price: 12.99, description: "Tomato sauce, mozzarella, and fresh basil." },
-                            { name: "Pepperoni", price: 14.99, description: "Tomato sauce, mozzarella, and pepperoni." },
-                            { name: "Vegetarian", price: 13.99, description: "Tomato sauce, mozzarella, bell peppers, mushrooms, and olives." }
-                        ]},
-                        { category: "Pasta", items: [
-                            { name: "Spaghetti Carbonara", price: 14.99, description: "Spaghetti with egg, pecorino romano, pancetta, and black pepper." },
-                            { name: "Penne Arrabbiata", price: 13.99, description: "Penne with spicy tomato sauce." }
-                        ]},
-                        { category: "Desserts", items: [
-                            { name: "Tiramisu", price: 6.99, description: "Coffee-flavoured Italian dessert made of ladyfingers dipped in coffee, layered with a whipped mixture of eggs, sugar, and mascarpone cheese." }
-                        ]}
-                    ]
-                },
-                {
-                    id: 3,
-                    name: "Sushi Palace",
-                    cuisine: "Japanese",
-                    cuisineType: "asian",
-                    description: "Premium sushi restaurant offering the freshest fish and authentic Japanese dishes in an elegant atmosphere.",
-                    distance: 1.2,
-                    rating: 4.7,
-                    reviewCount: 162,
-                    hours: "12:00 PM - 10:30 PM",
-                    phone: "+1-555-456-7890",
-                    image: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f363.png",
-                    location: { lat: 40.7328, lng: -74.0160 },
-                    menu: [
-                        { category: "Sushi", items: [
-                            { name: "Salmon Nigiri (2pc)", price: 5.99, description: "Fresh salmon on hand-pressed sushi rice." },
-                            { name: "Tuna Nigiri (2pc)", price: 6.99, description: "Fresh tuna on hand-pressed sushi rice." },
-                            { name: "California Roll (6pc)", price: 7.99, description: "Crab, avocado, and cucumber." }
-                        ]},
-                        { category: "Sashimi", items: [
-                            { name: "Salmon Sashimi (5pc)", price: 10.99, description: "Thinly sliced fresh salmon." },
-                            { name: "Tuna Sashimi (5pc)", price: 12.99, description: "Thinly sliced fresh tuna." }
-                        ]},
-                        { category: "Bento", items: [
-                            { name: "Chicken Teriyaki Bento", price: 16.99, description: "Chicken teriyaki, rice, salad, gyoza, and miso soup." }
-                        ]}
-                    ]
-                },
-                {
-                    id: 4,
-                    name: "Café Mocha",
-                    cuisine: "Café",
-                    cuisineType: "cafe",
-                    description: "Cozy café serving specialty coffees, teas, and homemade pastries in a relaxed environment. Free Wi-Fi available.",
-                    distance: 0.5,
-                    rating: 4.5,
-                    reviewCount: 93,
-                    hours: "07:00 AM - 08:00 PM",
-                    phone: "+1-555-234-5678",
-                    image: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/2615.png",
-                    location: { lat: 40.7228, lng: -74.0160 },
-                    menu: [
-                        { category: "Coffee", items: [
-                            { name: "Espresso", price: 2.99, description: "Strong black coffee made by forcing steam through ground coffee beans." },
-                            { name: "Cappuccino", price: 4.49, description: "Espresso with steamed milk and foam." },
-                            { name: "Latte", price: 4.99, description: "Espresso with steamed milk." }
-                        ]},
-                        { category: "Pastries", items: [
-                            { name: "Butter Croissant", price: 3.49, description: "Flaky, buttery pastry." },
-                            { name: "Blueberry Muffin", price: 3.99, description: "Moist muffin filled with blueberries." }
-                        ]},
-                        { category: "Sandwiches", items: [
-                            { name: "Avocado Toast", price: 7.99, description: "Smashed avocado on multigrain toast with sea salt and red pepper flakes." }
-                        ]}
-                    ]
-                },
-                {
-                    id: 5,
-                    name: "Sweet Delights",
-                    cuisine: "Desserts",
-                    cuisineType: "desserts",
-                    description: "A heaven for dessert lovers with a wide range of cakes, pastries, ice creams, and more.",
-                    distance: 0.9,
-                    rating: 4.9,
-                    reviewCount: 178,
-                    hours: "10:00 AM - 09:00 PM",
-                    phone: "+1-555-890-1234",
-                    image: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f370.png",
-                    location: { lat: 40.7428, lng: -74.0260 },
-                    menu: [
-                        { category: "Cakes", items: [
-                            { name: "Chocolate Cake", price: 6.99, description: "Rich chocolate cake with chocolate ganache." },
-                            { name: "Cheesecake", price: 7.99, description: "Creamy cheesecake with graham cracker crust." },
-                            { name: "Red Velvet", price: 7.49, description: "Moist red velvet cake with cream cheese frosting." }
-                        ]},
-                        { category: "Ice Cream", items: [
-                            { name: "Vanilla (1 scoop)", price: 3.49, description: "Classic vanilla ice cream." },
-                            { name: "Chocolate (1 scoop)", price: 3.49, description: "Rich chocolate ice cream." }
-                        ]},
-                        { category: "Pastries", items: [
-                            { name: "Éclair", price: 4.99, description: "Chocolate-covered pastry filled with cream." }
-                        ]}
-                    ]
-                },
-                {
-                    id: 6,
-                    name: "Thai Taste",
-                    cuisine: "Thai",
-                    cuisineType: "asian",
-                    description: "Authentic Thai cuisine with a modern twist. From pad thai to curry dishes, experience the flavors of Thailand.",
-                    distance: 1.5,
-                    rating: 4.6,
-                    reviewCount: 145,
-                    hours: "11:30 AM - 10:00 PM",
-                    phone: "+1-555-345-6789",
-                    image: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f35b.png",
-                    location: { lat: 40.7528, lng: -74.0360 },
-                    menu: [
-                        { category: "Starters", items: [
-                            { name: "Spring Rolls (4pc)", price: 6.99, description: "Vegetable filled crispy spring rolls with sweet chili sauce." },
-                            { name: "Chicken Satay (4pc)", price: 8.99, description: "Grilled chicken skewers with peanut sauce." }
-                        ]},
-                        { category: "Main Courses", items: [
-                            { name: "Pad Thai", price: 14.99, description: "Stir-fried rice noodles with tofu, shrimp, peanuts, and bean sprouts." },
-                            { name: "Green Curry", price: 15.99, description: "Spicy curry with coconut milk, bamboo shoots, and basil." }
-                        ]},
-                        { category: "Desserts", items: [
-                            { name: "Mango Sticky Rice", price: 7.99, description: "Sweet sticky rice with fresh mango and coconut cream." }
-                        ]}
-                    ]
-                }
-            ];
+        let mockReviews = {
+            'b1': [
+                { id: 'r1-1', userName: 'Alice Wonderland', rating: 5, comment: 'Absolutely divine! Every dish was a work of art. The service was impeccable.' },
+                { id: 'r1-2', userName: 'Bob The Foodie', rating: 4, comment: 'A fantastic experience, though a bit pricey. The scallops were cooked to perfection.' },
+            ],
+            'b2': [
+                { id: 'r2-1', userName: 'Charlie Brown', rating: 5, comment: 'Best Italian food in town! The lasagna reminds me of my nonna\'s cooking.' },
+            ],
+        };
 
-            // Sample reviews
-            appState.reviews = [
-                {
-                    id: 1,
-                    restaurantId: 1,
-                    userId: "user123",
-                    userName: "John Doe",
-                    userPhoto: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f466.png",
-                    rating: 4,
-                    title: "Great burgers",
-                    text: "The Whopper was delicious and the service was fast.",
-                    date: new Date('2023-05-15')
-                },
-                {
-                    id: 2,
-                    restaurantId: 1,
-                    userId: "user456",
-                    userName: "Jane Smith",
-                    userPhoto: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f467.png",
-                    rating: 5,
-                    title: "Best fast food place",
-                    text: "Always consistent quality and quick service.",
-                    date: new Date('2023-06-20')
-                },
-                {
-                    id: 3,
-                    restaurantId: 2,
-                    userId: "user789",
-                    userName: "Mike Johnson",
-                    userPhoto: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f468.png",
-                    rating: 5,
-                    title: "Authentic Italian Pizza",
-                    text: "Reminds me of the pizza I had in Naples. Truly authentic and delicious!",
-                    date: new Date('2023-07-10')
+        const categories = [
+            { id: 'all', name: 'All', icon: 'fa-utensils' },
+            { id: 'fine-dining', name: 'Fine Dining', icon: 'fa-tie' },
+            { id: 'casual-dining', name: 'Casual Dining', icon: 'fa-hamburger' },
+            { id: 'cafe', name: 'Cafés', icon: 'fa-coffee' },
+            { id: 'specialty', name: 'Specialty', icon: 'fa-star' }, // e.g. sushi, bakery
+            { id: 'fast-food', name: 'Quick Bites', icon: 'fa-bolt' }
+        ];
+        let activeCategory = 'all';
+        let currentFilters = { rating: 0, price: 'any', badges: [] };
+
+        // --- UI Elements ---
+        const loadingScreen = document.getElementById('loading-screen');
+        const appHeader = document.getElementById('app-header');
+        const screens = {
+            home: document.getElementById('home-screen'),
+            businessDetail: document.getElementById('business-detail-screen'),
+            menuItemDetail: document.getElementById('menu-item-detail-screen'),
+            addEditBusiness: document.getElementById('add-edit-business-screen'),
+            manageMyBusiness: document.getElementById('manage-my-business-screen'),
+            manageMenu: document.getElementById('manage-menu-screen'),
+            addEditMenuItem: document.getElementById('add-edit-menu-item-screen'),
+            submitReview: document.getElementById('submit-review-screen'),
+        };
+        const businessListEl = document.getElementById('business-list');
+        const categoryTabsEl = document.getElementById('category-tabs');
+        const filterModal = document.getElementById('filter-modal');
+        const messageModal = document.getElementById('message-modal');
+
+        // --- Navigation ---
+        function navigateTo(screenName, params = {}) {
+            Object.values(screens).forEach(s => s.classList.add('hidden'));
+            if (screens[screenName]) {
+                screens[screenName].classList.remove('hidden');
+                currentScreen = screenName;
+                window.scrollTo(0, 0); // Scroll to top on navigation
+
+                // Handle specific screen setups
+                if (screenName === 'businessDetail' && params.businessId) {
+                    currentBusinessId = params.businessId;
+                    renderBusinessDetail(params.businessId);
+                } else if (screenName === 'addEditBusiness') {
+                    setupBusinessForm(params.businessId); // businessId can be null for new
+                } else if (screenName === 'manageMyBusiness') {
+                    renderMyBusinessList();
+                } else if (screenName === 'manageMenu' && params.businessId) {
+                    currentManagingBusinessId = params.businessId;
+                    renderMenuManagement(params.businessId);
+                } else if (screenName === 'addEditMenuItem' && params.businessId) {
+                     currentManagingBusinessId = params.businessId; // Keep track of parent business
+                    setupMenuItemForm(params.menuItemId, params.businessId);
+                } else if (screenName === 'submitReview' && params.businessId) {
+                    currentBusinessId = params.businessId;
+                    setupReviewForm(params.businessId);
+                } else if (screenName === 'menuItemDetail' && params.menuItemId && params.businessId) {
+                    currentBusinessId = params.businessId; // To go back
+                    currentMenuItemId = params.menuItemId;
+                    renderMenuItemDetail(params.menuItemId, params.businessId);
                 }
-            ];
+
+
+            } else {
+                console.error(`Screen "${screenName}" not found.`);
+                screens.home.classList.remove('hidden'); // Fallback to home
+                currentScreen = 'home';
+            }
+            tg.MainButton.hide(); // Hide main button by default, show contextually
         }
 
-        // DOM Elements
-        const mainScreen = document.getElementById('main-screen');
-        const detailScreen = document.getElementById('detail-screen');
-        const reviewModal = document.getElementById('review-modal');
-        const restaurantList = document.getElementById('restaurant-list');
-        const currentLocation = document.getElementById('current-location');
-        const noResults = document.getElementById('no-results');
-        const menuCategories = document.getElementById('menu-categories');
-        const menuItems = document.getElementById('menu-items');
-        const reviewList = document.getElementById('review-list');
+        // --- Rendering Functions ---
+        function renderStarRating(rating, containerIdOrElement, interactive = false, sizeClass = 'text-xl') {
+            const container = typeof containerIdOrElement === 'string' ? document.getElementById(containerIdOrElement) : containerIdOrElement;
+            if (!container) return;
+            container.innerHTML = '';
+            for (let i = 1; i <= 5; i++) {
+                const star = document.createElement('i');
+                star.classList.add('fas', 'fa-star', sizeClass);
+                if (i <= rating) {
+                    star.classList.add('text-yellow-500');
+                } else {
+                    star.classList.add('text-gray-300');
+                }
+                if (interactive) {
+                    star.classList.add('cursor-pointer');
+                    star.dataset.value = i;
+                }
+                container.appendChild(star);
+            }
+        }
 
-        // Event Listeners
-        document.getElementById('back-to-list').addEventListener('click', showMainScreen);
-        document.getElementById('add-review').addEventListener('click', showReviewModal);
-        document.getElementById('share-restaurant').addEventListener('click', shareRestaurant);
-        document.getElementById('view-location').addEventListener('click', viewRestaurantLocation);
-        document.getElementById('refresh-location').addEventListener('click', getUserLocation);
-        document.getElementById('clear-filters').addEventListener('click', clearFilters);
-        document.getElementById('search-input').addEventListener('input', handleSearch);
+        function renderBadges(badgesArray, containerElement) {
+            containerElement.innerHTML = '';
+            if (!badgesArray || badgesArray.length === 0) return;
 
-        // Close modals
-        document.querySelectorAll('.close-modal').forEach(button => {
-            button.addEventListener('click', () => {
-                hideModal(reviewModal);
+            const badgeStyles = {
+                'top-rated': 'badge-gold',
+                'community-favorite': 'badge-silver',
+                'new-gem': 'badge-bronze',
+                'luxury-pick': 'bg-purple-500 text-white',
+                'chef-special': 'bg-red-500 text-white',
+                'best-seller': 'bg-green-500 text-white'
+            };
+
+            badgesArray.forEach(badgeText => {
+                const badgeEl = document.createElement('span');
+                badgeEl.className = `badge ${badgeStyles[badgeText] || 'bg-gray-200 text-gray-800'}`;
+                badgeEl.textContent = badgeText.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                containerElement.appendChild(badgeEl);
             });
-        });
+        }
 
-        // Filter buttons
-        document.querySelectorAll('.filter-btn').forEach(button => {
-            button.addEventListener('click', () => {
-                const filter = button.dataset.filter;
-                appState.activeFilter = filter;
-                
-                // Update button styles
-                document.querySelectorAll('.filter-btn').forEach(btn => {
-                    if (btn.dataset.filter === filter) {
-                        btn.classList.add('bg-primary', 'text-white');
-                        btn.classList.remove('bg-gray-200', 'dark:bg-gray-700');
-                    } else {
-                        btn.classList.remove('bg-primary', 'text-white');
-                        btn.classList.add('bg-gray-200', 'dark:bg-gray-700');
-                    }
+        function renderCategories() {
+            categoryTabsEl.innerHTML = '';
+            categories.forEach(cat => {
+                const tab = document.createElement('button');
+                tab.className = `tab flex-shrink-0 ${cat.id === activeCategory ? 'active' : ''}`;
+                tab.innerHTML = `<i class="fas ${cat.icon} mr-1 sm:mr-2"></i>${cat.name}`;
+                tab.dataset.categoryId = cat.id;
+                tab.addEventListener('click', () => {
+                    activeCategory = cat.id;
+                    renderCategories(); // Re-render to update active state
+                    filterAndRenderBusinesses();
                 });
-                
-                renderRestaurants();
-            });
-        });
-
-        // Review Form submission
-        document.getElementById('review-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            submitReview();
-        });
-
-        // Utility Functions
-        function showModal(modal) {
-            modal.classList.remove('opacity-0', 'invisible');
-            modal.classList.add('active');
-            setTimeout(() => {
-                modal.querySelector('input')?.focus();
-            }, 300);
-        }
-
-        function hideModal(modal) {
-            modal.classList.remove('active');
-            modal.classList.add('opacity-0', 'invisible');
-        }
-
-        function formatDate(date) {
-            return new Date(date).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
+                categoryTabsEl.appendChild(tab);
             });
         }
 
-        // App Functions
-        function initApp() {
-            loadSampleData();
-            getUserLocation();
-            renderRestaurants();
+        function filterAndRenderBusinesses() {
+            let filtered = mockBusinesses;
+
+            // Category filter
+            if (activeCategory !== 'all') {
+                filtered = filtered.filter(b => b.category === activeCategory);
+            }
+
+            // Search query filter
+            const query = document.getElementById('search-query').value.toLowerCase();
+            if (query) {
+                filtered = filtered.filter(b =>
+                    b.name.toLowerCase().includes(query) ||
+                    b.cuisine.toLowerCase().includes(query) ||
+                    b.description.toLowerCase().includes(query)
+                );
+            }
+
+            // Advanced filters (rating, price, badges)
+            if (currentFilters.rating > 0) {
+                filtered = filtered.filter(b => b.rating >= currentFilters.rating);
+            }
+            if (currentFilters.price !== 'any') {
+                filtered = filtered.filter(b => b.priceRange === currentFilters.price);
+            }
+            if (currentFilters.badges.length > 0) {
+                filtered = filtered.filter(b =>
+                    currentFilters.badges.every(fb => b.badges.includes(fb))
+                );
+            }
+
+
+            renderBusinessList(filtered);
+        }
+
+
+        function renderBusinessList(businessesToRender = mockBusinesses) {
+            businessListEl.innerHTML = '';
+            const noResultsMsg = document.getElementById('no-results-message');
+
+            if (businessesToRender.length === 0) {
+                noResultsMsg.classList.remove('hidden');
+                return;
+            }
+            noResultsMsg.classList.add('hidden');
+
+            businessesToRender.forEach(business => {
+                const card = document.createElement('div');
+                card.className = 'luxury-card cursor-pointer';
+                card.dataset.businessId = business.id;
+                card.innerHTML = `
+                    <img src="${business.imageUrl || 'https://placehold.co/400x200/e2e8f0/333333?text=Restaurant'}" alt="${business.name}" class="w-full h-48 object-cover">
+                    <div class="p-4">
+                        <h4 class="text-xl font-semibold text-gray-800 mb-1 truncate">${business.name}</h4>
+                        <p class="text-sm text-yellow-600 mb-2 truncate">${business.cuisine}</p>
+                        <div class="flex items-center text-sm mb-2">
+                            <div class="stars-container text-yellow-500 mr-2"></div>
+                            <span class="text-gray-500">(${business.reviewCount} reviews)</span>
+                        </div>
+                        <div class="badges-container flex space-x-1 mb-3"></div>
+                        <p class="text-xs text-gray-500 truncate"><i class="fas fa-map-marker-alt mr-1 text-yellow-500"></i>${business.address}</p>
+                    </div>
+                `;
+                renderStarRating(business.rating, card.querySelector('.stars-container'), false, 'text-base');
+                renderBadges(business.badges, card.querySelector('.badges-container'));
+
+                card.addEventListener('click', () => navigateTo('businessDetail', { businessId: business.id }));
+                businessListEl.appendChild(card);
+            });
+            updateMapMarkers(businessesToRender);
+        }
+
+        function renderBusinessDetail(businessId) {
+            const business = mockBusinesses.find(b => b.id === businessId);
+            if (!business) {
+                showModalMessage("Error", "Business not found.", "error");
+                navigateTo('home');
+                return;
+            }
+
+            document.getElementById('business-detail-img').src = business.imageUrl || 'https://placehold.co/600x300/e2e8f0/333333?text=Restaurant+Image';
+            document.getElementById('business-detail-name').textContent = business.name;
+            document.getElementById('business-detail-cuisine').textContent = business.cuisine;
+            document.getElementById('business-detail-address').innerHTML = `<i class="fas fa-map-marker-alt mr-2 text-yellow-500"></i>${business.address}`;
+            renderStarRating(business.rating, document.getElementById('business-detail-rating'));
+            document.getElementById('business-detail-review-count').textContent = `(${business.reviewCount} reviews)`;
+            renderBadges(business.badges, document.getElementById('business-detail-badges'));
+            document.getElementById('business-detail-description').textContent = business.description;
+
+            // Render menu highlights (e.g., first 3 items)
+            const menuListEl = document.getElementById('business-detail-menu-list');
+            menuListEl.innerHTML = '';
+            const businessMenu = mockMenus[businessId] || [];
+            businessMenu.slice(0, 3).forEach(item => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'p-3 bg-gray-50 rounded-lg shadow-sm flex justify-between items-center cursor-pointer hover:bg-gray-100';
+                itemEl.innerHTML = `
+                    <div>
+                        <h5 class="font-semibold text-gray-700">${item.name}</h5>
+                        <p class="text-sm text-gray-500">${item.description.substring(0,50)}...</p>
+                    </div>
+                    <span class="font-semibold text-yellow-600">$${item.price.toFixed(2)}</span>
+                `;
+                itemEl.addEventListener('click', () => navigateTo('menuItemDetail', { menuItemId: item.id, businessId: business.id }));
+                menuListEl.appendChild(itemEl);
+            });
+            if (businessMenu.length === 0) {
+                menuListEl.innerHTML = '<p class="text-gray-500">Menu not available yet.</p>';
+            }
+
+            document.getElementById('view-full-menu-btn').onclick = () => {
+                // For now, this can lead to a dedicated menu management screen or expand inline
+                // For simplicity, we'll just log. A full menu screen would be similar to manageMenuScreen but read-only.
+                console.log("View Full Menu for", businessId);
+                // Potentially navigateTo('fullMenuScreen', { businessId });
+                showModalMessage("Info", "Full menu view is a premium feature coming soon!", "info");
+            };
+
+
+            // Render reviews
+            const reviewsEl = document.getElementById('business-detail-reviews');
+            reviewsEl.innerHTML = '';
+            const businessReviews = mockReviews[businessId] || [];
+            if (businessReviews.length > 0) {
+                businessReviews.forEach(review => {
+                    const reviewEl = document.createElement('div');
+                    reviewEl.className = 'p-3 border-t border-gray-200';
+                    reviewEl.innerHTML = `
+                        <div class="flex justify-between items-center mb-1">
+                            <h5 class="font-semibold text-gray-700">${review.userName}</h5>
+                            <div class="review-stars-container text-yellow-500"></div>
+                        </div>
+                        <p class="text-sm text-gray-600">${review.comment}</p>
+                    `;
+                    renderStarRating(review.rating, reviewEl.querySelector('.review-stars-container'), false, 'text-sm');
+                    reviewsEl.appendChild(reviewEl);
+                });
+            } else {
+                reviewsEl.innerHTML = '<p class="text-gray-500">No reviews yet. Be the first!</p>';
+            }
+            document.getElementById('add-review-btn').dataset.businessId = businessId;
+        }
+
+        function renderMenuItemDetail(menuItemId, businessId) {
+            const businessMenu = mockMenus[businessId];
+            if (!businessMenu) {
+                showModalMessage("Error", "Menu not found for this business.", "error");
+                navigateTo('businessDetail', { businessId });
+                return;
+            }
+            const menuItem = businessMenu.find(item => item.id === menuItemId);
+            if (!menuItem) {
+                showModalMessage("Error", "Menu item not found.", "error");
+                navigateTo('businessDetail', { businessId });
+                return;
+            }
+
+            document.getElementById('menu-item-detail-img').src = menuItem.imageUrl || 'https://placehold.co/400x300/e2e8f0/333333?text=Dish+Image';
+            document.getElementById('menu-item-detail-name').textContent = menuItem.name;
+            document.getElementById('menu-item-detail-price').textContent = `$${menuItem.price.toFixed(2)}`;
+            document.getElementById('menu-item-detail-description').textContent = menuItem.description;
+            renderStarRating(menuItem.rating || 0, document.getElementById('menu-item-detail-rating'));
+            document.getElementById('menu-item-detail-review-count').textContent = `(${(menuItem.reviewCount || 0)} reviews)`;
+            renderBadges(menuItem.badges || [], document.getElementById('menu-item-detail-badges'));
+
+            document.querySelector('#menu-item-detail-screen .back-to-business-detail').onclick = () => navigateTo('businessDetail', { businessId });
+        }
+
+
+        // --- Map Functionality (Leaflet) ---
+        function initMap(lat, lng) {
+            if (map) map.remove(); // Remove existing map if any
+            map = L.map('map').setView([lat, lng], 14); // Higher zoom for city level
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19,
+            }).addTo(map);
+
+            // User marker
+            L.marker([lat, lng], {
+                icon: L.divIcon({
+                    className: 'custom-user-marker',
+                    html: '<i class="fas fa-map-pin fa-2x text-red-500"></i>',
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 30]
+                })
+            }).addTo(map).bindPopup("Your Location").openPopup();
+
+            updateMapMarkers(mockBusinesses); // Initial marker population
+        }
+
+        let businessMarkers = [];
+        function updateMapMarkers(businesses) {
+            if (!map) return;
+            // Clear existing business markers
+            businessMarkers.forEach(marker => map.removeLayer(marker));
+            businessMarkers = [];
+
+            businesses.forEach(business => {
+                if (business.lat && business.lng) {
+                    const marker = L.marker([business.lat, business.lng], {
+                         icon: L.divIcon({
+                            className: 'custom-business-marker',
+                            html: `<div class="p-1 bg-yellow-500 rounded-full shadow"><i class="fas fa-utensils text-white"></i></div>`,
+                            iconSize: [24, 24],
+                            iconAnchor: [12, 12]
+                        })
+                    }).addTo(map)
+                        .bindPopup(`<b>${business.name}</b><br>${business.cuisine}<br><button class="view-details-map-btn" data-id="${business.id}">View Details</button>`);
+                    businessMarkers.push(marker);
+                }
+            });
+             // Add event listener for dynamically created buttons in popups
+            map.on('popupopen', function(e) {
+                const viewDetailsBtn = e.popup._container.querySelector('.view-details-map-btn');
+                if (viewDetailsBtn) {
+                    viewDetailsBtn.onclick = function() {
+                        navigateTo('businessDetail', { businessId: this.dataset.id });
+                    };
+                }
+            });
         }
 
         function getUserLocation() {
-            currentLocation.textContent = "Getting location...";
-            
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        appState.userLocation = {
-                            lat: position.coords.latitude,
-                            lng: position.coords.longitude
-                        };
-                        currentLocation.textContent = "Your Location";
-                        // In a real app, we would fetch restaurants near this location
-                        // For demo, we just show the sample data
-                        renderRestaurants();
-                    },
-                    (error) => {
-                        console.error("Error getting location:", error);
-                        currentLocation.textContent = "Location unavailable";
-                        // Still render sample data for demo
-                        renderRestaurants();
-                    },
-                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-                );
+                navigator.geolocation.getCurrentPosition(position => {
+                    userLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
+                    // For Addis Ababa testing:
+                    // userLocation = { lat: 9.02497, lng: 38.74689 };
+                    initMap(userLocation.lat, userLocation.lng);
+                    filterAndRenderBusinesses(); // Render businesses based on default location
+                    setTimeout(() => { // Simulate loading
+                        loadingScreen.style.opacity = '0';
+                        setTimeout(() => loadingScreen.classList.add('hidden'), 300);
+                        appHeader.classList.remove('hidden');
+                        navigateTo('home');
+                    }, 1500);
+                }, error => {
+                    console.error("Error getting location: ", error);
+                    // Fallback to a default location (e.g., city center)
+                    userLocation = { lat: 9.02497, lng: 38.74689 }; // Addis Ababa default
+                    initMap(userLocation.lat, userLocation.lng);
+                    filterAndRenderBusinesses();
+                    showModalMessage("Location Error", "Could not get your location. Showing results for a default area.", "warning");
+                    setTimeout(() => {
+                        loadingScreen.style.opacity = '0';
+                        setTimeout(() => loadingScreen.classList.add('hidden'), 300);
+                        appHeader.classList.remove('hidden');
+                        navigateTo('home');
+                    }, 1500);
+                }, { enableHighAccuracy: true });
             } else {
-                currentLocation.textContent = "Geolocation not supported";
-                renderRestaurants();
+                console.error("Geolocation is not supported by this browser.");
+                userLocation = { lat: 9.02497, lng: 38.74689 }; // Addis Ababa default
+                initMap(userLocation.lat, userLocation.lng);
+                filterAndRenderBusinesses();
+                showModalMessage("Location Error", "Geolocation is not supported. Showing results for a default area.", "warning");
+                 setTimeout(() => {
+                    loadingScreen.style.opacity = '0';
+                    setTimeout(() => loadingScreen.classList.add('hidden'), 300);
+                    appHeader.classList.remove('hidden');
+                    navigateTo('home');
+                }, 1500);
             }
         }
 
-        function renderRestaurants() {
-            // Clear skeleton loaders
-            document.querySelectorAll('.skeleton-card').forEach(card => card.remove());
-            
-            let filteredRestaurants = appState.restaurants;
-            
-            // Apply cuisine filter
-            if (appState.activeFilter !== 'all') {
-                filteredRestaurants = filteredRestaurants.filter(
-                    restaurant => restaurant.cuisineType === appState.activeFilter
-                );
-            }
-            
-            // Apply search filter
-            if (appState.searchQuery) {
-                const query = appState.searchQuery.toLowerCase();
-                filteredRestaurants = filteredRestaurants.filter(restaurant => 
-                    restaurant.name.toLowerCase().includes(query) || 
-                    restaurant.cuisine.toLowerCase().includes(query) ||
-                    restaurant.description.toLowerCase().includes(query)
-                );
-            }
-            
-            // Sort by distance
-            filteredRestaurants = [...filteredRestaurants].sort((a, b) => a.distance - b.distance);
-            
-            // Check if we have any results
-            if (filteredRestaurants.length === 0) {
-                restaurantList.innerHTML = '';
-                noResults.classList.remove('hidden');
+        // --- CRUD Operations (Simulated) ---
+        // Business CRUD
+        function setupBusinessForm(businessId = null) {
+            const form = document.getElementById('business-form');
+            const titleEl = document.getElementById('business-form-title');
+            form.reset();
+            document.getElementById('business-form-id').value = '';
+
+            if (businessId) {
+                const business = mockBusinesses.find(b => b.id === businessId);
+                if (business) {
+                    titleEl.textContent = `Edit ${business.name}`;
+                    document.getElementById('business-form-id').value = business.id;
+                    document.getElementById('business-name').value = business.name;
+                    document.getElementById('business-cuisine').value = business.cuisine;
+                    document.getElementById('business-address').value = business.address;
+                    document.getElementById('business-latitude').value = business.lat || '';
+                    document.getElementById('business-longitude').value = business.lng || '';
+                    document.getElementById('business-description').value = business.description;
+                    document.getElementById('business-image-url').value = business.imageUrl || '';
+                    document.getElementById('business-category').value = business.category || 'casual-dining';
+                }
             } else {
-                noResults.classList.add('hidden');
-                
-                restaurantList.innerHTML = '';
-                filteredRestaurants.forEach((restaurant, index) => {
-                    const card = document.createElement('div');
-                    card.className = 'restaurant-card rounded-lg shadow-md overflow-hidden bg-white dark:bg-gray-800';
-                    card.style.animationDelay = `${index * 0.05}s`;
-                    
-                    const reviewsForRestaurant = appState.reviews.filter(r => r.restaurantId === restaurant.id);
-                    
-                    card.innerHTML = `
-                        <div class="restaurant-image h-48 bg-gray-200 dark:bg-gray-700">
-                            <img src="${restaurant.image}" alt="${restaurant.name}" 
-                                class="w-full h-full object-cover">
-                        </div>
-                        <div class="p-4">
-                            <div class="flex justify-between items-start">
-                                <h3 class="font-bold text-lg">${restaurant.name}</h3>
-                                <div class="flex items-center bg-yellow-rating bg-opacity-20 px-2 py-1 rounded">
-                                    <i class="fas fa-star text-yellow-rating mr-1"></i>
-                                    <span>${restaurant.rating}</span>
-                                    <span class="text-xs text-gray-500 dark:text-gray-400 ml-1">(${restaurant.reviewCount})</span>
-                                </div>
-                            </div>
-                            <div class="flex items-center mt-1 mb-2">
-                                <span class="text-gray-600 dark:text-gray-300 text-sm">${restaurant.cuisine}</span>
-                                <span class="mx-2">•</span>
-                                <span class="text-gray-600 dark:text-gray-300 text-sm">${restaurant.distance} km away</span>
-                            </div>
-                            <p class="text-gray-500 dark:text-gray-400 text-sm line-clamp-2">${restaurant.description}</p>
-                            <div class="mt-3 flex justify-between items-center">
-                                <span class="text-primary text-sm">${restaurant.hours}</span>
-                                <button class="view-restaurant-btn px-3 py-1 rounded-full bg-primary text-white text-sm hover:bg-primary-dark" 
-                                    data-id="${restaurant.id}">View Menu</button>
-                            </div>
-                        </div>
-                    `;
-                    
-                    restaurantList.appendChild(card);
-                    
-                    // Add event listener to view restaurant button
-                    card.querySelector('.view-restaurant-btn').addEventListener('click', () => {
-                        showRestaurantDetails(restaurant.id);
-                    });
-                });
+                titleEl.textContent = 'Add New Business';
             }
         }
 
-        function showRestaurantDetails(restaurantId) {
-            const restaurant = appState.restaurants.find(r => r.id === restaurantId);
-            if (!restaurant) return;
-            
-            appState.currentRestaurant = restaurant;
-            
-            // Set restaurant details
-            document.getElementById('restaurant-cover').style.backgroundImage = `url(${restaurant.image})`;
-            document.getElementById('detail-name').textContent = restaurant.name;
-            document.getElementById('detail-rating').innerHTML = `
-                <i class="fas fa-star text-yellow-rating mr-1"></i>
-                <span>${restaurant.rating} (${restaurant.reviewCount})</span>
-            `;
-            document.getElementById('detail-cuisine').textContent = restaurant.cuisine;
-            document.getElementById('detail-distance').textContent = `${restaurant.distance} km away`;
-            document.getElementById('detail-hours').textContent = restaurant.hours;
-            document.getElementById('detail-phone').textContent = restaurant.phone;
-            document.getElementById('detail-phone').href = `tel:${restaurant.phone}`;
-            document.getElementById('detail-description').textContent = restaurant.description;
-            
-            // Render menu categories
-            renderMenuCategories(restaurant);
-            
-            // Render menu items (starting with first category or all)
-            appState.activeMenuCategory = 'all';
-            renderMenuItems(restaurant);
-            
-            // Render reviews
-            renderReviews(restaurant.id);
-            
-            // Switch screens
-            mainScreen.classList.add('hidden');
-            detailScreen.classList.remove('hidden');
-            
-            // Scroll to top
-            window.scrollTo(0, 0);
-        }
+        document.getElementById('business-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = document.getElementById('business-form-id').value;
+            const businessData = {
+                name: document.getElementById('business-name').value,
+                cuisine: document.getElementById('business-cuisine').value,
+                address: document.getElementById('business-address').value,
+                lat: parseFloat(document.getElementById('business-latitude').value) || null,
+                lng: parseFloat(document.getElementById('business-longitude').value) || null,
+                description: document.getElementById('business-description').value,
+                imageUrl: document.getElementById('business-image-url').value,
+                category: document.getElementById('business-category').value,
+                rating: id ? mockBusinesses.find(b=>b.id===id).rating : (Math.random() * 2 + 3).toFixed(1), // Keep existing or random for new
+                reviewCount: id ? mockBusinesses.find(b=>b.id===id).reviewCount : Math.floor(Math.random() * 50),
+                badges: id ? mockBusinesses.find(b=>b.id===id).badges : [], // Keep existing or empty for new
+                priceRange: '$$$' // Default price range for new
+            };
 
-        function renderMenuCategories(restaurant) {
-            menuCategories.innerHTML = `
-                <button class="menu-category-btn whitespace-nowrap px-3 py-1 rounded-full text-sm bg-primary text-white active" 
-                    data-category="all">All</button>
-            `;
-            
-            // Extract unique categories
-            const categories = restaurant.menu.map(item => item.category);
-            
-            categories.forEach(category => {
-                const btn = document.createElement('button');
-                btn.className = 'menu-category-btn whitespace-nowrap px-3 py-1 rounded-full text-sm bg-gray-200 dark:bg-gray-700';
-                btn.setAttribute('data-category', category);
-                btn.textContent = category;
-                menuCategories.appendChild(btn);
-                
-                // Add event listener
-                btn.addEventListener('click', () => {
-                    appState.activeMenuCategory = category;
-                    
-                    // Update button styles
-                    document.querySelectorAll('.menu-category-btn').forEach(el => {
-                        if (el.dataset.category === category) {
-                            el.classList.add('bg-primary', 'text-white');
-                            el.classList.remove('bg-gray-200', 'dark:bg-gray-700');
-                        } else {
-                            el.classList.remove('bg-primary', 'text-white');
-                            el.classList.add('bg-gray-200', 'dark:bg-gray-700');
-                        }
-                    });
-                    
-                    renderMenuItems(restaurant);
-                });
-            });
-            
-            // Add event listener to "All" button
-            document.querySelector('.menu-category-btn[data-category="all"]').addEventListener('click', () => {
-                appState.activeMenuCategory = 'all';
-                
-                // Update button styles
-                document.querySelectorAll('.menu-category-btn').forEach(el => {
-                    if (el.dataset.category === 'all') {
-                        el.classList.add('bg-primary', 'text-white');
-                        el.classList.remove('bg-gray-200', 'dark:bg-gray-700');
-                    } else {
-                        el.classList.remove('bg-primary', 'text-white');
-                        el.classList.add('bg-gray-200', 'dark:bg-gray-700');
-                    }
-                });
-                
-                renderMenuItems(restaurant);
-            });
-        }
-
-        function renderMenuItems(restaurant) {
-            menuItems.innerHTML = '';
-            
-            restaurant.menu.forEach(category => {
-                // Skip if not matching the active category filter
-                if (appState.activeMenuCategory !== 'all' && category.category !== appState.activeMenuCategory) {
-                    return;
+            // TODO: API call to save/update business (Drizzle ORM/SQLite on backend)
+            if (id) { // Update
+                const index = mockBusinesses.findIndex(b => b.id === id);
+                if (index !== -1) {
+                    mockBusinesses[index] = { ...mockBusinesses[index], ...businessData };
+                    showModalMessage("Success", `${businessData.name} updated successfully.`, "success");
                 }
-                
-                // Add category title if showing all categories
-                if (appState.activeMenuCategory === 'all') {
-                    const categoryTitle = document.createElement('h3');
-                    categoryTitle.className = 'font-semibold text-lg mt-4 mb-2';
-                    categoryTitle.textContent = category.category;
-                    menuItems.appendChild(categoryTitle);
-                }
-                
-                // Add menu items
-                category.items.forEach(item => {
-                    const menuItem = document.createElement('div');
-                    menuItem.className = 'flex justify-between border-b dark:border-gray-700 pb-2 last:border-0';
-                    menuItem.innerHTML = `
-                        <div>
-                            <div class="font-medium">${item.name}</div>
-                            <div class="text-sm text-gray-600 dark:text-gray-400">${item.description}</div>
-                        </div>
-                        <div class="text-primary font-semibold whitespace-nowrap ml-2">$${item.price.toFixed(2)}</div>
-                    `;
-                    menuItems.appendChild(menuItem);
-                });
-            });
-        }
+            } else { // Create
+                businessData.id = 'b' + (mockBusinesses.length + 1) + Date.now(); // Simple unique ID
+                mockBusinesses.push(businessData);
+                if (!mockMenus[businessData.id]) mockMenus[businessData.id] = []; // Initialize menu for new business
+                showModalMessage("Success", `${businessData.name} added successfully.`, "success");
+            }
+            console.log('Saved Business:', businessData);
+            navigateTo('manageMyBusiness');
+        });
 
-        function renderReviews(restaurantId) {
-            const restaurantReviews = appState.reviews.filter(review => review.restaurantId === restaurantId);
-            reviewList.innerHTML = '';
-            
-            if (restaurantReviews.length === 0) {
-                reviewList.innerHTML = `
-                    <div class="text-center py-4 text-gray-500 dark:text-gray-400">
-                        <p>No reviews yet. Be the first to write one!</p>
-                    </div>
-                `;
+        function renderMyBusinessList() {
+            const listEl = document.getElementById('my-business-list');
+            const noResultsMsg = document.getElementById('no-my-businesses-message');
+            listEl.innerHTML = '';
+
+            // For now, assume all mock businesses are "mine". In reality, filter by owner ID.
+            const myBusinesses = mockBusinesses; // Replace with actual owned businesses
+
+            if (myBusinesses.length === 0) {
+                noResultsMsg.classList.remove('hidden');
                 return;
             }
-            
-            restaurantReviews.forEach(review => {
-                const reviewItem = document.createElement('div');
-                reviewItem.className = 'border-b dark:border-gray-700 pb-3 last:border-0';
-                
-                // Generate star rating HTML
-                let starsHtml = '';
-                for (let i = 1; i <= 5; i++) {
-                    if (i <= review.rating) {
-                        starsHtml += '<i class="fas fa-star text-yellow-rating"></i>';
-                    } else {
-                        starsHtml += '<i class="far fa-star text-gray-300 dark:text-gray-600"></i>';
-                    }
-                }
-                
-                reviewItem.innerHTML = `
-                    <div class="flex items-start">
-                        <img src="${review.userPhoto}" alt="${review.userName}" class="w-10 h-10 rounded-full mr-3">
-                        <div class="flex-1">
-                            <div class="flex justify-between items-center">
-                                <h4 class="font-medium">${review.userName}</h4>
-                                <span class="text-sm text-gray-500 dark:text-gray-400">${formatDate(review.date)}</span>
-                            </div>
-                            <div class="flex items-center my-1">
-                                <div class="text-sm">${starsHtml}</div>
-                            </div>
-                            <div class="font-medium mb-1">${review.title}</div>
-                            <p class="text-gray-600 dark:text-gray-300 text-sm">${review.text}</p>
-                        </div>
+            noResultsMsg.classList.add('hidden');
+
+            myBusinesses.forEach(business => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'luxury-card p-4 flex flex-col sm:flex-row justify-between sm:items-center space-y-3 sm:space-y-0';
+                itemEl.innerHTML = `
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800">${business.name}</h3>
+                        <p class="text-sm text-gray-500">${business.address}</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button class="text-sm py-1 px-3 rounded bg-blue-500 text-white hover:bg-blue-600 edit-my-business-btn" data-business-id="${business.id}"><i class="fas fa-edit mr-1"></i>Edit Info</button>
+                        <button class="text-sm py-1 px-3 rounded bg-green-500 text-white hover:bg-green-600 manage-my-menu-btn" data-business-id="${business.id}"><i class="fas fa-list-alt mr-1"></i>Manage Menu</button>
+                        <button class="text-sm py-1 px-3 rounded bg-red-500 text-white hover:bg-red-600 delete-my-business-btn" data-business-id="${business.id}"><i class="fas fa-trash mr-1"></i>Delete</button>
                     </div>
                 `;
-                
-                reviewList.appendChild(reviewItem);
+                listEl.appendChild(itemEl);
+            });
+
+            // Add event listeners for action buttons
+            listEl.querySelectorAll('.edit-my-business-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => navigateTo('addEditBusiness', { businessId: e.currentTarget.dataset.businessId }));
+            });
+            listEl.querySelectorAll('.manage-my-menu-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => navigateTo('manageMenu', { businessId: e.currentTarget.dataset.businessId }));
+            });
+            listEl.querySelectorAll('.delete-my-business-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => deleteBusiness(e.currentTarget.dataset.businessId));
             });
         }
 
-        function showMainScreen() {
-            detailScreen.classList.add('hidden');
-            mainScreen.classList.remove('hidden');
+        function deleteBusiness(businessId) {
+            // TODO: API call to delete business
+            // Confirmation would be good here (using custom modal)
+            const businessName = mockBusinesses.find(b => b.id === businessId)?.name || 'this business';
+            showConfirmationModal(
+                `Delete ${businessName}?`,
+                "Are you sure you want to delete this business? This action cannot be undone.",
+                () => {
+                    mockBusinesses = mockBusinesses.filter(b => b.id !== businessId);
+                    delete mockMenus[businessId]; // Also delete associated menu
+                    delete mockReviews[businessId]; // And reviews
+                    console.log('Deleted Business:', businessId);
+                    renderMyBusinessList(); // Re-render the list
+                    filterAndRenderBusinesses(); // Update home screen list if business was there
+                    showModalMessage("Success", `${businessName} deleted successfully.`, "success");
+                }
+            );
         }
 
-        function showReviewModal() {
-            if (!appState.currentRestaurant) return;
-            
-            // Reset form
-            document.getElementById('review-restaurant-id').value = appState.currentRestaurant.id;
-            document.getElementById('review-user-id').value = appState.userProfile.id;
-            document.getElementById('review-title').value = '';
-            document.getElementById('review-text').value = '';
-            document.querySelector('input[name="rating"]:checked')?.removeAttribute('checked');
-            
-            showModal(reviewModal);
+        // Menu Item CRUD
+        function renderMenuManagement(businessId) {
+            const business = mockBusinesses.find(b => b.id === businessId);
+            if (!business) { navigateTo('manageMyBusiness'); return; }
+
+            document.getElementById('manage-menu-business-name').textContent = `Manage Menu for ${business.name}`;
+            const listEl = document.getElementById('menu-item-list-management');
+            const noItemsMsg = document.getElementById('no-menu-items-message');
+            listEl.innerHTML = '';
+            const menu = mockMenus[businessId] || [];
+
+            if (menu.length === 0) {
+                noItemsMsg.classList.remove('hidden');
+            } else {
+                noItemsMsg.classList.add('hidden');
+                menu.forEach(item => {
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'luxury-card p-3 flex flex-col sm:flex-row justify-between sm:items-center space-y-2 sm:space-y-0';
+                    itemEl.innerHTML = `
+                        <div class="flex items-center space-x-3">
+                            <img src="${item.imageUrl || 'https://placehold.co/80x60/e2e8f0/333333?text=Dish'}" alt="${item.name}" class="w-16 h-12 object-cover rounded">
+                            <div>
+                                <h4 class="font-semibold text-gray-700">${item.name}</h4>
+                                <p class="text-sm text-yellow-600">$${item.price.toFixed(2)}</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="text-sm py-1 px-2 rounded bg-blue-500 text-white hover:bg-blue-600 edit-menu-item-btn" data-item-id="${item.id}"><i class="fas fa-edit mr-1"></i>Edit</button>
+                            <button class="text-sm py-1 px-2 rounded bg-red-500 text-white hover:bg-red-600 delete-menu-item-btn" data-item-id="${item.id}"><i class="fas fa-trash mr-1"></i>Delete</button>
+                        </div>
+                    `;
+                    listEl.appendChild(itemEl);
+                });
+            }
+
+            // Add event listeners
+            document.getElementById('add-new-menu-item-btn').onclick = () => navigateTo('addEditMenuItem', { businessId });
+            listEl.querySelectorAll('.edit-menu-item-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => navigateTo('addEditMenuItem', { businessId, menuItemId: e.currentTarget.dataset.itemId }));
+            });
+            listEl.querySelectorAll('.delete-menu-item-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => deleteMenuItem(businessId, e.currentTarget.dataset.itemId));
+            });
         }
 
-        function submitReview() {
-            const restaurantId = parseInt(document.getElementById('review-restaurant-id').value);
-            const userId = document.getElementById('review-user-id').value;
-            const rating = parseInt(document.querySelector('input[name="rating"]:checked')?.value || '5');
-            const title = document.getElementById('review-title').value.trim();
-            const text = document.getElementById('review-text').value.trim();
-            
-            if (!title || !text) return;
-            
-            // Create new review
-            const newReview = {
-                id: Math.max(0, ...appState.reviews.map(r => r.id)) + 1,
-                restaurantId,
-                userId,
-                userName: appState.userProfile.name,
-                userPhoto: appState.userProfile.photo,
-                rating,
-                title,
-                text,
-                date: new Date()
-            };
-            
-            // Add to reviews
-            appState.reviews.push(newReview);
-            
-            // Update restaurant rating
-            updateRestaurantRating(restaurantId);
-            
-            // Close modal
-            hideModal(reviewModal);
-            
-            // Render updated reviews
-            renderReviews(restaurantId);
-        }
+        function setupMenuItemForm(menuItemId = null, businessId) {
+            const form = document.getElementById('menu-item-form');
+            const titleEl = document.getElementById('menu-item-form-title');
+            form.reset();
+            document.getElementById('menu-item-form-id').value = '';
+            document.getElementById('menu-item-form-business-id').value = businessId;
 
-        function updateRestaurantRating(restaurantId) {
-            const restaurant = appState.restaurants.find(r => r.id === restaurantId);
-            if (!restaurant) return;
-            
-            const restaurantReviews = appState.reviews.filter(r => r.restaurantId === restaurantId);
-            const reviewCount = restaurantReviews.length;
-            
-            if (reviewCount === 0) return;
-            
-            // Calculate average rating
-            const totalRating = restaurantReviews.reduce((sum, review) => sum + review.rating, 0);
-            const avgRating = totalRating / reviewCount;
-            
-            // Update restaurant
-            restaurant.rating = parseFloat(avgRating.toFixed(1));
-            restaurant.reviewCount = reviewCount;
-            
-            // Update UI
-            document.getElementById('detail-rating').innerHTML = `
-                <i class="fas fa-star text-yellow-rating mr-1"></i>
-                <span>${restaurant.rating} (${restaurant.reviewCount})</span>
-            `;
-        }
-
-        function shareRestaurant() {
-            if (!appState.currentRestaurant) return;
-            
-            // In a real Telegram Mini App, we would use Telegram's native
-            // sharing functionality. For this demo, we'll simulate it with an alert.
-            const restaurant = appState.currentRestaurant;
-            const shareText = `Check out ${restaurant.name} - ${restaurant.cuisine} restaurant, rated ${restaurant.rating}/5!`;
-            
-            // This would be replaced with Telegram's native sharing API
-            // For demo purposes, let's assume we're calling Telegram's WebApp API
-            try {
-                // In a real app, we would use window.Telegram.WebApp.showPopup
-                alert(`Sharing: ${shareText}`);
-            } catch (error) {
-                console.error("Error sharing:", error);
+            if (menuItemId) {
+                const menuItem = (mockMenus[businessId] || []).find(item => item.id === menuItemId);
+                if (menuItem) {
+                    titleEl.textContent = `Edit ${menuItem.name}`;
+                    document.getElementById('menu-item-form-id').value = menuItem.id;
+                    document.getElementById('menu-item-name').value = menuItem.name;
+                    document.getElementById('menu-item-description').value = menuItem.description;
+                    document.getElementById('menu-item-price').value = menuItem.price;
+                    document.getElementById('menu-item-category').value = menuItem.category || '';
+                    document.getElementById('menu-item-image-url').value = menuItem.imageUrl || '';
+                }
+            } else {
+                titleEl.textContent = 'Add New Menu Item';
             }
         }
 
-        function viewRestaurantLocation() {
-            if (!appState.currentRestaurant) return;
-            
-            // In a real app, this would open the location in Telegram's map viewer
-            // or use a map API to show the location
-            const restaurant = appState.currentRestaurant;
-            alert(`Viewing location for ${restaurant.name} at coordinates: ${restaurant.location.lat}, ${restaurant.location.lng}`);
-        }
+        document.getElementById('menu-item-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const itemId = document.getElementById('menu-item-form-id').value;
+            const businessId = document.getElementById('menu-item-form-business-id').value;
+            const menuItemData = {
+                name: document.getElementById('menu-item-name').value,
+                description: document.getElementById('menu-item-description').value,
+                price: parseFloat(document.getElementById('menu-item-price').value),
+                category: document.getElementById('menu-item-category').value,
+                imageUrl: document.getElementById('menu-item-image-url').value,
+                // Keep existing rating/reviews/badges or initialize for new
+                rating: itemId ? (mockMenus[businessId].find(i=>i.id===itemId).rating || 0) : 0,
+                reviewCount: itemId ? (mockMenus[businessId].find(i=>i.id===itemId).reviewCount || 0) : 0,
+                badges: itemId ? (mockMenus[businessId].find(i=>i.id===itemId).badges || []) : [],
+            };
 
-        function handleSearch(e) {
-            appState.searchQuery = e.target.value.trim();
-            renderRestaurants();
-        }
+            // TODO: API call to save/update menu item
+            if (!mockMenus[businessId]) mockMenus[businessId] = [];
 
-        function clearFilters() {
-            appState.activeFilter = 'all';
-            appState.searchQuery = '';
-            
-            // Reset search input
-            document.getElementById('search-input').value = '';
-            
-            // Reset filter buttons
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                if (btn.dataset.filter === 'all') {
-                    btn.classList.add('bg-primary', 'text-white');
-                    btn.classList.remove('bg-gray-200', 'dark:bg-gray-700');
-                } else {
-                    btn.classList.remove('bg-primary', 'text-white');
-                    btn.classList.add('bg-gray-200', 'dark:bg-gray-700');
+            if (itemId) { // Update
+                const index = mockMenus[businessId].findIndex(item => item.id === itemId);
+                if (index !== -1) {
+                    mockMenus[businessId][index] = { ...mockMenus[businessId][index], ...menuItemData };
+                     showModalMessage("Success", `${menuItemData.name} updated.`, "success");
                 }
-            });
-            
-            renderRestaurants();
+            } else { // Create
+                menuItemData.id = 'm' + businessId + '-' + (mockMenus[businessId].length + 1) + Date.now(); // Simple unique ID
+                mockMenus[businessId].push(menuItemData);
+                showModalMessage("Success", `${menuItemData.name} added to menu.`, "success");
+            }
+            console.log('Saved Menu Item:', menuItemData);
+            navigateTo('manageMenu', { businessId });
+        });
+
+        function deleteMenuItem(businessId, menuItemId) {
+            // TODO: API call to delete menu item
+            const itemName = mockMenus[businessId]?.find(item => item.id === menuItemId)?.name || 'this item';
+             showConfirmationModal(
+                `Delete ${itemName}?`,
+                "Are you sure you want to delete this menu item? This action cannot be undone.",
+                () => {
+                    if (mockMenus[businessId]) {
+                        mockMenus[businessId] = mockMenus[businessId].filter(item => item.id !== menuItemId);
+                    }
+                    console.log('Deleted Menu Item:', menuItemId, 'from business:', businessId);
+                    renderMenuManagement(businessId); // Re-render the list
+                    showModalMessage("Success", `${itemName} deleted.`, "success");
+                }
+            );
         }
 
-        // Initialize the app
-        initApp();
+        // Review Submission
+        let selectedReviewRating = 0;
+        function setupReviewForm(businessId) {
+            const business = mockBusinesses.find(b => b.id === businessId);
+            if (!business) { navigateTo('home'); return; }
+
+            document.getElementById('review-business-name').textContent = business.name;
+            document.getElementById('review-form-business-id').value = businessId;
+            document.getElementById('review-form').reset();
+            selectedReviewRating = 0;
+            renderStarRating(0, document.getElementById('review-stars'), true); // Interactive stars
+        }
+
+        document.getElementById('review-stars').addEventListener('click', function(e) {
+            if (e.target.classList.contains('fa-star')) {
+                selectedReviewRating = parseInt(e.target.dataset.value);
+                document.getElementById('review-rating-value').value = selectedReviewRating;
+                renderStarRating(selectedReviewRating, this, true);
+            }
+        });
+
+        document.getElementById('review-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const businessId = document.getElementById('review-form-business-id').value;
+            if (selectedReviewRating === 0) {
+                showModalMessage("Validation Error", "Please select a star rating.", "error");
+                return;
+            }
+            const reviewData = {
+                id: 'r' + businessId + '-' + Date.now(),
+                userName: 'Current User', // Replace with actual user name from Telegram/Auth
+                rating: selectedReviewRating,
+                comment: document.getElementById('review-comment').value
+            };
+
+            // TODO: API call to submit review
+            if (!mockReviews[businessId]) mockReviews[businessId] = [];
+            mockReviews[businessId].unshift(reviewData); // Add to beginning
+
+            // Update business average rating (simplified)
+            const business = mockBusinesses.find(b => b.id === businessId);
+            if (business) {
+                const totalRating = mockReviews[businessId].reduce((sum, r) => sum + r.rating, 0);
+                business.rating = parseFloat((totalRating / mockReviews[businessId].length).toFixed(1));
+                business.reviewCount = mockReviews[businessId].length;
+            }
+
+            console.log('Submitted Review:', reviewData);
+            showModalMessage("Review Submitted", "Thank you for your feedback!", "success");
+            navigateTo('businessDetail', { businessId });
+        });
+
+        // --- Modal Functionality ---
+        function openModal(modalElement) {
+            modalElement.classList.remove('opacity-0', 'pointer-events-none');
+            modalElement.classList.add('open');
+            tg.BackButton.show();
+            tg.onEvent('backButtonClicked', () => closeModal(modalElement));
+        }
+
+        function closeModal(modalElement) {
+            modalElement.classList.add('opacity-0');
+            modalElement.classList.remove('open');
+            setTimeout(() => {
+                modalElement.classList.add('pointer-events-none');
+            }, 300); // Match transition duration
+            tg.BackButton.hide();
+            tg.offEvent('backButtonClicked', () => closeModal(modalElement)); // Clean up
+        }
+
+        document.getElementById('filter-btn').addEventListener('click', () => openModal(filterModal));
+        document.getElementById('close-filter-modal-btn').addEventListener('click', () => closeModal(filterModal));
+        document.getElementById('apply-filters-btn').addEventListener('click', () => {
+            currentFilters.rating = parseInt(document.getElementById('filter-rating').value);
+            currentFilters.price = document.getElementById('filter-price').value;
+            currentFilters.badges = [];
+            document.querySelectorAll('#filter-badges input[type="checkbox"]:checked').forEach(cb => {
+                currentFilters.badges.push(cb.value);
+            });
+            filterAndRenderBusinesses();
+            closeModal(filterModal);
+        });
+        document.getElementById('reset-filters-btn').addEventListener('click', () => {
+            document.getElementById('filter-rating').value = "0";
+            document.getElementById('filter-price').value = "any";
+            document.querySelectorAll('#filter-badges input[type="checkbox"]').forEach(cb => cb.checked = false);
+            currentFilters = { rating: 0, price: 'any', badges: [] }; // Reset internal state
+            filterAndRenderBusinesses(); // Apply reset filters immediately
+            // closeModal(filterModal); // Optionally close modal after reset
+        });
+
+        // Generic Message Modal
+        const msgModalEl = document.getElementById('message-modal');
+        const msgModalTitle = document.getElementById('message-modal-title');
+        const msgModalText = document.getElementById('message-modal-text');
+        const msgModalIcon = document.getElementById('message-modal-icon');
+        const msgModalOkBtn = document.getElementById('message-modal-ok-btn');
+        const closeMsgModalBtn = document.getElementById('close-message-modal-btn');
+
+        function showModalMessage(title, text, type = "info") { // type: info, success, warning, error
+            msgModalTitle.textContent = title;
+            msgModalText.textContent = text;
+            msgModalIcon.innerHTML = '';
+            let iconClass = 'text-blue-500';
+            if (type === "success") iconClass = 'fa-check-circle text-green-500';
+            else if (type === "warning") iconClass = 'fa-exclamation-triangle text-yellow-500';
+            else if (type === "error") iconClass = 'fa-times-circle text-red-500';
+            else iconClass = 'fa-info-circle text-blue-500'; // Default info
+            msgModalIcon.innerHTML = `<i class="fas ${iconClass}"></i>`;
+            openModal(msgModalEl);
+        }
+        msgModalOkBtn.addEventListener('click', () => closeModal(msgModalEl));
+        closeMsgModalBtn.addEventListener('click', () => closeModal(msgModalEl));
+
+        // Confirmation Modal (repurposing message modal or create a new one)
+        // For simplicity, using a global callback for confirmation
+        let confirmCallback = null;
+        function showConfirmationModal(title, text, onConfirm) {
+            msgModalTitle.textContent = title;
+            msgModalText.textContent = text;
+            msgModalIcon.innerHTML = `<i class="fas fa-question-circle text-yellow-500"></i>`; // Question icon
+
+            // Change OK button to "Confirm" and add a "Cancel" button
+            msgModalOkBtn.textContent = "Confirm";
+            const cancelButton = document.createElement('button');
+            cancelButton.textContent = "Cancel";
+            cancelButton.className = "px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition w-full mt-2";
+            
+            // Clear previous extra buttons if any
+            const existingCancel = msgModalOkBtn.parentElement.querySelector('.cancel-confirm-btn');
+            if(existingCancel) existingCancel.remove();
+
+            msgModalOkBtn.parentElement.appendChild(cancelButton);
+            cancelButton.classList.add('cancel-confirm-btn'); // Mark for removal
+
+            confirmCallback = onConfirm;
+            openModal(msgModalEl);
+
+            msgModalOkBtn.onclick = () => {
+                closeModal(msgModalEl);
+                if (confirmCallback) confirmCallback();
+                resetMessageModalButtons();
+            };
+            cancelButton.onclick = () => {
+                closeModal(msgModalEl);
+                resetMessageModalButtons();
+            };
+            closeMsgModalBtn.onclick = () => { // Ensure X button also cancels
+                 closeModal(msgModalEl);
+                resetMessageModalButtons();
+            }
+        }
+
+        function resetMessageModalButtons() {
+            msgModalOkBtn.textContent = "OK";
+            msgModalOkBtn.onclick = () => closeModal(msgModalEl); // Reset default OK behavior
+            const cancelButton = msgModalOkBtn.parentElement.querySelector('.cancel-confirm-btn');
+            if (cancelButton) cancelButton.remove();
+            confirmCallback = null;
+        }
+
+
+        // --- Event Listeners for Navigation & Actions ---
+        document.querySelectorAll('.back-to-home').forEach(btn => {
+            btn.addEventListener('click', () => navigateTo('home'));
+        });
+        document.getElementById('user-profile-btn').addEventListener('click', () => {
+            // Placeholder for user profile - could be a modal or another screen
+            showModalMessage("Profile", "User profile management coming soon!", "info");
+        });
+        document.getElementById('manage-business-nav-btn').addEventListener('click', () => {
+            navigateTo('manageMyBusiness');
+        });
+
+        // Business Detail Screen back button (if it's not a generic .back-to-home)
+        // (Already handled by generic .back-to-home)
+
+        // Add/Edit Business Screen back buttons
+        document.querySelector('#add-edit-business-screen .back-to-manage-business').addEventListener('click', () => navigateTo('manageMyBusiness'));
+
+        // Manage My Business Screen buttons
+        document.getElementById('add-new-business-btn').addEventListener('click', () => navigateTo('addEditBusiness'));
+
+        // Manage Menu Screen buttons
+        document.querySelector('#manage-menu-screen .back-to-manage-business-overview').addEventListener('click', () => navigateTo('manageMyBusiness'));
+        // Add new menu item button is handled in renderMenuManagement
+
+        // Add/Edit Menu Item Screen back button
+        document.querySelector('#add-edit-menu-item-screen .back-to-manage-menu').addEventListener('click', () => {
+            if (currentManagingBusinessId) {
+                navigateTo('manageMenu', { businessId: currentManagingBusinessId });
+            } else {
+                navigateTo('manageMyBusiness'); // Fallback
+            }
+        });
+
+        // Submit Review Screen back button
+        document.querySelector('#submit-review-screen .back-to-business-from-review').addEventListener('click', () => {
+            if (currentBusinessId) {
+                navigateTo('businessDetail', { businessId: currentBusinessId });
+            } else {
+                navigateTo('home'); // Fallback
+            }
+        });
+        document.getElementById('add-review-btn').addEventListener('click', function() {
+            const businessId = this.dataset.businessId;
+            if (businessId) {
+                navigateTo('submitReview', { businessId });
+            }
+        });
+
+        // Search input listener
+        document.getElementById('search-query').addEventListener('input', filterAndRenderBusinesses);
+
+
+        // --- Telegram Specific Main Button ---
+        // Example: tg.MainButton.setText("Show Results").show().onClick(() => { /* action */ });
+
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCategories();
+            getUserLocation(); // This will also trigger initial business list rendering and map update
+            // Initial screen is loading, then navigates to home after location.
+        });
+
     </script>
 </body>
 </html>
