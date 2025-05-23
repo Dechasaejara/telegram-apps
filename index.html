@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Web Pages Manager</title>
+    <title>LuxServe - Luxury Service Finder</title>
+    <!-- Telegram Mini App SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -12,188 +15,280 @@
                 extend: {
                     colors: {
                         primary: '#5D5CDE',
-                        'primary-dark': '#4A49B7',
-                        'gray-dark': '#181818',
-                    }
+                        secondary: '#E2E1FF',
+                        luxury: {
+                            gold: '#D4AF37',
+                            silver: '#C0C0C0',
+                            black: '#121212',
+                        }
+                    },
                 }
             }
         }
     </script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
-        .modal {
-            transition: opacity 0.3s ease, visibility 0.3s ease;
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
         }
-        .modal-content {
-            transform: scale(0.95);
-            transition: transform 0.3s ease;
+        ::-webkit-scrollbar-track {
+            background: transparent;
         }
-        .modal.active .modal-content {
-            transform: scale(1);
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #666;
+        }
+        
+        /* Animations */
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Dark mode transitions */
+        * {
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
         }
     </style>
 </head>
-<body class="bg-white dark:bg-gray-dark text-gray-800 dark:text-gray-100 min-h-screen transition-colors duration-200">
-    <div class="container mx-auto p-4 max-w-6xl">
-        <!-- App Header -->
-        <header class="py-4 border-b dark:border-gray-700 mb-6">
-            <h1 class="text-2xl font-bold text-primary dark:text-primary flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Web Pages Manager
-            </h1>
+<body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100">
+    <div id="app" class="max-w-md mx-auto min-h-screen pb-24 relative">
+        <!-- Header -->
+        <header class="sticky top-0 z-30 bg-white dark:bg-gray-900 shadow-sm dark:shadow-gray-800 p-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <span class="text-primary text-2xl font-bold">LuxServe</span>
+                    <span class="bg-luxury-gold text-white text-xs px-2 py-0.5 rounded">PREMIUM</span>
+                </div>
+                <div class="flex space-x-3">
+                    <button id="filter-btn" class="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-primary">
+                        <i class="fas fa-sliders-h"></i>
+                    </button>
+                    <button id="location-btn" class="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-primary">
+                        <i class="fas fa-location-dot"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Search bar -->
+            <div class="mt-4 relative">
+                <input type="text" id="search-input" placeholder="Search luxury services..." 
+                       class="w-full p-3 pl-10 rounded-lg bg-gray-100 dark:bg-gray-800 text-base focus:outline-none focus:ring-2 focus:ring-primary">
+                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            </div>
         </header>
 
-        <!-- Main Content -->
-        <div class="flex flex-col md:flex-row gap-6">
-            <!-- Categories Sidebar -->
-            <div class="w-full md:w-1/3 lg:w-1/4">
-                <div class="bg-gray-50 dark:bg-gray-800 rounded-lg shadow p-4">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-lg font-semibold">Categories</h2>
-                        <button id="add-category-btn" class="bg-primary hover:bg-primary-dark text-white rounded-full p-1" title="Add Category">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                            </svg>
+        <!-- Categories Horizontal Scroll -->
+        <div class="overflow-x-auto py-4 px-4 whitespace-nowrap">
+            <div class="flex space-x-3">
+                <button class="category-btn active px-4 py-2 rounded-full bg-primary text-white text-sm font-medium">
+                    All
+                </button>
+                <button class="category-btn px-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-medium">
+                    Spa & Wellness
+                </button>
+                <button class="category-btn px-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-medium">
+                    Personal Stylist
+                </button>
+                <button class="category-btn px-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-medium">
+                    Chef Services
+                </button>
+                <button class="category-btn px-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-medium">
+                    Home Services
+                </button>
+                <button class="category-btn px-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-medium">
+                    Transportation
+                </button>
+            </div>
+        </div>
+        
+        <!-- Filter Panel (Hidden by default) -->
+        <div id="filter-panel" class="hidden fixed inset-0 z-40 bg-black bg-opacity-50">
+            <div class="absolute bottom-0 w-full bg-white dark:bg-gray-900 rounded-t-xl p-4 animate-fade-in">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold">Filters</h3>
+                    <button id="close-filter" class="p-2">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <!-- Price Range -->
+                <div class="mb-4">
+                    <h4 class="font-medium mb-2">Price Range</h4>
+                    <div class="flex items-center space-x-2">
+                        <input type="range" min="0" max="1000" value="1000" class="w-full accent-primary" id="price-range">
+                        <span id="price-display">$0-$1000</span>
+                    </div>
+                </div>
+                
+                <!-- Rating Filter -->
+                <div class="mb-4">
+                    <h4 class="font-medium mb-2">Minimum Rating</h4>
+                    <div class="flex space-x-2">
+                        <button class="rating-btn px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700">
+                            3+ <i class="fas fa-star text-yellow-400 text-xs"></i>
+                        </button>
+                        <button class="rating-btn px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700">
+                            4+ <i class="fas fa-star text-yellow-400 text-xs"></i>
+                        </button>
+                        <button class="rating-btn px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700">
+                            4.5+ <i class="fas fa-star text-yellow-400 text-xs"></i>
                         </button>
                     </div>
-                    <ul id="categories-list" class="space-y-2">
-                        <!-- Categories will be inserted here -->
-                    </ul>
                 </div>
-            </div>
-
-            <!-- Web Pages Content -->
-            <div class="w-full md:w-2/3 lg:w-3/4">
-                <div id="no-category-selected" class="bg-gray-50 dark:bg-gray-800 rounded-lg shadow p-6 text-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <h3 class="mt-4 text-lg font-medium text-gray-600 dark:text-gray-300">No Category Selected</h3>
-                    <p class="mt-2 text-gray-500 dark:text-gray-400">Select a category from the sidebar or create a new one to manage web pages.</p>
-                </div>
-
-                <div id="web-pages-container" class="bg-gray-50 dark:bg-gray-800 rounded-lg shadow p-4 hidden">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 id="current-category-name" class="text-lg font-semibold">Web Pages</h2>
-                        <button id="add-webpage-btn" class="bg-primary hover:bg-primary-dark text-white rounded-full p-1" title="Add Web Page">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                            </svg>
+                
+                <!-- Badges Filter -->
+                <div class="mb-4">
+                    <h4 class="font-medium mb-2">Badges</h4>
+                    <div class="flex flex-wrap gap-2">
+                        <button class="badge-btn px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700 text-sm">
+                            Premium
+                        </button>
+                        <button class="badge-btn px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700 text-sm">
+                            Verified
+                        </button>
+                        <button class="badge-btn px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700 text-sm">
+                            Top Rated
+                        </button>
+                        <button class="badge-btn px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700 text-sm">
+                            Exclusive
                         </button>
                     </div>
-                    <div id="web-pages-list" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <!-- Web pages will be inserted here -->
-                    </div>
-                    <div id="no-webpages" class="text-center py-8 hidden">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <p class="mt-4 text-gray-500 dark:text-gray-400">No web pages in this category yet.</p>
-                    </div>
+                </div>
+                
+                <!-- Apply Filters Button -->
+                <button id="apply-filters" class="w-full py-3 bg-primary text-white rounded-lg font-medium">
+                    Apply Filters
+                </button>
+            </div>
+        </div>
+        
+        <!-- Service Detail Modal (Hidden by default) -->
+        <div id="service-modal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-50">
+            <div class="absolute bottom-0 w-full bg-white dark:bg-gray-900 rounded-t-xl max-h-[90vh] overflow-y-auto animate-fade-in">
+                <div id="service-detail-content">
+                    <!-- Content will be populated by JavaScript -->
                 </div>
             </div>
         </div>
 
-        <!-- Modals -->
-        <!-- Category Modal -->
-        <div id="category-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 opacity-0 invisible">
-            <div class="modal-content bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full mx-4">
-                <div class="p-6">
-                    <h3 id="category-modal-title" class="text-xl font-semibold mb-4">Add Category</h3>
-                    <form id="category-form">
-                        <input type="hidden" id="category-id">
-                        <div class="mb-4">
-                            <label for="category-name" class="block text-gray-700 dark:text-gray-300 mb-2">Category Name</label>
-                            <input type="text" id="category-name" class="w-full px-4 py-2 border rounded-lg text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
-                        </div>
-                        <div class="flex justify-end space-x-3">
-                            <button type="button" class="close-modal px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg">Cancel</button>
-                            <button type="submit" class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg">Save</button>
-                        </div>
-                    </form>
+        <!-- Location Modal (Hidden by default) -->
+        <div id="location-modal" class="hidden fixed inset-0 z-40 bg-black bg-opacity-50">
+            <div class="absolute bottom-0 w-full bg-white dark:bg-gray-900 rounded-t-xl p-4 animate-fade-in">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold">Set Location</h3>
+                    <button id="close-location" class="p-2">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
-            </div>
-        </div>
-
-        <!-- Web Page Modal -->
-        <div id="webpage-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 opacity-0 invisible">
-            <div class="modal-content bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full mx-4">
-                <div class="p-6">
-                    <h3 id="webpage-modal-title" class="text-xl font-semibold mb-4">Add Web Page</h3>
-                    <form id="webpage-form">
-                        <input type="hidden" id="webpage-id">
-                        <div class="mb-4">
-                            <label for="webpage-title" class="block text-gray-700 dark:text-gray-300 mb-2">Title</label>
-                            <input type="text" id="webpage-title" class="w-full px-4 py-2 border rounded-lg text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
-                        </div>
-                        <div class="mb-4">
-                            <label for="webpage-url" class="block text-gray-700 dark:text-gray-300 mb-2">URL</label>
-                            <input type="url" id="webpage-url" class="w-full px-4 py-2 border rounded-lg text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
-                        </div>
-                        <div class="mb-4">
-                            <label for="webpage-description" class="block text-gray-700 dark:text-gray-300 mb-2">Description</label>
-                            <textarea id="webpage-description" class="w-full px-4 py-2 border rounded-lg text-base dark:bg-gray-700 dark:border-gray-600 dark:text-white" rows="3"></textarea>
-                        </div>
-                        <div class="flex justify-end space-x-3">
-                            <button type="button" class="close-modal px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg">Cancel</button>
-                            <button type="submit" class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg">Save</button>
-                        </div>
-                    </form>
+                
+                <div class="mb-4">
+                    <button id="current-location" class="w-full py-3 flex justify-center items-center bg-primary text-white rounded-lg font-medium">
+                        <i class="fas fa-location-crosshairs mr-2"></i> Use Current Location
+                    </button>
                 </div>
-            </div>
-        </div>
-
-        <!-- Web Page View Modal -->
-        <div id="webpage-view-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 opacity-0 invisible">
-            <div class="modal-content bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-2xl w-full mx-4">
-                <div class="p-6">
-                    <div class="flex justify-between items-start mb-4">
-                        <h3 id="view-webpage-title" class="text-xl font-semibold">Web Page Title</h3>
-                        <button class="close-modal text-gray-500">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="mb-4">
-                        <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">URL:</div>
-                        <a id="view-webpage-url" href="#" target="_blank" class="text-primary break-all"></a>
-                    </div>
-                    <div class="mb-6">
-                        <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">Description:</div>
-                        <p id="view-webpage-description" class="text-gray-700 dark:text-gray-300"></p>
-                    </div>
-                    <div class="flex justify-end space-x-3">
-                        <button id="view-edit-btn" class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg">Edit</button>
-                        <a id="view-open-link" href="#" target="_blank" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg">Open Link</a>
+                
+                <div class="mb-4">
+                    <input type="text" placeholder="Enter address or area" 
+                           class="w-full p-3 rounded-lg bg-gray-100 dark:bg-gray-800 text-base focus:outline-none focus:ring-2 focus:ring-primary">
+                </div>
+                
+                <div class="mb-4">
+                    <h4 class="font-medium mb-2">Recent Locations</h4>
+                    <div class="space-y-2">
+                        <div class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                            <i class="fas fa-history text-gray-400 mr-2"></i>
+                            <span>Downtown, New York</span>
+                        </div>
+                        <div class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                            <i class="fas fa-history text-gray-400 mr-2"></i>
+                            <span>Upper East Side, New York</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Delete Confirmation Modal -->
-        <div id="delete-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 opacity-0 invisible">
-            <div class="modal-content bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full mx-4">
-                <div class="p-6">
-                    <h3 class="text-xl font-semibold mb-2">Confirm Delete</h3>
-                    <p id="delete-message" class="text-gray-600 dark:text-gray-300 mb-6">Are you sure you want to delete this item?</p>
-                    <div class="flex justify-end space-x-3">
-                        <button class="close-modal px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg">Cancel</button>
-                        <button id="confirm-delete-btn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">Delete</button>
+        
+        <!-- Booking Success Modal (Hidden by default) -->
+        <div id="booking-success-modal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
+            <div class="bg-white dark:bg-gray-900 rounded-xl p-6 max-w-xs w-full text-center animate-fade-in">
+                <div class="flex justify-center mb-4">
+                    <div class="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+                        <i class="fas fa-check text-2xl text-green-500"></i>
                     </div>
                 </div>
+                <h3 class="text-xl font-bold mb-2">Booking Confirmed!</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-4">Your reservation has been successfully confirmed. You'll receive a notification with details.</p>
+                <button id="close-success" class="w-full py-3 bg-primary text-white rounded-lg font-medium">
+                    Done
+                </button>
             </div>
         </div>
 
+        <!-- Share Success Modal -->
+        <div id="share-success-modal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
+            <div class="bg-white dark:bg-gray-900 rounded-xl p-6 max-w-xs w-full text-center animate-fade-in">
+                <div class="flex justify-center mb-4">
+                    <div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
+                        <i class="fas fa-share-alt text-2xl text-blue-500"></i>
+                    </div>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Shared Successfully!</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-4">Your selected service has been shared to Telegram.</p>
+                <button id="close-share-success" class="w-full py-3 bg-primary text-white rounded-lg font-medium">
+                    Done
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Service List -->
+        <div id="service-list" class="px-4 pb-20">
+            <!-- Services will be populated by JavaScript -->
+            <div id="service-loading" class="py-10 text-center">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                <p class="mt-2 text-gray-600 dark:text-gray-400">Loading luxury services...</p>
+            </div>
+        </div>
+        
+        <!-- Bottom Navigation -->
+        <nav class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 shadow-lg dark:shadow-gray-800 z-20">
+            <div class="max-w-md mx-auto px-4 py-2">
+                <div class="flex justify-between items-center">
+                    <button class="nav-btn flex flex-col items-center p-2 text-primary">
+                        <i class="fas fa-home text-lg"></i>
+                        <span class="text-xs mt-1">Home</span>
+                    </button>
+                    <button class="nav-btn flex flex-col items-center p-2 text-gray-500 dark:text-gray-400">
+                        <i class="fas fa-compass text-lg"></i>
+                        <span class="text-xs mt-1">Explore</span>
+                    </button>
+                    <button class="nav-btn flex flex-col items-center p-2 text-gray-500 dark:text-gray-400">
+                        <i class="fas fa-calendar-alt text-lg"></i>
+                        <span class="text-xs mt-1">Bookings</span>
+                    </button>
+                    <button class="nav-btn flex flex-col items-center p-2 text-gray-500 dark:text-gray-400">
+                        <i class="fas fa-user text-lg"></i>
+                        <span class="text-xs mt-1">Profile</span>
+                    </button>
+                </div>
+            </div>
+        </nav>
     </div>
 
     <script>
-        // Check for dark mode preference
+        // Dark mode detection and setup
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
             document.documentElement.classList.add('dark');
         }
-        
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
             if (event.matches) {
                 document.documentElement.classList.add('dark');
@@ -202,372 +297,690 @@
             }
         });
 
-        // Sample data (in-memory storage)
-        let categories = [
-            { id: 1, name: 'Social Media' },
-            { id: 2, name: 'News Sites' },
-            { id: 3, name: 'Development Resources' }
+        // Telegram Web App initialization
+        let tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.expand();
+            tg.enableClosingConfirmation();
+            
+            // Set theme based on Telegram theme
+            if (tg.colorScheme === 'dark') {
+                document.documentElement.classList.add('dark');
+            }
+        }
+
+        // Function to generate colored blocks for mock images
+        function generateColorBlock(color, text) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 300;
+            canvas.height = 200;
+            const ctx = canvas.getContext('2d');
+            
+            // Fill background
+            ctx.fillStyle = color;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Add text
+            ctx.fillStyle = '#333333';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, canvas.width/2, canvas.height/2);
+            
+            return canvas.toDataURL();
+        }
+
+        // Mock data for services
+        const services = [
+            {
+                id: 1,
+                name: "Royal Spa & Massage",
+                category: "Spa & Wellness",
+                images: [
+                    generateColorBlock("#E6D7B9", "Luxury Spa"),
+                    generateColorBlock("#B9C9E6", "Massage Room"),
+                    generateColorBlock("#E6B9D7", "Wellness Area")
+                ],
+                description: "Experience ultimate relaxation with our premium spa treatments designed for discerning clients. Our therapists are trained in exclusive techniques from around the world.",
+                rating: 4.9,
+                reviews: 128,
+                price: "$150 - $400",
+                badges: ["Premium", "Top Rated"],
+                location: "Downtown",
+                distance: "0.8 miles",
+                features: ["Swedish Massage", "Hot Stone Therapy", "Aromatherapy", "Couples Massage"],
+                availability: ["10:00 AM", "12:30 PM", "3:00 PM", "5:30 PM"]
+            },
+            {
+                id: 2,
+                name: "Elite Personal Styling",
+                category: "Personal Stylist",
+                images: [
+                    generateColorBlock("#CFD8DC", "Fashion Styling"),
+                    generateColorBlock("#DCEDC8", "Wardrobe Selection"),
+                    generateColorBlock("#FFE0B2", "Personal Shopper")
+                ],
+                description: "Transform your image with our elite personal styling services. Our fashion experts will curate a personalized wardrobe that reflects your unique style and status.",
+                rating: 4.7,
+                reviews: 85,
+                price: "$200 - $750",
+                badges: ["Exclusive", "Verified"],
+                location: "Fashion District",
+                distance: "1.2 miles",
+                features: ["Style Consultation", "Wardrobe Audit", "Personal Shopping", "Event Styling"],
+                availability: ["9:00 AM", "11:30 AM", "2:00 PM", "4:30 PM"]
+            },
+            {
+                id: 3,
+                name: "Gourmet Chef At Home",
+                category: "Chef Services",
+                images: [
+                    generateColorBlock("#BBDEFB", "Chef Service"),
+                    generateColorBlock("#F8BBD0", "Gourmet Cuisine"),
+                    generateColorBlock("#C8E6C9", "Fine Dining")
+                ],
+                description: "Enjoy restaurant-quality dining in the comfort of your home. Our Michelin-trained chefs will create a bespoke culinary experience tailored to your preferences.",
+                rating: 4.8,
+                reviews: 104,
+                price: "$300 - $1000",
+                badges: ["Premium", "Top Rated", "Exclusive"],
+                location: "Citywide",
+                distance: "Service at your location",
+                features: ["Personalized Menu", "Wine Pairing", "Dietary Accommodations", "Special Occasions"],
+                availability: ["6:00 PM", "7:00 PM", "8:00 PM", "9:00 PM"]
+            },
+            {
+                id: 4,
+                name: "Premium Home Cleaning",
+                category: "Home Services",
+                images: [
+                    generateColorBlock("#D1C4E9", "Home Cleaning"),
+                    generateColorBlock("#B3E5FC", "Premium Service"),
+                    generateColorBlock("#FFCCBC", "Housekeeping")
+                ],
+                description: "Our premium cleaning service uses eco-friendly products and hospital-grade disinfection techniques to ensure your home is immaculately clean and healthy.",
+                rating: 4.6,
+                reviews: 156,
+                price: "$100 - $350",
+                badges: ["Verified", "Top Rated"],
+                location: "Citywide",
+                distance: "Service at your location",
+                features: ["Deep Cleaning", "Window Washing", "Carpet Cleaning", "Organization Services"],
+                availability: ["9:00 AM", "11:00 AM", "1:00 PM", "3:00 PM"]
+            },
+            {
+                id: 5,
+                name: "Luxury Car Service",
+                category: "Transportation",
+                images: [
+                    generateColorBlock("#E1BEE7", "Luxury Cars"),
+                    generateColorBlock("#B2DFDB", "Chauffeur Service"),
+                    generateColorBlock("#FFECB3", "Premium Transportation")
+                ],
+                description: "Travel in style with our fleet of luxury vehicles. Whether it's airport transfers or city tours, our professional chauffeurs provide a seamless experience.",
+                rating: 4.8,
+                reviews: 92,
+                price: "$80 - $250/hour",
+                badges: ["Premium", "Verified"],
+                location: "Citywide",
+                distance: "On-demand service",
+                features: ["Airport Transfers", "City Tours", "Event Transportation", "Hourly Chauffeur"],
+                availability: ["24/7 Service"]
+            },
+            {
+                id: 6,
+                name: "Elite Personal Training",
+                category: "Spa & Wellness",
+                images: [
+                    generateColorBlock("#BCAAA4", "Personal Training"),
+                    generateColorBlock("#B2EBF2", "Fitness Premium"),
+                    generateColorBlock("#DCEDC8", "Elite Workout")
+                ],
+                description: "Achieve your fitness goals with our elite personal trainers. Customized workout programs, nutrition planning, and motivation to help you reach your peak condition.",
+                rating: 4.7,
+                reviews: 78,
+                price: "$120 - $200/session",
+                badges: ["Premium", "Verified"],
+                location: "Multiple Locations",
+                distance: "1.5 miles",
+                features: ["1-on-1 Training", "Nutrition Planning", "Progress Tracking", "Recovery Techniques"],
+                availability: ["6:00 AM", "8:00 AM", "5:00 PM", "7:00 PM"]
+            }
         ];
 
-        let webPages = [
-            { id: 1, categoryId: 1, title: 'Facebook', url: 'https://www.facebook.com', description: 'Global social networking site.' },
-            { id: 2, categoryId: 1, title: 'Twitter', url: 'https://www.twitter.com', description: 'Platform for short messages and updates.' },
-            { id: 3, categoryId: 2, title: 'CNN', url: 'https://www.cnn.com', description: 'International news network.' },
-            { id: 4, categoryId: 3, title: 'GitHub', url: 'https://www.github.com', description: 'Web-based platform for version control using Git.' }
-        ];
-
-        // App state
-        let selectedCategoryId = null;
-        let deleteItemId = null;
-        let deleteItemType = null;
-
-        // DOM Elements
-        const categoriesList = document.getElementById('categories-list');
-        const webPagesContainer = document.getElementById('web-pages-container');
-        const noCategorySelected = document.getElementById('no-category-selected');
-        const webPagesList = document.getElementById('web-pages-list');
-        const noWebpages = document.getElementById('no-webpages');
-        const currentCategoryName = document.getElementById('current-category-name');
-
-        // Modal Elements
-        const categoryModal = document.getElementById('category-modal');
-        const webpageModal = document.getElementById('webpage-modal');
-        const webpageViewModal = document.getElementById('webpage-view-modal');
-        const deleteModal = document.getElementById('delete-modal');
-
-        // Form Elements
-        const categoryForm = document.getElementById('category-form');
-        const webpageForm = document.getElementById('webpage-form');
-        
-        // Utility Functions
-        function getNextId(collection) {
-            return Math.max(0, ...collection.map(item => item.id)) + 1;
-        }
-
-        function showModal(modal) {
-            modal.classList.remove('opacity-0', 'invisible');
-            modal.classList.add('active');
-            setTimeout(() => {
-                modal.querySelector('input')?.focus();
-            }, 300);
-        }
-
-        function hideModal(modal) {
-            modal.classList.remove('active');
-            modal.classList.add('opacity-0', 'invisible');
-        }
-
-        // Close modals when clicking on close buttons
-        document.querySelectorAll('.close-modal').forEach(button => {
-            button.addEventListener('click', () => {
-                hideModal(categoryModal);
-                hideModal(webpageModal);
-                hideModal(webpageViewModal);
-                hideModal(deleteModal);
-            });
-        });
-
-        // Render Functions
-        function renderCategories() {
-            categoriesList.innerHTML = '';
-            categories.forEach(category => {
-                const item = document.createElement('li');
-                const isSelected = category.id === selectedCategoryId;
+        // Render service cards
+        function renderServices(serviceList = services) {
+            const serviceListEl = document.getElementById('service-list');
+            serviceListEl.innerHTML = '';
+            
+            serviceList.forEach(service => {
+                const serviceCard = document.createElement('div');
+                serviceCard.className = 'bg-white dark:bg-gray-800 rounded-xl shadow-sm dark:shadow-gray-700 mb-4 overflow-hidden';
+                serviceCard.setAttribute('data-service-id', service.id);
                 
-                item.className = `flex justify-between items-center rounded-lg p-2 cursor-pointer ${isSelected ? 'bg-primary text-white' : 'hover:bg-gray-200 dark:hover:bg-gray-700'}`;
-                item.innerHTML = `
-                    <span class="truncate">${category.name}</span>
-                    <div class="flex space-x-1 opacity-80 hover:opacity-100">
-                        <button class="edit-category p-1 rounded hover:bg-black hover:bg-opacity-10" data-id="${category.id}">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                        </button>
-                        <button class="delete-category p-1 rounded hover:bg-black hover:bg-opacity-10" data-id="${category.id}">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                        </button>
+                const badgesHTML = service.badges.map(badge => 
+                    `<span class="bg-secondary dark:bg-gray-700 text-primary text-xs px-2 py-0.5 rounded mr-2">${badge}</span>`
+                ).join('');
+                
+                serviceCard.innerHTML = `
+                    <div class="relative">
+                        <img src="${service.images[0]}" alt="${service.name}" class="w-full h-48 object-cover">
+                        <div class="absolute bottom-0 left-0 w-full p-3 bg-gradient-to-t from-black to-transparent">
+                            <div class="flex items-center text-white">
+                                <span class="font-bold">${service.rating}</span>
+                                <div class="ml-1">
+                                    ${generateStars(service.rating)}
+                                </div>
+                                <span class="ml-1 text-sm">(${service.reviews})</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-lg font-bold">${service.name}</h3>
+                            <button class="favorite-btn p-1 text-gray-400 hover:text-red-500">
+                                <i class="far fa-heart"></i>
+                            </button>
+                        </div>
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-map-marker-alt text-primary mr-1"></i>
+                            <span class="text-sm text-gray-600 dark:text-gray-400">${service.location} · ${service.distance}</span>
+                        </div>
+                        <div class="mb-2">
+                            ${badgesHTML}
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">${service.description}</p>
+                        <div class="flex justify-between items-center">
+                            <span class="font-semibold text-primary">${service.price}</span>
+                            <button class="book-now-btn px-4 py-2 bg-primary text-white rounded-lg text-sm">
+                                Book Now
+                            </button>
+                        </div>
                     </div>
                 `;
                 
-                categoriesList.appendChild(item);
+                serviceListEl.appendChild(serviceCard);
                 
-                // Add event listener to select the category
-                item.addEventListener('click', (e) => {
-                    if (!e.target.closest('button')) {
-                        selectCategory(category.id);
+                // Add event listeners to the card
+                serviceCard.addEventListener('click', (e) => {
+                    // Don't open service details if clicking on favorite or book now button
+                    if (!e.target.closest('.favorite-btn') && !e.target.closest('.book-now-btn')) {
+                        openServiceDetails(service.id);
                     }
                 });
-            });
-            
-            // Add event listeners for edit and delete buttons
-            document.querySelectorAll('.edit-category').forEach(button => {
-                button.addEventListener('click', (e) => {
+                
+                // Add event listener to favorite button
+                const favoriteBtn = serviceCard.querySelector('.favorite-btn');
+                favoriteBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    const id = parseInt(button.dataset.id);
-                    editCategory(id);
+                    toggleFavorite(favoriteBtn);
                 });
-            });
-            
-            document.querySelectorAll('.delete-category').forEach(button => {
-                button.addEventListener('click', (e) => {
+                
+                // Add event listener to book now button
+                const bookNowBtn = serviceCard.querySelector('.book-now-btn');
+                bookNowBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    const id = parseInt(button.dataset.id);
-                    confirmDeleteCategory(id);
+                    openServiceDetails(service.id, true);
                 });
             });
         }
 
-        function renderWebPages() {
-            if (!selectedCategoryId) {
-                webPagesContainer.classList.add('hidden');
-                noCategorySelected.classList.remove('hidden');
-                return;
+        // Generate star rating HTML
+        function generateStars(rating) {
+            let stars = '';
+            const fullStars = Math.floor(rating);
+            const halfStar = rating % 1 >= 0.5;
+            
+            for (let i = 0; i < fullStars; i++) {
+                stars += '<i class="fas fa-star text-yellow-400 text-xs"></i>';
             }
             
-            webPagesContainer.classList.remove('hidden');
-            noCategorySelected.classList.add('hidden');
-            
-            const category = categories.find(c => c.id === selectedCategoryId);
-            currentCategoryName.textContent = `${category.name} - Web Pages`;
-            
-            const categoryWebPages = webPages.filter(wp => wp.categoryId === selectedCategoryId);
-            webPagesList.innerHTML = '';
-            
-            if (categoryWebPages.length === 0) {
-                noWebpages.classList.remove('hidden');
-            } else {
-                noWebpages.classList.add('hidden');
+            if (halfStar) {
+                stars += '<i class="fas fa-star-half-alt text-yellow-400 text-xs"></i>';
                 
-                categoryWebPages.forEach(webpage => {
-                    const card = document.createElement('div');
-                    card.className = 'bg-white dark:bg-gray-700 rounded-lg shadow p-4 hover:shadow-md transition-shadow';
-                    card.innerHTML = `
-                        <h3 class="font-medium text-lg truncate mb-2">${webpage.title}</h3>
-                        <p class="text-gray-500 dark:text-gray-400 text-sm truncate mb-3">${webpage.url}</p>
-                        <div class="flex justify-end space-x-2">
-                            <button class="view-webpage p-1 rounded bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500" data-id="${webpage.id}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                </svg>
-                            </button>
-                            <button class="edit-webpage p-1 rounded bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500" data-id="${webpage.id}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                            </button>
-                            <button class="delete-webpage p-1 rounded bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500" data-id="${webpage.id}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                            </button>
+                for (let i = 0; i < 5 - fullStars - 1; i++) {
+                    stars += '<i class="far fa-star text-yellow-400 text-xs"></i>';
+                }
+            } else {
+                for (let i = 0; i < 5 - fullStars; i++) {
+                    stars += '<i class="far fa-star text-yellow-400 text-xs"></i>';
+                }
+            }
+            
+            return stars;
+        }
+
+        // Toggle favorite
+        function toggleFavorite(btn) {
+            if (btn.innerHTML.includes('far')) {
+                btn.innerHTML = '<i class="fas fa-heart text-red-500"></i>';
+                showToast('Added to favorites');
+            } else {
+                btn.innerHTML = '<i class="far fa-heart"></i>';
+                showToast('Removed from favorites');
+            }
+        }
+
+        // Open service details
+        function openServiceDetails(serviceId, scrollToBooking = false) {
+            const service = services.find(s => s.id === serviceId);
+            if (!service) return;
+            
+            const modal = document.getElementById('service-modal');
+            const contentEl = document.getElementById('service-detail-content');
+            
+            const imagesHTML = service.images.map((img, index) => 
+                `<div class="carousel-item ${index === 0 ? 'active' : ''}" data-index="${index}">
+                    <img src="${img}" alt="" class="w-full h-64 object-cover">
+                </div>`
+            ).join('');
+            
+            const featuresHTML = service.features.map(feature => 
+                `<div class="flex items-center mb-2">
+                    <i class="fas fa-check text-primary mr-2"></i>
+                    <span>${feature}</span>
+                </div>`
+            ).join('');
+            
+            const availabilityHTML = service.availability.map(time => 
+                `<button class="time-slot px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-center hover:border-primary">
+                    ${time}
+                </button>`
+            ).join('');
+            
+            const badgesHTML = service.badges.map(badge => 
+                `<span class="bg-secondary dark:bg-gray-700 text-primary text-xs px-2 py-0.5 rounded mr-2">${badge}</span>`
+            ).join('');
+            
+            contentEl.innerHTML = `
+                <div class="relative">
+                    <div class="carousel relative">
+                        <div class="carousel-inner">
+                            ${imagesHTML}
                         </div>
-                    `;
-                    webPagesList.appendChild(card);
-                });
+                        <button class="carousel-control-prev absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button class="carousel-control-next absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        <div class="carousel-indicators absolute bottom-3 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                            ${service.images.map((_, index) => 
+                                `<button class="carousel-indicator w-2 h-2 rounded-full bg-white ${index === 0 ? 'opacity-100' : 'opacity-50'}" data-index="${index}"></button>`
+                            ).join('')}
+                        </div>
+                    </div>
+                    <button id="close-service-modal" class="absolute top-4 right-4 bg-black bg-opacity-50 text-white p-2 rounded-full">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
                 
-                // Add event listeners
-                document.querySelectorAll('.view-webpage').forEach(button => {
-                    button.addEventListener('click', () => {
-                        const id = parseInt(button.dataset.id);
-                        viewWebPage(id);
-                    });
-                });
-                
-                document.querySelectorAll('.edit-webpage').forEach(button => {
-                    button.addEventListener('click', () => {
-                        const id = parseInt(button.dataset.id);
-                        editWebPage(id);
-                    });
-                });
-                
-                document.querySelectorAll('.delete-webpage').forEach(button => {
-                    button.addEventListener('click', () => {
-                        const id = parseInt(button.dataset.id);
-                        confirmDeleteWebPage(id);
-                    });
-                });
-            }
-        }
-
-        // Action Functions
-        function selectCategory(categoryId) {
-            selectedCategoryId = categoryId;
-            renderCategories();
-            renderWebPages();
-        }
-
-        function addCategory() {
-            document.getElementById('category-modal-title').textContent = 'Add Category';
-            document.getElementById('category-id').value = '';
-            document.getElementById('category-name').value = '';
-            showModal(categoryModal);
-        }
-
-        function editCategory(categoryId) {
-            const category = categories.find(c => c.id === categoryId);
-            if (category) {
-                document.getElementById('category-modal-title').textContent = 'Edit Category';
-                document.getElementById('category-id').value = category.id;
-                document.getElementById('category-name').value = category.name;
-                showModal(categoryModal);
-            }
-        }
-
-        function confirmDeleteCategory(categoryId) {
-            const category = categories.find(c => c.id === categoryId);
-            if (category) {
-                const webPagesCount = webPages.filter(wp => wp.categoryId === categoryId).length;
-                document.getElementById('delete-message').textContent = 
-                    `Are you sure you want to delete the category "${category.name}"? This will also delete ${webPagesCount} associated web pages.`;
-                deleteItemId = categoryId;
-                deleteItemType = 'category';
-                showModal(deleteModal);
-            }
-        }
-
-        function addWebPage() {
-            document.getElementById('webpage-modal-title').textContent = 'Add Web Page';
-            document.getElementById('webpage-id').value = '';
-            document.getElementById('webpage-title').value = '';
-            document.getElementById('webpage-url').value = '';
-            document.getElementById('webpage-description').value = '';
-            showModal(webpageModal);
-        }
-
-        function editWebPage(webpageId) {
-            const webpage = webPages.find(wp => wp.id === webpageId);
-            if (webpage) {
-                document.getElementById('webpage-modal-title').textContent = 'Edit Web Page';
-                document.getElementById('webpage-id').value = webpage.id;
-                document.getElementById('webpage-title').value = webpage.title;
-                document.getElementById('webpage-url').value = webpage.url;
-                document.getElementById('webpage-description').value = webpage.description || '';
-                showModal(webpageModal);
-            }
-        }
-
-        function viewWebPage(webpageId) {
-            const webpage = webPages.find(wp => wp.id === webpageId);
-            if (webpage) {
-                document.getElementById('view-webpage-title').textContent = webpage.title;
-                document.getElementById('view-webpage-url').textContent = webpage.url;
-                document.getElementById('view-webpage-url').href = webpage.url;
-                document.getElementById('view-webpage-description').textContent = webpage.description || 'No description available.';
-                document.getElementById('view-open-link').href = webpage.url;
-                
-                // Set up the edit button
-                document.getElementById('view-edit-btn').onclick = () => {
-                    hideModal(webpageViewModal);
-                    editWebPage(webpageId);
-                };
-                
-                showModal(webpageViewModal);
-            }
-        }
-
-        function confirmDeleteWebPage(webpageId) {
-            const webpage = webPages.find(wp => wp.id === webpageId);
-            if (webpage) {
-                document.getElementById('delete-message').textContent = 
-                    `Are you sure you want to delete the web page "${webpage.title}"?`;
-                deleteItemId = webpageId;
-                deleteItemType = 'webpage';
-                showModal(deleteModal);
-            }
-        }
-
-        // Form Submissions
-        categoryForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const id = document.getElementById('category-id').value;
-            const name = document.getElementById('category-name').value.trim();
+                <div class="p-4">
+                    <div class="flex justify-between items-start mb-2">
+                        <h2 class="text-xl font-bold">${service.name}</h2>
+                        <button class="favorite-detail-btn p-1 text-gray-400 hover:text-red-500">
+                            <i class="far fa-heart"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="flex items-center mb-2">
+                        <span class="font-bold mr-1">${service.rating}</span>
+                        <div class="ml-1">
+                            ${generateStars(service.rating)}
+                        </div>
+                        <span class="ml-1 text-sm">(${service.reviews} reviews)</span>
+                    </div>
+                    
+                    <div class="flex items-center mb-2">
+                        <i class="fas fa-map-marker-alt text-primary mr-1"></i>
+                        <span class="text-sm text-gray-600 dark:text-gray-400">${service.location} · ${service.distance}</span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        ${badgesHTML}
+                    </div>
+                    
+                    <div class="mb-6">
+                        <h3 class="font-bold mb-2">About</h3>
+                        <p class="text-gray-600 dark:text-gray-400">${service.description}</p>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <h3 class="font-bold mb-2">Services Offered</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            ${featuresHTML}
+                        </div>
+                    </div>
+                    
+                    <div id="booking-section" class="mb-6">
+                        <h3 class="font-bold mb-2">Book an Appointment</h3>
+                        <p class="text-gray-600 dark:text-gray-400 mb-2">Select a time slot:</p>
+                        <div class="grid grid-cols-2 gap-2 mb-4">
+                            ${availabilityHTML}
+                        </div>
+                        <button id="confirm-booking" class="w-full py-3 bg-primary text-white rounded-lg font-medium">
+                            Confirm Booking
+                        </button>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <h3 class="font-bold mb-2">Reviews</h3>
+                        <div class="mb-4">
+                            <div class="flex items-center mb-2">
+                                <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                                    <i class="fas fa-user text-gray-500"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium">John D.</h4>
+                                    <div class="flex items-center">
+                                        <div class="mr-1">
+                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                        </div>
+                                        <span class="text-xs text-gray-500">2 days ago</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-gray-600 dark:text-gray-400 text-sm">
+                                Exceptional service! The attention to detail and personalization exceeded my expectations. Will definitely book again.
+                            </p>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="flex items-center mb-2">
+                                <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                                    <i class="fas fa-user text-gray-500"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium">Sarah M.</h4>
+                                    <div class="flex items-center">
+                                        <div class="mr-1">
+                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                            <i class="far fa-star text-yellow-400 text-xs"></i>
+                                        </div>
+                                        <span class="text-xs text-gray-500">1 week ago</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-gray-600 dark:text-gray-400 text-sm">
+                                Very professional and high-quality service. The only issue was a slight delay, but the experience made up for it.
+                            </p>
+                        </div>
+                        
+                        <button class="text-primary font-medium">
+                            View all ${service.reviews} reviews
+                        </button>
+                    </div>
+                    
+                    <div class="flex space-x-3">
+                        <button id="share-service" class="flex-1 py-3 border border-primary text-primary rounded-lg font-medium">
+                            <i class="fas fa-share-alt mr-1"></i> Share
+                        </button>
+                        <button id="report-service" class="flex-1 py-3 border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-300 rounded-lg font-medium">
+                            <i class="fas fa-flag mr-1"></i> Report
+                        </button>
+                    </div>
+                </div>
+            `;
             
-            if (id) {
-                // Update existing category
-                const index = categories.findIndex(c => c.id === parseInt(id));
-                if (index !== -1) {
-                    categories[index].name = name;
-                }
+            modal.classList.remove('hidden');
+            
+            // Set up carousel functionality
+            const carouselItems = contentEl.querySelectorAll('.carousel-item');
+            const carouselIndicators = contentEl.querySelectorAll('.carousel-indicator');
+            const prevButton = contentEl.querySelector('.carousel-control-prev');
+            const nextButton = contentEl.querySelector('.carousel-control-next');
+            
+            let currentIndex = 0;
+            
+            function showSlide(index) {
+                carouselItems.forEach(item => item.classList.remove('active'));
+                carouselIndicators.forEach(indicator => indicator.classList.remove('opacity-100'));
+                carouselIndicators.forEach(indicator => indicator.classList.add('opacity-50'));
+                
+                carouselItems[index].classList.add('active');
+                carouselIndicators[index].classList.remove('opacity-50');
+                carouselIndicators[index].classList.add('opacity-100');
+                currentIndex = index;
+            }
+            
+            prevButton.addEventListener('click', () => {
+                const newIndex = currentIndex === 0 ? carouselItems.length - 1 : currentIndex - 1;
+                showSlide(newIndex);
+            });
+            
+            nextButton.addEventListener('click', () => {
+                const newIndex = currentIndex === carouselItems.length - 1 ? 0 : currentIndex + 1;
+                showSlide(newIndex);
+            });
+            
+            carouselIndicators.forEach((indicator, index) => {
+                indicator.addEventListener('click', () => {
+                    showSlide(index);
+                });
+            });
+            
+            // Set up event listeners for the modal
+            document.getElementById('close-service-modal').addEventListener('click', () => {
+                modal.classList.add('hidden');
+            });
+            
+            // Scroll to booking section if needed
+            if (scrollToBooking) {
+                setTimeout(() => {
+                    document.getElementById('booking-section').scrollIntoView({ behavior: 'smooth' });
+                }, 300);
+            }
+            
+            // Set up time slot selection
+            const timeSlots = contentEl.querySelectorAll('.time-slot');
+            timeSlots.forEach(slot => {
+                slot.addEventListener('click', () => {
+                    timeSlots.forEach(s => s.classList.remove('border-primary', 'text-primary'));
+                    slot.classList.add('border-primary', 'text-primary');
+                });
+            });
+            
+            // Set up confirm booking
+            document.getElementById('confirm-booking').addEventListener('click', () => {
+                showBookingSuccess();
+                modal.classList.add('hidden');
+            });
+            
+            // Set up favorite button
+            const favoriteBtn = contentEl.querySelector('.favorite-detail-btn');
+            favoriteBtn.addEventListener('click', () => {
+                toggleFavorite(favoriteBtn);
+            });
+            
+            // Set up share service button
+            document.getElementById('share-service').addEventListener('click', () => {
+                shareService(service);
+            });
+        }
+
+        // Show booking success modal
+        function showBookingSuccess() {
+            const modal = document.getElementById('booking-success-modal');
+            modal.classList.remove('hidden');
+            
+            document.getElementById('close-success').addEventListener('click', () => {
+                modal.classList.add('hidden');
+            });
+        }
+
+        // Share service
+        function shareService(service) {
+            if (tg && tg.showPopup) {
+                tg.showPopup({
+                    title: 'Share via',
+                    message: 'Choose where to share this service',
+                    buttons: [
+                        {id: 'telegram', type: 'default', text: 'Share to Telegram'},
+                        {id: 'cancel', type: 'cancel', text: 'Cancel'}
+                    ]
+                }, (buttonId) => {
+                    if (buttonId === 'telegram') {
+                        // In a real app, this would share to Telegram
+                        const shareModal = document.getElementById('share-success-modal');
+                        shareModal.classList.remove('hidden');
+                        
+                        document.getElementById('close-share-success').addEventListener('click', () => {
+                            shareModal.classList.add('hidden');
+                        });
+                    }
+                });
             } else {
-                // Add new category
-                const newCategory = {
-                    id: getNextId(categories),
-                    name: name
-                };
-                categories.push(newCategory);
-                selectedCategoryId = newCategory.id;
-            }
-            
-            hideModal(categoryModal);
-            renderCategories();
-            renderWebPages();
-        });
-
-        webpageForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const id = document.getElementById('webpage-id').value;
-            const title = document.getElementById('webpage-title').value.trim();
-            const url = document.getElementById('webpage-url').value.trim();
-            const description = document.getElementById('webpage-description').value.trim();
-            
-            if (id) {
-                // Update existing webpage
-                const index = webPages.findIndex(wp => wp.id === parseInt(id));
-                if (index !== -1) {
-                    webPages[index].title = title;
-                    webPages[index].url = url;
-                    webPages[index].description = description;
-                }
-            } else {
-                // Add new webpage
-                const newWebPage = {
-                    id: getNextId(webPages),
-                    categoryId: selectedCategoryId,
-                    title: title,
-                    url: url,
-                    description: description
-                };
-                webPages.push(newWebPage);
-            }
-            
-            hideModal(webpageModal);
-            renderWebPages();
-        });
-
-        // Delete Confirmation
-        document.getElementById('confirm-delete-btn').addEventListener('click', () => {
-            if (deleteItemType === 'category') {
-                // Delete category and its webpages
-                categories = categories.filter(c => c.id !== deleteItemId);
-                webPages = webPages.filter(wp => wp.categoryId !== deleteItemId);
+                // Fallback for when Telegram SDK is not available
+                const shareModal = document.getElementById('share-success-modal');
+                shareModal.classList.remove('hidden');
                 
-                if (selectedCategoryId === deleteItemId) {
-                    selectedCategoryId = categories.length > 0 ? categories[0].id : null;
-                }
-            } else if (deleteItemType === 'webpage') {
-                // Delete webpage
-                webPages = webPages.filter(wp => wp.id !== deleteItemId);
+                document.getElementById('close-share-success').addEventListener('click', () => {
+                    shareModal.classList.add('hidden');
+                });
             }
-            
-            hideModal(deleteModal);
-            renderCategories();
-            renderWebPages();
-        });
-
-        // Button Event Listeners
-        document.getElementById('add-category-btn').addEventListener('click', addCategory);
-        document.getElementById('add-webpage-btn').addEventListener('click', addWebPage);
-
-        // Initialize the app
-        renderCategories();
-        if (categories.length > 0) {
-            selectCategory(categories[0].id);
-        } else {
-            renderWebPages();
         }
+
+        // Show toast message
+        function showToast(message) {
+            const toastId = 'toast-' + Date.now();
+            const toast = document.createElement('div');
+            toast.id = toastId;
+            toast.className = 'fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg z-50 animate-fade-in';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Filter panel functionality
+        document.getElementById('filter-btn').addEventListener('click', () => {
+            document.getElementById('filter-panel').classList.remove('hidden');
+        });
+        
+        document.getElementById('close-filter').addEventListener('click', () => {
+            document.getElementById('filter-panel').classList.add('hidden');
+        });
+        
+        // Price range functionality
+        const priceRange = document.getElementById('price-range');
+        const priceDisplay = document.getElementById('price-display');
+        
+        priceRange.addEventListener('input', () => {
+            priceDisplay.textContent = `$0-$${priceRange.value}`;
+        });
+        
+        // Badge & rating filter selection
+        const badgeBtns = document.querySelectorAll('.badge-btn');
+        badgeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                btn.classList.toggle('bg-primary');
+                btn.classList.toggle('text-white');
+                btn.classList.toggle('border-primary');
+            });
+        });
+        
+        const ratingBtns = document.querySelectorAll('.rating-btn');
+        ratingBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                ratingBtns.forEach(b => {
+                    b.classList.remove('bg-primary', 'text-white', 'border-primary');
+                });
+                btn.classList.add('bg-primary', 'text-white', 'border-primary');
+            });
+        });
+        
+        // Apply filters button
+        document.getElementById('apply-filters').addEventListener('click', () => {
+            // In a real app, this would filter the results
+            document.getElementById('filter-panel').classList.add('hidden');
+            document.getElementById('service-list').innerHTML = `
+                <div id="service-loading" class="py-10 text-center">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                    <p class="mt-2 text-gray-600 dark:text-gray-400">Filtering services...</p>
+                </div>
+            `;
+            
+            // Simulate filtering delay
+            setTimeout(() => {
+                renderServices();
+                showToast('Filters applied successfully!');
+            }, 800);
+        });
+        
+        // Location modal functionality
+        document.getElementById('location-btn').addEventListener('click', () => {
+            document.getElementById('location-modal').classList.remove('hidden');
+        });
+        
+        document.getElementById('close-location').addEventListener('click', () => {
+            document.getElementById('location-modal').classList.add('hidden');
+        });
+        
+        document.getElementById('current-location').addEventListener('click', () => {
+            document.getElementById('location-modal').classList.add('hidden');
+            document.getElementById('service-list').innerHTML = `
+                <div id="service-loading" class="py-10 text-center">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                    <p class="mt-2 text-gray-600 dark:text-gray-400">Finding services near you...</p>
+                </div>
+            `;
+            
+            // Simulate location update delay
+            setTimeout(() => {
+                renderServices();
+                showToast('Location updated to current location');
+            }, 1200);
+        });
+        
+        // Category buttons functionality
+        const categoryBtns = document.querySelectorAll('.category-btn');
+        categoryBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active class from all buttons
+                categoryBtns.forEach(b => b.classList.remove('active', 'bg-primary', 'text-white'));
+                categoryBtns.forEach(b => b.classList.add('bg-gray-100', 'dark:bg-gray-800', 'text-gray-600', 'dark:text-gray-300'));
+                
+                // Add active class to clicked button
+                btn.classList.add('active', 'bg-primary', 'text-white');
+                btn.classList.remove('bg-gray-100', 'dark:bg-gray-800', 'text-gray-600', 'dark:text-gray-300');
+                
+                // Show loading state
+                document.getElementById('service-list').innerHTML = `
+                    <div id="service-loading" class="py-10 text-center">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                        <p class="mt-2 text-gray-600 dark:text-gray-400">Loading ${btn.textContent.trim() === 'All' ? 'services' : btn.textContent.trim() + ' services'}...</p>
+                    </div>
+                `;
+                
+                // Filter services based on category with a slight delay to show the loading state
+                setTimeout(() => {
+                    const category = btn.textContent.trim();
+                    let filteredServices;
+                    
+                    if (category === 'All') {
+                        filteredServices = services;
+                    } else {
+                        filteredServices = services.filter(service => service.category === category);
+                    }
+                    
+                    renderServices(filteredServices);
+                }, 800);
+            });
+        });
+        
+        // Initialize the service list with a loading state
+        setTimeout(() => {
+            renderServices();
+        }, 1000);
     </script>
 </body>
 </html>
