@@ -2,1006 +2,957 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LoveQuest</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>daily volueenter</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Apply Telegram Theme Variables */
+        :root {
+            --tg-theme-bg-color: #ffffff; /* Default light theme bg */
+            --tg-theme-text-color: #000000; /* Default light theme text */
+            --tg-theme-hint-color: #999999; /* Default light theme hint */
+            --tg-theme-link-color: #2481cc; /* Default light theme link */
+            --tg-theme-button-color: #2481cc; /* Default light theme button */
+            --tg-theme-button-text-color: #ffffff; /* Default light theme button text */
+            --tg-theme-secondary-bg-color: #f0f0f0; /* Default light theme secondary bg */
+            --tg-header-color: #ffffff; /* Default header color */
+            --tg-section-header-color: #000000; /* Default section header text color */
+            --tg-accent-text-color: #2481cc; /* Default accent text color */
+            --tg-destructive-text-color: #ff3b30; /* Default destructive text color */
+            --tg-border-color: #e0e0e0; /* Default border color */
+        }
+
         body {
-            font-family: 'Inter', sans-serif;
-            overscroll-behavior-y: none; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            overscroll-behavior-y: contain; /* Prevents pull-to-refresh in mini app */
         }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        .screen {
+            min-height: calc(100vh - 60px); /* Adjust if nav bar height changes */
+            display: none; /* Hidden by default */
+            box-sizing: border-box;
+        }
+        .screen.active {
+            display: flex; /* Use flex for centering/layout */
+            flex-direction: column;
+        }
+        /* Custom scrollbar for better aesthetics if needed */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--tg-theme-secondary-bg-color);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--tg-theme-hint-color);
+            border-radius: 5px;
+        }
+        .nav-bar {
+            background-color: var(--tg-theme-secondary-bg-color);
+            border-top: 1px solid var(--tg-border-color);
+        }
+        .nav-button {
+            color: var(--tg-theme-hint-color);
+        }
+        .nav-button.active {
+            color: var(--tg-theme-button-color);
+        }
+        .swipe-card {
+            touch-action: none; /* Important for custom swipe gestures */
+            user-select: none;
+            transform-origin: bottom center;
+        }
+        .profile-pic-xl {
+            width: 128px;
+            height: 128px;
+        }
+        .profile-pic-lg {
+            width: 80px;
+            height: 80px;
+        }
+        .profile-pic-md {
+            width: 56px;
+            height: 56px;
+        }
+        .profile-pic-sm {
+            width: 40px;
+            height: 40px;
+        }
+        .tag {
+            background-color: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+        }
+        input, textarea, select {
+            background-color: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-text-color);
+            border: 1px solid var(--tg-border-color);
+        }
+        input::placeholder, textarea::placeholder {
+            color: var(--tg-theme-hint-color);
+        }
+        button.primary-btn {
+            background-color: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+        }
+        button.secondary-btn {
+            background-color: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-text-color);
+            border: 1px solid var(--tg-theme-button-color);
+        }
+        .tab-button {
+            border-bottom: 2px solid transparent;
+            color: var(--tg-theme-hint-color);
+        }
+        .tab-button.active {
+            border-bottom-color: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-color);
+        }
+        .status-pending { color: orange; }
+        .status-accepted { color: green; }
 
-        .telegram-bg { background-color: var(--tg-theme-bg-color, #ffffff); }
-        .telegram-text { color: var(--tg-theme-text-color, #000000); }
-        .telegram-hint { color: var(--tg-theme-hint-color, #999999); }
-        .telegram-link { color: var(--tg-theme-link-color, #2481cc); }
-        .telegram-button-bg { background-color: var(--tg-theme-button-color, #2481cc); }
-        .telegram-button-text { color: var(--tg-theme-button-text-color, #ffffff); }
-        .telegram-secondary-bg { background-color: var(--tg-theme-secondary-bg-color, #f0f0f0); }
-
-        .quest-card, .profile-card, .match-card, .post-card, .journal-entry-card {
-            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        /* Specific Telegram UI element mimicking */
+        .tg-list-item {
+            border-bottom: 1px solid var(--tg-border-color);
         }
-        .quest-card:hover, .profile-card:hover, .match-card:hover, .post-card:hover, .journal-entry-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        .tg-list-item:last-child {
+            border-bottom: none;
         }
-        .nav-item.active {
-            color: var(--tg-theme-button-color, #2481cc);
-            border-bottom: 2px solid var(--tg-theme-button-color, #2481cc);
+        .tg-section-title {
+            color: var(--tg-section-header-color);
             font-weight: 600;
-        }
-        #main-content {
-            padding-top: 4rem; 
-            padding-bottom: 4rem; 
-        }
-        .modal-content-max-height {
-             max-height: calc(80vh - 4rem); 
         }
     </style>
 </head>
-<body class="telegram-bg telegram-text">
+<body class="overscroll-none">
 
     <div id="app-container" class="h-screen flex flex-col">
-        <header id="app-header" class="telegram-bg shadow-md fixed top-0 left-0 right-0 z-50 border-b" style="border-color: var(--tg-theme-secondary-bg-color, #e0e0e0);">
-            <div class="container mx-auto px-4 py-3 flex items-center justify-between h-16">
-                <h1 id="header-title" class="text-xl font-bold telegram-text">LoveQuest</h1>
-            </div>
-        </header>
 
-        <main id="main-content" class="flex-grow overflow-y-auto">
-            
-            <div id="loading-view" class="p-6 text-center">
-                <svg class="animate-spin h-10 w-10 telegram-text mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <p class="telegram-hint">Initializing your adventure...</p>
+        <main class="flex-grow overflow-y-auto">
+            <div id="screen-profile" class="screen p-4 space-y-4">
+                <div class="flex flex-col items-center space-y-3">
+                    <img id="profile-main-pic" src="https://placehold.co/128x128/E0E0E0/B0B0B0?text=User" alt="Profile Picture" class="profile-pic-xl rounded-full object-cover">
+                    <h2 id="profile-main-username" class="text-2xl font-semibold">@username</h2>
+                </div>
+
+                <div class="space-y-1">
+                    <label for="profile-hobbies" class="block text-sm font-medium tg-section-title">Hobbies & Interests (comma separated):</label>
+                    <textarea id="profile-hobbies" rows="3" class="w-full p-2 rounded-lg border" placeholder="e.g., hiking, coding, reading"></textarea>
+                </div>
+                <div class="space-y-1">
+                    <label for="profile-passions" class="block text-sm font-medium tg-section-title">Passions (comma separated):</label>
+                    <textarea id="profile-passions" rows="3" class="w-full p-2 rounded-lg border" placeholder="e.g., sustainable living, AI ethics"></textarea>
+                </div>
+                <div class="space-y-1">
+                    <label for="profile-preferences" class="block text-sm font-medium tg-section-title">Relationship Preferences:</label>
+                    <input type="text" id="profile-preferences" class="w-full p-2 rounded-lg border" placeholder="e.g., Looking for serious, casual">
+                </div>
+                <div class="space-y-1">
+                    <label for="profile-personality" class="block text-sm font-medium tg-section-title">Key Personality Traits (comma separated):</label>
+                    <input type="text" id="profile-personality" class="w-full p-2 rounded-lg border" placeholder="e.g., adventurous, empathetic, witty">
+                </div>
+                <button id="save-profile-btn" class="w-full primary-btn py-2.5 px-4 rounded-lg font-semibold">Save Profile</button>
             </div>
 
-            <div id="profile-view" class="p-4 md:p-6 hidden space-y-6">
-                <div class="telegram-secondary-bg p-6 rounded-xl shadow-lg">
-                    <div class="flex items-center space-x-4 mb-6">
-                        <img id="profile-avatar" src="https://placehold.co/80x80/E2E8F0/A0AEC0?text=Me" alt="User Avatar" class="w-20 h-20 rounded-full border-2 object-cover" style="border-color: var(--tg-theme-button-color, #2481cc);">
-                        <div>
-                            <h2 id="profile-name-display" class="text-2xl font-semibold telegram-text">Your Name</h2>
-                            <p id="profile-age-gender-display" class="telegram-hint">Age, Gender</p>
-                            <p id="profile-tg-username-display" class="telegram-hint text-sm"></p>
+            <div id="screen-swipe" class="screen items-center justify-center p-4 relative overflow-hidden">
+                <div id="swipe-card-container" class="relative w-full max-w-sm h-[70vh] aspect-[3/4]">
+                    </div>
+                <div id="swipe-empty-state" class="hidden text-center">
+                    <p class="text-xl var(--tg-theme-hint-color)">No more profiles to show right now.</p>
+                    <p class="var(--tg-theme-hint-color)">Check back later!</p>
+                </div>
+                <div class="absolute bottom-20 left-1/2 -translate-x-1/2 flex space-x-8">
+                     <button id="reject-btn" class="bg-red-500 text-white rounded-full p-4 shadow-lg transform transition-transform hover:scale-110">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                    <button id="accept-btn" class="bg-green-500 text-white rounded-full p-4 shadow-lg transform transition-transform hover:scale-110">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div id="screen-adventure" class="screen p-4 space-y-6">
+                <h2 class="text-2xl font-bold tg-section-title text-center">Your Adventure</h2>
+
+                <div class="bg-var(--tg-theme-secondary-bg-color) p-4 rounded-lg shadow">
+                    <h3 class="text-lg font-semibold tg-section-title mb-2">Personality Assessments</h3>
+                    <ul id="assessments-list" class="space-y-2">
+                        </ul>
+                </div>
+
+                <div class="bg-var(--tg-theme-secondary-bg-color) p-4 rounded-lg shadow">
+                    <h3 class="text-lg font-semibold tg-section-title mb-2">Local Challenges</h3>
+                    <ul id="challenges-list" class="space-y-2">
+                        </ul>
+                </div>
+                 <div id="adventure-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
+                    <div class="bg-var(--tg-theme-bg-color) p-6 rounded-lg shadow-xl w-full max-w-md space-y-4">
+                        <h3 id="adventure-modal-title" class="text-xl font-semibold tg-section-title">Modal Title</h3>
+                        <div id="adventure-modal-content"></div>
+                        <div class="flex justify-end space-x-2">
+                            <button id="adventure-modal-close-btn" class="secondary-btn py-2 px-4 rounded-lg">Close</button>
+                            <button id="adventure-modal-action-btn" class="primary-btn py-2 px-4 rounded-lg">Submit</button>
                         </div>
                     </div>
-                    <div class="mb-4">
-                        <h3 class="text-lg font-medium telegram-text mb-1">Bio</h3>
-                        <p id="profile-bio-display" class="telegram-hint text-sm leading-relaxed">Your captivating bio goes here...</p>
-                    </div>
-                    <div class="mb-4">
-                        <h3 class="text-lg font-medium telegram-text mb-2">Interests</h3>
-                        <div id="profile-interests-display" class="flex flex-wrap gap-2"></div>
-                    </div>
-                     <div class="mb-4">
-                        <h3 class="text-lg font-medium telegram-text mb-2">My Telegram User ID</h3>
-                        <p id="profile-user-id-display" class="telegram-hint text-sm break-all"></p>
-                    </div>
-                </div>
-                <form id="profile-edit-form" class="hidden space-y-4 telegram-secondary-bg p-6 rounded-xl shadow-lg">
-                    <div>
-                        <label for="profile-name" class="block text-sm font-medium telegram-text">Name (as you want it displayed)</label>
-                        <input type="text" id="profile-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 telegram-bg telegram-text" placeholder="Your Display Name">
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label for="profile-age" class="block text-sm font-medium telegram-text">Age</label>
-                            <input type="number" id="profile-age" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 telegram-bg telegram-text" placeholder="25">
-                        </div>
-                        <div>
-                            <label for="profile-gender" class="block text-sm font-medium telegram-text">Gender</label>
-                            <select id="profile-gender" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 telegram-bg telegram-text">
-                                <option>Prefer not to say</option><option>Male</option><option>Female</option><option>Non-binary</option><option>Other</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label for="profile-bio" class="block text-sm font-medium telegram-text">Bio</label>
-                        <textarea id="profile-bio" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 telegram-bg telegram-text" placeholder="Tell us about yourself..."></textarea>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium telegram-text">Interests (select up to 5)</label>
-                        <div id="profile-interests-edit" class="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
-                    </div>
-                    <button type="submit" class="w-full telegram-button-bg telegram-button-text font-semibold py-2 px-4 rounded-lg shadow hover:opacity-90 transition duration-150">Save Profile</button>
-                </form>
-            </div>
-
-            <div id="adventure-hub-view" class="p-4 md:p-6 hidden space-y-6">
-                <h2 class="text-2xl font-semibold telegram-text">Available Adventures</h2>
-                <div id="quests-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <p id="no-quests-message" class="telegram-hint col-span-full text-center hidden">No adventures available right now. Check back soon!</p>
                 </div>
             </div>
 
-            <div id="quest-detail-view" class="p-4 md:p-6 hidden space-y-6">
-                <h2 id="quest-title" class="text-2xl font-bold telegram-text">Quest Title</h2>
-                <p id="quest-description" class="telegram-hint">Quest description.</p>
-                <div id="quest-steps-container" class="space-y-4"></div>
+            <div id="screen-history" class="screen p-4 space-y-4">
+                <h2 class="text-2xl font-bold tg-section-title text-center">Swipe History</h2>
+                <div class="flex border-b border-var(--tg-border-color)">
+                    <button data-tab="accepted" class="history-tab-btn tab-button flex-1 py-2 font-medium active">Accepted</button>
+                    <button data-tab="rejected" class="history-tab-btn tab-button flex-1 py-2 font-medium">Rejected</button>
+                </div>
+                <div id="history-content" class="space-y-3">
+                    </div>
             </div>
 
-            <div id="achievements-view" class="p-4 md:p-6 hidden space-y-6">
-                <h2 class="text-2xl font-semibold telegram-text">My Quest Achievements</h2>
-                <div id="achievements-list" class="space-y-4">
-                    <p id="no-achievements-message" class="telegram-hint text-center">Complete quests to see your achievements here!</p>
-                </div>
-                 <button id="invite-friend-button" class="w-full telegram-button-bg telegram-button-text font-semibold py-2 px-4 rounded-lg shadow hover:opacity-90 mt-6">Invite a Friend to LoveQuest</button>
+            <div id="screen-chat-list" class="screen p-4 space-y-3">
+                <h2 class="text-2xl font-bold tg-section-title text-center">Your Matches & Chats</h2>
+                <div id="chat-list-container" class="space-y-2">
+                    </div>
+                <p id="no-chats-message" class="text-center var(--tg-theme-hint-color) hidden">No active chats yet. Keep swiping!</p>
             </div>
 
-            <div id="chat-view" class="p-4 md:p-6 hidden flex flex-col h-full">
-                <div id="chat-with-name" class="text-xl font-semibold telegram-text mb-4">Chat Placeholder</div>
-                <div id="chat-messages-container" class="flex-grow border telegram-secondary-bg rounded-lg p-4 overflow-y-auto mb-4">
-                    <p class="telegram-hint">This is a placeholder for chat. Please use Telegram's native chat to connect with people you meet through LoveQuest adventures!</p>
-                </div>
-                <div class="flex">
-                    <input type="text" id="chat-message-input" placeholder="Type your message (mock)..." class="flex-grow rounded-l-lg border-gray-300 shadow-sm p-2 telegram-bg telegram-text">
-                    <button id="send-chat-message-button" class="telegram-button-bg telegram-button-text font-semibold px-4 rounded-r-lg shadow hover:opacity-90">Send (Mock)</button>
-                </div>
+            <div id="screen-chat-individual" class="screen flex flex-col h-full">
+                <header class="bg-var(--tg-theme-secondary-bg-color) p-3 flex items-center space-x-3 border-b border-var(--tg-border-color) sticky top-0 z-10">
+                    <button id="chat-back-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 var(--tg-theme-text-color)">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                        </svg>
+                    </button>
+                    <img id="chat-partner-pic" src="https://placehold.co/40x40/E0E0E0/B0B0B0?text=P" alt="Partner Pic" class="profile-pic-sm rounded-full object-cover">
+                    <h3 id="chat-partner-name" class="font-semibold text-lg">Partner Name</h3>
+                </header>
+                <div id="chat-messages-container" class="flex-grow p-4 space-y-3 overflow-y-auto">
+                    </div>
+                <footer class="bg-var(--tg-theme-secondary-bg-color) p-3 border-t border-var(--tg-border-color) sticky bottom-0 z-10">
+                    <div class="flex items-center space-x-2">
+                        <input type="text" id="chat-message-input" class="flex-grow p-2.5 rounded-lg border" placeholder="Type a message...">
+                        <button id="chat-send-btn" class="primary-btn p-2.5 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                            </svg>
+                        </button>
+                    </div>
+                </footer>
             </div>
 
-            <div id="journal-view" class="p-4 md:p-6 hidden space-y-6">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-2xl font-semibold telegram-text">My LoveQuest Journal</h2>
-                    <button id="create-journal-entry-button" class="telegram-button-bg telegram-button-text font-semibold py-2 px-4 rounded-lg shadow hover:opacity-90">New Entry</button>
-                </div>
-                <div id="journal-entries-list" class="space-y-4">
-                    <p id="no-journal-entries-message" class="telegram-hint text-center">No journal entries yet. Start reflecting on your journey!</p>
-                </div>
-                <form id="create-journal-entry-form" class="hidden space-y-4 telegram-secondary-bg p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold telegram-text">New Journal Entry</h3>
-                    <div>
-                        <label for="journal-entry-title-input" class="block text-sm font-medium telegram-text">Title</label>
-                        <input type="text" id="journal-entry-title-input" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 telegram-bg telegram-text" placeholder="Entry Title">
-                    </div>
-                    <div>
-                        <label for="journal-entry-content-input" class="block text-sm font-medium telegram-text">Reflection</label>
-                        <textarea id="journal-entry-content-input" rows="5" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 telegram-bg telegram-text" placeholder="Your thoughts and feelings..."></textarea>
-                    </div>
-                    <div class="flex justify-end space-x-2">
-                         <button type="button" id="cancel-journal-entry-button" class="bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg shadow hover:bg-gray-300">Cancel</button>
-                        <button type="submit" class="telegram-button-bg telegram-button-text font-semibold py-2 px-4 rounded-lg shadow hover:opacity-90">Save Entry</button>
-                    </div>
-                </form>
-            </div>
         </main>
 
-        <div id="modal-container" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[100] p-4">
-            <div id="modal-content" class="telegram-bg p-6 rounded-xl shadow-xl w-full max-w-lg modal-content-max-height overflow-y-auto">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 id="modal-title" class="text-xl font-semibold telegram-text">Modal Title</h3>
-                    <button id="modal-close-button" class="telegram-hint hover:telegram-text text-2xl leading-none">&times;</button>
-                </div>
-                <div id="modal-body"></div>
-            </div>
-        </div>
-
-        <nav id="bottom-nav" class="telegram-bg border-t fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center h-16 shadow-top" style="border-color: var(--tg-theme-secondary-bg-color, #e0e0e0);">
-            <button data-view="profile-view" class="nav-item flex-1 flex flex-col items-center justify-center p-2 telegram-hint hover:telegram-text transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"><path d="M12 2.5a5.5 5.5 0 0 1 3.096 10.047 9.005 9.005 0 0 1 5.9 8.181.75.75 0 1 1-1.499.044 7.5 7.5 0 0 0-14.993 0 .75.75 0 1 1-1.5-.045 9.005 9.005 0 0 1 5.9-8.18A5.5 5.5 0 0 1 12 2.5ZM8 8a4 4 0 1 0 8 0 4 4 0 0 0-8 0Z" /></svg>
-                <span class="text-xs mt-1">Profile</span>
+        <nav class="nav-bar grid grid-cols-5 gap-1 p-1 sticky bottom-0">
+            <button data-screen="screen-profile" class="nav-button p-2 rounded-lg flex flex-col items-center space-y-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                <span class="text-xs">Profile</span>
             </button>
-            <button data-view="adventure-hub-view" class="nav-item flex-1 flex flex-col items-center justify-center p-2 telegram-hint hover:telegram-text transition-colors">
-                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"><path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 0 0 .723 0l.028-.015.071-.041a16.975 16.975 0 0 0 1.144-.742 19.58 19.58 0 0 0 2.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 0 0-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 0 0 2.682 2.282 16.975 16.975 0 0 0 1.145.742ZM12 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clip-rule="evenodd" /></svg>
-                <span class="text-xs mt-1">Adventures</span>
+            <button data-screen="screen-swipe" class="nav-button p-2 rounded-lg flex flex-col items-center space-y-0.5 active">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 3.75H6A2.25 2.25 0 003.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0120.25 6v1.5m0 9V18A2.25 2.25 0 0118 20.25h-1.5m-9 0H6A2.25 2.25 0 013.75 18v-1.5M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <span class="text-xs">Discover</span>
             </button>
-            <button data-view="achievements-view" class="nav-item flex-1 flex flex-col items-center justify-center p-2 telegram-hint hover:telegram-text transition-colors"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"><path fill-rule="evenodd" d="M10.788 3.212a.75.75 0 0 0-1.06 0l-7.5 7.5a.75.75 0 0 0 1.06 1.06L4.5 11.06l2.72 2.72a.75.75 0 0 0 1.06-1.06L5.56 10l5.228-5.228a.75.75 0 0 0 0-1.06Z" clip-rule="evenodd" /><path fill-rule="evenodd" d="M13.212 3.212a.75.75 0 0 1 1.06 0l7.5 7.5a.75.75 0 0 1-1.06 1.06L18.5 11.06l-2.72 2.72a.75.75 0 0 1-1.06-1.06L17.44 10l-5.228-5.228a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /> <path fill-rule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25c0 2.008.994 4.042 2.758 5.875a.75.75 0 0 0 1.144-.028L12 11.036l1.348 1.563a.75.75 0 0 0 1.144.028c1.764-1.833 2.758-3.867 2.758-5.875A5.25 5.25 0 0 0 12 1.5Zm-3.75 5.25a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0Z" clip-rule="evenodd" /> </svg>
-                <span class="text-xs mt-1">Achievements</span>
+            <button data-screen="screen-adventure" class="nav-button p-2 rounded-lg flex flex-col items-center space-y-0.5">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503-6.998l4.875-2.172a.75.75 0 01.921.921l-2.173 4.875M14.25 12l-4.875 2.172a.75.75 0 01-.921-.921L10.5 8.25M12 15.75H9" /></svg>
+                <span class="text-xs">Adventure</span>
             </button>
-            <button data-view="journal-view" class="nav-item flex-1 flex flex-col items-center justify-center p-2 telegram-hint hover:telegram-text transition-colors"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"><path d="M11.25 4.533A9.707 9.707 0 0 0 6 3a9.735 9.735 0 0 0-3.25.555.75.75 0 0 0-.5.707v14.522c0 .314.21.598.5.707A9.733 9.733 0 0 0 6 21a9.707 9.707 0 0 0 5.25-1.533.75.75 0 0 0 .5-.707V5.24a.75.75 0 0 0-.5-.707Z" /><path d="M12.75 4.533A9.707 9.707 0 0 1 18 3a9.735 9.735 0 0 1 3.25.555.75.75 0 0 1 .5.707v14.522c0 .314-.21.598-.5.707A9.733 9.733 0 0 1 18 21a9.707 9.707 0 0 1-5.25-1.533.75.75 0 0 1-.5-.707V5.24a.75.75 0 0 1 .5-.707Z" /></svg>
-                <span class="text-xs mt-1">Journal</span>
+            <button data-screen="screen-history" class="nav-button p-2 rounded-lg flex flex-col items-center space-y-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" /></svg>
+                <span class="text-xs">History</span>
+            </button>
+            <button data-screen="screen-chat-list" class="nav-button p-2 rounded-lg flex flex-col items-center space-y-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 011.037-.443 48.282 48.282 0 005.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" /></svg>
+                <span class="text-xs">Chats</span>
             </button>
         </nav>
     </div>
 
-    <script type="module">
-        // --- App State and Configuration ---
-        const app = {
-            userId: null, 
-            tgUser: null, 
-            currentView: 'loading-view',
-            tgWebApp: window.Telegram.WebApp,
-            currentUserProfile: null, // Will be loaded from CloudStorage
-            userQuestProgress: {}, // { questId: { completedSteps: [0, 1], answers: {...} } } - CloudStorage
-            userJournalEntries: [], // [{id: 'uuid', title: '', content: '', date: ''}] - CloudStorage
-            
-            availableInterests: ["Reading", "Hiking", "Cooking", "Gaming", "Movies", "Music", "Travel", "Art", "Sports", "Photography", "Coding", "Yoga"],
-            activeQuest: null, // Details of the currently viewed quest (from hardcoded QUEST_DEFINITIONS)
-            
-            // Hardcoded Quest Definitions
-            QUEST_DEFINITIONS: [
-                { 
-                    id: "quest1",
-                    title: "The Spark of Connection",
-                    description: "Embark on a journey to discover your communication style. This quest involves self-reflection and expressing yourself.",
-                    steps: [
-                        { type: "assessment", title: "Communication Quiz", details: "Answer a few questions about how you connect with others.", questions: [{ q: "When meeting someone new, you usually:", options: ["Listen more than talk", "Talk more than listen", "Balance both"] }, {q: "Your preferred way to resolve conflict is:", options:["Direct discussion", "Avoiding it", "Mediated talk"]}] },
-                        { type: "challenge_virtual", title: "Icebreaker Intro", details: "Craft a fun 3-sentence introduction about yourself. Imagine you're sharing it." },
-                        { type: "clue_reveal", title: "First Insight", clueText: "Authentic communication is key to building strong connections." }
-                    ],
-                    achievement: "Completed 'The Spark of Connection' and reflected on communication style."
-                },
-                { 
-                    id: "quest2",
-                    title: "The Local Explorer",
-                    description: "Explore your surroundings (even virtually) and find hidden gems. This quest is about observation and a sense of adventure.",
-                    steps: [
-                        { type: "challenge_local", title: "Cafe 'The Daily Grind' Code", businessName: "The Daily Grind", details: "Imagine you visited 'The Daily Grind' cafe. The special code word for LoveQuest users is displayed near the counter. What is it? (Or scan QR)", expectedCode: "COFFEELOVE", qrEnabled: true },
-                        { type: "assessment", title: "Adventure Preferences", details: "What kind of adventures excite you most?", questions: [{q: "Ideal weekend activity:", options:["Relaxing at home", "Exploring nature", "Trying a new restaurant/cafe", "Attending a social event"]}] },
-                        { type: "clue_reveal", title: "Partner Insight", clueText: "Shared experiences can bring people closer." }
-                    ],
-                    achievement: "Completed 'The Local Explorer' and embraced a spirit of adventure."
-                }
-            ],
-            
-            dom: { // DOM elements (same as before, but with new views)
-                headerTitle: document.getElementById('header-title'),
-                loadingView: document.getElementById('loading-view'),
-                profileView: document.getElementById('profile-view'),
-                profileForm: document.getElementById('profile-edit-form'),
-                profileAvatar: document.getElementById('profile-avatar'),
-                profileNameDisplay: document.getElementById('profile-name-display'),
-                profileTgUsernameDisplay: document.getElementById('profile-tg-username-display'),
-                profileAgeGenderDisplay: document.getElementById('profile-age-gender-display'),
-                profileBioDisplay: document.getElementById('profile-bio-display'),
-                profileInterestsDisplay: document.getElementById('profile-interests-display'),
-                profileUserIdDisplay: document.getElementById('profile-user-id-display'),
-                profileNameInput: document.getElementById('profile-name'),
-                profileAgeInput: document.getElementById('profile-age'),
-                profileGenderInput: document.getElementById('profile-gender'),
-                profileBioInput: document.getElementById('profile-bio'),
-                profileInterestsEdit: document.getElementById('profile-interests-edit'),
-                
-                adventureHubView: document.getElementById('adventure-hub-view'),
-                questsList: document.getElementById('quests-list'),
-                noQuestsMessage: document.getElementById('no-quests-message'),
+    <script>
+        const tg = window.Telegram.WebApp;
 
-                questDetailView: document.getElementById('quest-detail-view'),
-                questTitle: document.getElementById('quest-title'),
-                questDescription: document.getElementById('quest-description'),
-                questStepsContainer: document.getElementById('quest-steps-container'),
+        // --- App State & Data ---
+        let currentUser = {
+            id: null,
+            username: 'guest',
+            photo_url: 'https://placehold.co/128x128/E0E0E0/B0B0B0?text=User',
+            profile: { hobbies: '', passions: '', preferences: '', personality: '' }
+        };
+        let potentialPartners = []; // Will be populated with mock data
+        let swipeHistory = { accepted: [], rejected: [] };
+        let matches = []; // { partnerId, partnerName, partnerPic, chatLog: [{sender, text, time}] }
+        let adventureProgress = { assessments: {}, challenges: {} }; // { 'assessmentId': {completed: true, answers: []} }
 
-                achievementsView: document.getElementById('achievements-view'), // New
-                achievementsList: document.getElementById('achievements-list'), // New
-                noAchievementsMessage: document.getElementById('no-achievements-message'), // New
-                inviteFriendButton: document.getElementById('invite-friend-button'), // New
+        const MOCK_USERS_COUNT = 20;
+        const MOCK_ASSESSMENTS = [
+            { id: 'assess1', title: 'Weekend Vibes', question: 'Your ideal weekend is:', options: ['Adventure outdoors', 'Cozy at home', 'Socializing with friends', 'Learning something new'], completed: false },
+            { id: 'assess2', title: 'Communication Style', question: 'When resolving conflict, you prefer:', options: ['Direct conversation', 'Time to think first', 'Mediator help', 'Humor to lighten mood'], completed: false },
+        ];
+        const MOCK_CHALLENGES = [
+            { id: 'challenge1', title: 'Cafe Connoisseur', description: "Visit 'The Daily Grind Cafe' and find the 'Secret Brew' name on their chalkboard.", task: "Enter the Secret Brew name:", completed: false, solution: "Moonbeam Mocha" },
+            { id: 'challenge2', title: 'Bookworm Quest', description: "At 'Readers' Nook Bookstore', ask for the book recommended for 'dreamers'.", task: "What's the book title?", completed: false, solution: "The Starless Sea" },
+        ];
 
-                chatView: document.getElementById('chat-view'), // Placeholder
-                chatWithName: document.getElementById('chat-with-name'),
-                chatMessagesContainer: document.getElementById('chat-messages-container'),
-                chatMessageInput: document.getElementById('chat-message-input'),
-                sendChatMessageButton: document.getElementById('send-chat-message-button'),
+        // --- DOM Elements ---
+        const screens = document.querySelectorAll('.screen');
+        const navButtons = document.querySelectorAll('.nav-button');
+        const profilePicEl = document.getElementById('profile-main-pic');
+        const profileUsernameEl = document.getElementById('profile-main-username');
+        const hobbiesInput = document.getElementById('profile-hobbies');
+        const passionsInput = document.getElementById('profile-passions');
+        const preferencesInput = document.getElementById('profile-preferences');
+        const personalityInput = document.getElementById('profile-personality');
+        const saveProfileBtn = document.getElementById('save-profile-btn');
+        const swipeCardContainer = document.getElementById('swipe-card-container');
+        const swipeEmptyState = document.getElementById('swipe-empty-state');
+        const rejectBtn = document.getElementById('reject-btn');
+        const acceptBtn = document.getElementById('accept-btn');
+        const historyContentEl = document.getElementById('history-content');
+        const historyTabButtons = document.querySelectorAll('.history-tab-btn');
+        const chatListContainer = document.getElementById('chat-list-container');
+        const noChatsMessage = document.getElementById('no-chats-message');
+        const chatPartnerPic = document.getElementById('chat-partner-pic');
+        const chatPartnerName = document.getElementById('chat-partner-name');
+        const chatMessagesContainer = document.getElementById('chat-messages-container');
+        const chatMessageInput = document.getElementById('chat-message-input');
+        const chatSendBtn = document.getElementById('chat-send-btn');
+        const chatBackBtn = document.getElementById('chat-back-btn');
+        const assessmentsListEl = document.getElementById('assessments-list');
+        const challengesListEl = document.getElementById('challenges-list');
+        const adventureModal = document.getElementById('adventure-modal');
+        const adventureModalTitle = document.getElementById('adventure-modal-title');
+        const adventureModalContent = document.getElementById('adventure-modal-content');
+        const adventureModalCloseBtn = document.getElementById('adventure-modal-close-btn');
+        const adventureModalActionBtn = document.getElementById('adventure-modal-action-btn');
 
-                journalView: document.getElementById('journal-view'), // New
-                journalEntriesList: document.getElementById('journal-entries-list'), // New
-                noJournalEntriesMessage: document.getElementById('no-journal-entries-message'), // New
-                createJournalEntryButton: document.getElementById('create-journal-entry-button'), // New
-                createJournalEntryForm: document.getElementById('create-journal-entry-form'), // New
-                journalEntryTitleInput: document.getElementById('journal-entry-title-input'), // New
-                journalEntryContentInput: document.getElementById('journal-entry-content-input'), // New
-                cancelJournalEntryButton: document.getElementById('cancel-journal-entry-button'), // New
+        let currentAdventureContext = null; // To store which assessment/challenge is active in modal
+        let currentChatPartnerId = null;
 
-                bottomNav: document.getElementById('bottom-nav'),
-                modalContainer: document.getElementById('modal-container'),
-                modalContent: document.getElementById('modal-content'),
-                modalTitle: document.getElementById('modal-title'),
-                modalBody: document.getElementById('modal-body'),
-                modalCloseButton: document.getElementById('modal-close-button'),
-            },
 
-            async init() {
-                this.tgWebApp.ready();
-                this.tgWebApp.expand();
-                this.applyTelegramTheme();
-
-                if (this.tgWebApp.initDataUnsafe && this.tgWebApp.initDataUnsafe.user) {
-                    this.tgUser = this.tgWebApp.initDataUnsafe.user;
-                    this.userId = this.tgUser.id.toString();
-                    console.log("Telegram User:", this.tgUser);
-                    this.dom.profileUserIdDisplay.textContent = this.userId;
-                    if (this.tgUser.photo_url) this.dom.profileAvatar.src = this.tgUser.photo_url;
-                    if (this.tgUser.username) this.dom.profileTgUsernameDisplay.textContent = `@${this.tgUser.username}`;
-                } else {
-                    console.error("Telegram user data not available!");
-                    this.showError("Could not retrieve your Telegram profile. Please try launching from Telegram.");
-                    this.navigateTo('loading-view'); // Stay on loading or show specific error view
-                    this.dom.loadingView.innerHTML = `<p class="text-red-500 text-center p-6">Critical: Telegram user data missing. Please launch from Telegram.</p>`;
-                    return;
-                }
-                
-                this.setupEventListeners();
-                this.populateInterestCheckboxes();
-                await this.loadDataFromCloudStorage(); // Load profile, progress, journal
-
-                if (!this.currentUserProfile || !this.currentUserProfile.name) {
-                    this.navigateTo('profile-view');
-                    this.showProfileEditForm();
-                    this.tgWebApp.MainButton.setText("Save Profile").show().onClick(this.handleProfileSave);
-                } else {
-                   this.navigateTo('adventure-hub-view');
-                }
-            },
-            
-            // --- CloudStorage Helpers ---
-            saveToCloudStorage(key, value, callback) {
-                this.tgWebApp.CloudStorage.setItem(key, JSON.stringify(value), (error, success) => {
-                    if (error) {
-                        this.showError(`Cloud Save Error (${key}): ${error}`);
-                        if (callback) callback(error, null);
-                        return;
-                    }
-                    if (callback) callback(null, success);
-                });
-            },
-
-            getFromCloudStorage(keys, callback) {
-                this.tgWebApp.CloudStorage.getItems(keys, (error, data) => {
-                    if (error) {
-                        this.showError(`Cloud Load Error: ${error}`);
-                        if (callback) callback(error, null);
-                        return;
-                    }
-                    const parsedData = {};
-                    for (const key in data) {
-                        try {
-                            parsedData[key] = JSON.parse(data[key]);
-                        } catch (e) {
-                            console.warn(`Could not parse JSON for key ${key} from CloudStorage:`, data[key]);
-                            parsedData[key] = null; // Or some default
-                        }
-                    }
-                    if (callback) callback(null, parsedData);
-                });
-            },
-            
-            async loadDataFromCloudStorage() {
-                return new Promise((resolve) => {
-                    this.getFromCloudStorage(['userProfile', 'userQuestProgress', 'userJournalEntries'], (error, data) => {
-                        if (error) {
-                            this.showError("Failed to load your data from the cloud.");
-                            // Initialize with defaults if load fails
-                            this.currentUserProfile = this.currentUserProfile || this.getInitialProfile();
-                            this.userQuestProgress = {};
-                            this.userJournalEntries = [];
-                        } else {
-                            this.currentUserProfile = data.userProfile || this.getInitialProfile();
-                            this.userQuestProgress = data.userQuestProgress || {};
-                            this.userJournalEntries = data.userJournalEntries || [];
-                        }
-                        this.displayUserProfile();
-                        resolve();
-                    });
-                });
-            },
-
-            getInitialProfile() {
-                 return { 
-                    name: `${this.tgUser.first_name || ''} ${this.tgUser.last_name || ''}`.trim() || '',
-                    tgUsername: this.tgUser.username || '',
-                    tgPhotoUrl: this.tgUser.photo_url || '',
-                    age: '', gender: '', bio: '', interests: [] 
-                };
-            },
-
-            applyTelegramTheme() { /* ... same as before ... */ 
-                const themeParams = this.tgWebApp.themeParams;
-                document.documentElement.style.setProperty('--tg-theme-bg-color', themeParams.bg_color || '#ffffff');
-                document.documentElement.style.setProperty('--tg-theme-text-color', themeParams.text_color || '#000000');
-                document.documentElement.style.setProperty('--tg-theme-hint-color', themeParams.hint_color || '#999999');
-                document.documentElement.style.setProperty('--tg-theme-link-color', themeParams.link_color || '#2481cc');
-                document.documentElement.style.setProperty('--tg-theme-button-color', themeParams.button_color || '#2481cc');
-                document.documentElement.style.setProperty('--tg-theme-button-text-color', themeParams.button_text_color || '#ffffff');
-                document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', themeParams.secondary_bg_color || '#f0f0f0');
-                document.body.style.backgroundColor = themeParams.bg_color || '#ffffff';
-                document.body.style.color = themeParams.text_color || '#000000';
-            },
-
-            navigateTo(viewId, params = {}) {
-                console.log(`Navigating to ${viewId}`);
-                ['loading-view', 'profile-view', 'adventure-hub-view', 'quest-detail-view', 'achievements-view', 'chat-view', 'journal-view'].forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.classList.add('hidden');
-                });
-                const targetView = document.getElementById(viewId);
-                if (targetView) {
-                    targetView.classList.remove('hidden');
-                    this.currentView = viewId;
-                    this.updateHeaderAndMainButton(viewId, params);
-                    this.updateActiveNavItem(viewId);
-                    if(document.getElementById('main-content')) document.getElementById('main-content').scrollTop = 0;
-
-                    if (viewId === 'adventure-hub-view') this.loadQuestsDisplay();
-                    if (viewId === 'quest-detail-view' && params.questId) this.loadQuestDetail(params.questId);
-                    if (viewId === 'achievements-view') this.loadAchievements();
-                    if (viewId === 'journal-view') this.loadJournalEntries();
-                    if (viewId === 'chat-view') this.loadChatPlaceholder(); // Chat is just a placeholder
-                } else {
-                    console.error(`View ${viewId} not found!`);
-                }
-            },
-            
-            updateActiveNavItem(viewId) { /* ... same as before ... */ 
-                 this.dom.bottomNav.querySelectorAll('.nav-item').forEach(item => {
-                    item.classList.remove('active');
-                    if (item.dataset.view === viewId) {
-                        item.classList.add('active');
-                    }
-                });
-            },
-
-            updateHeaderAndMainButton(viewId, params = {}) { /* ... adapted for new views ... */ 
-                this.tgWebApp.BackButton.hide();
-                this.tgWebApp.MainButton.hide();
-                this.dom.headerTitle.textContent = "LoveQuest"; 
-
-                switch (viewId) {
-                    case 'profile-view':
-                        this.dom.headerTitle.textContent = "My Profile";
-                        if (this.dom.profileForm.classList.contains('hidden')) {
-                            this.tgWebApp.MainButton.setText("Edit Profile").show().onClick(this.showProfileEditForm);
-                        } else {
-                            this.tgWebApp.MainButton.setText("Save Profile").show().onClick(this.handleProfileSave);
-                            this.tgWebApp.BackButton.show().onClick(() => this.showProfileDisplay());
-                        }
-                        break;
-                    case 'adventure-hub-view':
-                        this.dom.headerTitle.textContent = "Adventures";
-                        break;
-                    case 'quest-detail-view':
-                        this.dom.headerTitle.textContent = params.questTitle || "Quest Details"; 
-                        this.tgWebApp.BackButton.show().onClick(() => this.navigateTo('adventure-hub-view'));
-                        // MainButton for quest steps handled in renderQuestSteps
-                        break;
-                    case 'achievements-view':
-                        this.dom.headerTitle.textContent = "My Achievements";
-                        break;
-                    case 'journal-view':
-                        this.dom.headerTitle.textContent = "My Journal";
-                         if (this.dom.createJournalEntryForm.classList.contains('hidden')) {
-                            this.tgWebApp.MainButton.setText("New Entry").show().onClick(() => {
-                                this.dom.createJournalEntryForm.classList.remove('hidden');
-                                this.tgWebApp.MainButton.setText("Save Entry").onClick(this.handleCreateJournalEntry);
-                                this.tgWebApp.BackButton.show().onClick(() => {
-                                    this.dom.createJournalEntryForm.classList.add('hidden');
-                                    this.updateHeaderAndMainButton('journal-view'); 
-                                });
-                            });
-                        } else { // Form is visible
-                             this.tgWebApp.MainButton.setText("Save Entry").show().onClick(this.handleCreateJournalEntry);
-                             this.tgWebApp.BackButton.show().onClick(() => {
-                                this.dom.createJournalEntryForm.classList.add('hidden');
-                                this.updateHeaderAndMainButton('journal-view'); 
-                            });
-                        }
-                        break;
-                    case 'chat-view': // Placeholder
-                        this.dom.headerTitle.textContent = "Chat";
-                        this.tgWebApp.BackButton.show().onClick(() => this.navigateTo('achievements-view')); // Or previous view
-                        break;
-                }
-            },
-
-            displayUserProfile() { /* ... same as before, loads from this.currentUserProfile ... */ 
-                if (!this.currentUserProfile) this.currentUserProfile = this.getInitialProfile();
-                const profile = this.currentUserProfile;
-                
-                this.dom.profileNameDisplay.textContent = profile.name || "Your Name";
-                this.dom.profileAgeGenderDisplay.textContent = `${profile.age || 'Age'}, ${profile.gender || 'Gender'}`;
-                this.dom.profileBioDisplay.textContent = profile.bio || "No bio yet. Tell us about yourself!";
-                this.dom.profileTgUsernameDisplay.textContent = profile.tgUsername ? `@${profile.tgUsername}` : (this.tgUser.username ? `@${this.tgUser.username}` : '');
-                
-                const avatarUrl = profile.tgPhotoUrl || (this.tgUser ? this.tgUser.photo_url : null);
-                this.dom.profileAvatar.src = avatarUrl || `https://placehold.co/80x80/E2E8F0/A0AEC0?text=${(profile.name || 'Me').charAt(0)}`;
-
-                this.dom.profileInterestsDisplay.innerHTML = '';
-                if (profile.interests && profile.interests.length > 0) {
-                    profile.interests.forEach(interest => {
-                        const interestEl = document.createElement('span');
-                        interestEl.className = 'telegram-button-bg telegram-button-text px-3 py-1 rounded-full text-sm';
-                        interestEl.textContent = interest;
-                        this.dom.profileInterestsDisplay.appendChild(interestEl);
-                    });
-                } else {
-                    this.dom.profileInterestsDisplay.innerHTML = `<span class="telegram-hint text-sm">Add some interests!</span>`;
-                }
-                
-                this.dom.profileNameInput.value = profile.name || '';
-                this.dom.profileAgeInput.value = profile.age || '';
-                this.dom.profileGenderInput.value = profile.gender || 'Prefer not to say';
-                this.dom.profileBioInput.value = profile.bio || '';
-                
-                this.dom.profileInterestsEdit.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-                    checkbox.checked = profile.interests && profile.interests.includes(checkbox.value);
-                });
-            },
-
-            showProfileEditForm() { /* ... same as before ... */ 
-                this.dom.profileView.querySelectorAll('.telegram-secondary-bg:not(#profile-edit-form)').forEach(el => el.classList.add('hidden'));
-                this.dom.profileForm.classList.remove('hidden');
-                if (!this.currentUserProfile.name && this.tgUser) { 
-                    this.dom.profileNameInput.value = `${this.tgUser.first_name || ''} ${this.tgUser.last_name || ''}`.trim();
-                } else {
-                    this.dom.profileNameInput.value = this.currentUserProfile.name || '';
-                }
-                this.dom.profileAgeInput.value = this.currentUserProfile.age || '';
-                this.dom.profileGenderInput.value = this.currentUserProfile.gender || 'Prefer not to say';
-                this.dom.profileBioInput.value = this.currentUserProfile.bio || '';
-                this.dom.profileInterestsEdit.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-                    checkbox.checked = this.currentUserProfile.interests && this.currentUserProfile.interests.includes(checkbox.value);
-                });
-                this.updateHeaderAndMainButton('profile-view');
-                this.tgWebApp.HapticFeedback.impactOccurred('light');
-            },
-            showProfileDisplay() { /* ... same as before ... */ 
-                this.dom.profileForm.classList.add('hidden');
-                this.dom.profileView.querySelectorAll('.telegram-secondary-bg:not(#profile-edit-form)').forEach(el => el.classList.remove('hidden'));
-                this.updateHeaderAndMainButton('profile-view');
-            },
-
-            handleProfileSave: async () => { /* ... saves to CloudStorage ... */ 
-                app.tgWebApp.MainButton.showProgress();
-                const name = app.dom.profileNameInput.value.trim();
-                const age = app.dom.profileAgeInput.value;
-                const gender = app.dom.profileGenderInput.value;
-                const bio = app.dom.profileBioInput.value.trim();
-                const selectedInterests = Array.from(app.dom.profileInterestsEdit.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
-
-                if (!name) { app.showError("Display Name is required."); app.tgWebApp.MainButton.hideProgress(); return; }
-                if (selectedInterests.length > 5) { app.showError("Please select up to 5 interests."); app.tgWebApp.MainButton.hideProgress(); return; }
-
-                const profileData = {
-                    name,
-                    age: parseInt(age) || null,
-                    gender,
-                    bio,
-                    interests: selectedInterests,
-                    tgUsername: app.tgUser.username || '', 
-                    tgPhotoUrl: app.tgUser.photo_url || '', 
-                    updatedAt: new Date().toISOString() // Simple timestamp
-                };
-                
-                app.saveToCloudStorage('userProfile', profileData, (error, success) => {
-                    app.tgWebApp.MainButton.hideProgress();
-                    if (error) return; // showError already called in helper
-                    app.currentUserProfile = profileData; 
-                    app.displayUserProfile();
-                    app.showProfileDisplay();
-                    app.tgWebApp.HapticFeedback.notificationOccurred('success');
-                    app.showSuccess("Profile saved!");
-                });
-            },
-
-            populateInterestCheckboxes() { /* ... same as before ... */ 
-                this.dom.profileInterestsEdit.innerHTML = '';
-                this.availableInterests.forEach(interest => {
-                    const div = document.createElement('div');
-                    div.className = 'flex items-center';
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.id = `interest-${interest.toLowerCase().replace(' ', '-')}`;
-                    checkbox.value = interest;
-                    checkbox.className = 'h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-2';
-                    const label = document.createElement('label');
-                    label.htmlFor = checkbox.id;
-                    label.textContent = interest;
-                    label.className = 'text-sm telegram-text';
-                    div.appendChild(checkbox);
-                    div.appendChild(label);
-                    this.dom.profileInterestsEdit.appendChild(div);
-                });
-            },
-
-            loadQuestsDisplay() { // Renamed from loadQuests
-                this.dom.questsList.innerHTML = ''; 
-                this.dom.noQuestsMessage.classList.add('hidden');
-                if (this.QUEST_DEFINITIONS.length === 0) {
-                    this.dom.noQuestsMessage.classList.remove('hidden');
-                    return;
-                }
-                this.QUEST_DEFINITIONS.forEach(quest => this.renderQuestCard(quest));
-            },
-
-            renderQuestCard(quest) { /* ... same as before ... */ 
-                const card = document.createElement('div');
-                card.className = 'quest-card telegram-secondary-bg p-4 rounded-lg shadow cursor-pointer';
-                card.innerHTML = `
-                    <h3 class="text-lg font-semibold telegram-text mb-1">${quest.title}</h3>
-                    <p class="telegram-hint text-sm mb-3">${quest.description.substring(0, 100)}${quest.description.length > 100 ? '...' : ''}</p>
-                    <button class="start-quest-button telegram-button-bg telegram-button-text text-sm font-medium py-2 px-3 rounded-md hover:opacity-90 w-full">Start Adventure</button>
-                `;
-                card.querySelector('.start-quest-button').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.tgWebApp.showConfirm(`Start the adventure "${quest.title}"?`, (confirmed) => {
-                        if (confirmed) {
-                            this.navigateTo('quest-detail-view', { questId: quest.id, questTitle: quest.title });
-                        }
-                    });
-                });
-                card.addEventListener('click', () => { 
-                     this.tgWebApp.showConfirm(`Start the adventure "${quest.title}"?`, (confirmed) => {
-                        if (confirmed) {
-                            this.navigateTo('quest-detail-view', { questId: quest.id, questTitle: quest.title });
-                        }
-                    });
-                });
-                this.dom.questsList.appendChild(card);
-            },
-
-            loadQuestDetail(questId) {
-                this.activeQuest = this.QUEST_DEFINITIONS.find(q => q.id === questId);
-                if (this.activeQuest) {
-                    this.dom.questTitle.textContent = this.activeQuest.title;
-                    this.dom.questDescription.textContent = this.activeQuest.description;
-                    this.updateHeaderAndMainButton('quest-detail-view', { questTitle: this.activeQuest.title });
-                    this.renderQuestSteps();
-                } else {
-                    this.showError("Quest not found.");
-                    this.navigateTo('adventure-hub-view');
-                }
-            },
-
-            renderQuestSteps() { /* ... adapted for userQuestProgress ... */
-                this.dom.questStepsContainer.innerHTML = '';
-                if (!this.activeQuest || !this.activeQuest.steps || this.activeQuest.steps.length === 0) {
-                    this.dom.questStepsContainer.innerHTML = `<p class="telegram-hint">No steps defined for this quest.</p>`;
-                    return;
-                }
-
-                const questProgress = this.userQuestProgress[this.activeQuest.id] || { completedSteps: [], answers: {} };
-
-                this.activeQuest.steps.forEach((step, index) => {
-                    const isCompleted = questProgress.completedSteps.includes(index);
-                    const stepEl = document.createElement('div');
-                    stepEl.className = `telegram-secondary-bg p-4 rounded-lg shadow ${isCompleted ? 'opacity-70' : ''}`;
-                    let stepContent = `<h4 class="font-semibold telegram-text mb-1">${index + 1}. ${step.title} ${isCompleted ? '<span class="text-green-500 text-xs ml-2">(Completed)</span>' : ''}</h4>
-                                       <p class="telegram-hint text-sm mb-2">${step.details}</p>`;
-                    
-                    if (!isCompleted) {
-                        switch(step.type) {
-                            case 'assessment':
-                                stepContent += `<button data-step-index="${index}" class="assessment-button telegram-link font-medium text-sm">Take Assessment</button>`;
-                                break;
-                            case 'challenge_virtual':
-                                stepContent += `<textarea data-step-index="${index}" class="virtual-challenge-input mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 telegram-bg telegram-text" rows="3" placeholder="Your response..."></textarea>
-                                                <button data-step-index="${index}" class="submit-challenge-button telegram-button-bg telegram-button-text text-sm font-medium py-1 px-3 rounded-md hover:opacity-90 mt-2">Submit</button>`;
-                                break;
-                            case 'challenge_local':
-                                 stepContent += `<p class="text-sm telegram-hint my-1">Visit: <strong>${step.businessName || 'the designated location'}</strong></p>`;
-                                 if (step.qrEnabled) {
-                                     stepContent += `<button data-step-index="${index}" class="scan-qr-button telegram-button-bg telegram-button-text text-sm font-medium py-1 px-3 rounded-md hover:opacity-90 mt-2">Scan QR Code</button>`;
-                                 }
-                                 stepContent += `<input type="text" data-step-index="${index}" class="local-challenge-code mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 telegram-bg telegram-text" placeholder="Enter code found (if no QR)">
-                                                 <button data-step-index="${index}" class="submit-code-button telegram-button-bg telegram-button-text text-sm font-medium py-1 px-3 rounded-md hover:opacity-90 mt-2">Verify Code</button>`;
-                                break;
-                            case 'clue_reveal': // Clues are revealed upon completing a prior step or immediately if no condition
-                                stepContent += `<p class="italic telegram-text p-2 bg-yellow-100 text-yellow-700 rounded">Clue: ${step.clueText || "A new clue awaits!"}</p>
-                                                <button data-step-index="${index}" class="mark-clue-read-button telegram-link font-medium text-sm mt-1">Mark as Read</button>`;
-                                break;
-                        }
-                    } else if (step.type === 'clue_reveal') { // Show clue if completed
-                         stepContent += `<p class="italic telegram-text p-2 bg-yellow-100 text-yellow-700 rounded">Clue: ${step.clueText || "A new clue awaits!"}</p>`;
-                    }
-                    stepEl.innerHTML = stepContent;
-                    this.dom.questStepsContainer.appendChild(stepEl);
-                });
-                this.attachQuestStepListeners();
-
-                const allStepsCompleted = questProgress.completedSteps.length === this.activeQuest.steps.length;
-                if (allStepsCompleted) {
-                    this.tgWebApp.MainButton.setText("Quest Completed!").setParams({is_active: false}).show();
-                } else {
-                     this.tgWebApp.MainButton.setText("Complete Next Step").show().onClick(() => {
-                        // This is a generic button, specific step actions are better
-                        this.showError("Please interact with the specific step buttons.");
-                    });
-                }
-            },
-
-            markStepAsComplete(questId, stepIndex, answerData = null) {
-                if (!this.userQuestProgress[questId]) {
-                    this.userQuestProgress[questId] = { completedSteps: [], answers: {} };
-                }
-                if (!this.userQuestProgress[questId].completedSteps.includes(stepIndex)) {
-                    this.userQuestProgress[questId].completedSteps.push(stepIndex);
-                }
-                if (answerData) {
-                    this.userQuestProgress[questId].answers[stepIndex] = answerData;
-                }
-                this.saveToCloudStorage('userQuestProgress', this.userQuestProgress, (err) => {
-                    if (!err) {
-                        this.showSuccess("Step completed!");
-                        this.renderQuestSteps(); // Re-render to show completion
-                    }
-                });
-            },
-            
-            attachQuestStepListeners() { /* ... adapted for markStepAsComplete ... */
-                this.dom.questStepsContainer.querySelectorAll('.assessment-button').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const stepIndex = parseInt(e.target.dataset.stepIndex);
-                        const step = this.activeQuest.steps[stepIndex];
-                        this.showAssessmentModal(step, stepIndex);
-                    });
-                });
-                 this.dom.questStepsContainer.querySelectorAll('.submit-challenge-button').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const stepIndex = parseInt(e.target.dataset.stepIndex);
-                        const input = this.dom.questStepsContainer.querySelector(`.virtual-challenge-input[data-step-index="${stepIndex}"]`);
-                        if (input.value.trim()) {
-                            this.markStepAsComplete(this.activeQuest.id, stepIndex, { response: input.value.trim() });
-                            input.disabled = true; button.disabled = true; button.textContent = "Submitted";
-                        } else {
-                            this.showError("Please provide a response.");
-                        }
-                    });
-                });
-                this.dom.questStepsContainer.querySelectorAll('.scan-qr-button').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const stepIndex = parseInt(e.target.dataset.stepIndex);
-                        const step = this.activeQuest.steps[stepIndex];
-                        this.tgWebApp.showScanQrPopup({text: `Scan QR at ${step.businessName || 'location'}`}, (scannedText) => {
-                            if (scannedText && scannedText.trim().toUpperCase() === step.expectedCode.toUpperCase()) {
-                                this.markStepAsComplete(this.activeQuest.id, stepIndex, { qrScanned: scannedText });
-                            } else if (scannedText) {
-                                this.showError("Incorrect QR Code.");
-                            }
-                            return true; 
-                        });
-                    });
-                });
-                this.dom.questStepsContainer.querySelectorAll('.submit-code-button').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const stepIndex = parseInt(e.target.dataset.stepIndex);
-                        const input = this.dom.questStepsContainer.querySelector(`.local-challenge-code[data-step-index="${stepIndex}"]`);
-                        const step = this.activeQuest.steps[stepIndex];
-                        if (input.value.trim().toUpperCase() === step.expectedCode.toUpperCase()) {
-                             this.markStepAsComplete(this.activeQuest.id, stepIndex, { codeEntered: input.value.trim() });
-                        } else {
-                            this.showError("Incorrect code.");
-                        }
-                    });
-                });
-                this.dom.questStepsContainer.querySelectorAll('.mark-clue-read-button').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const stepIndex = parseInt(e.target.dataset.stepIndex);
-                        this.markStepAsComplete(this.activeQuest.id, stepIndex);
-                    });
-                });
-            },
-
-            showAssessmentModal(step, stepIndex) { /* ... adapted for markStepAsComplete ... */
-                let modalHtml = `<p class="telegram-hint mb-4">${step.details}</p>`;
-                step.questions.forEach((q, qi) => {
-                    modalHtml += `<div class="mb-3">
-                                    <p class="font-medium telegram-text">${qi + 1}. ${q.q}</p>
-                                    <div class="mt-1 space-y-1">`;
-                    q.options.forEach((opt, opti) => {
-                        modalHtml += `<div>
-                                        <input type="radio" name="q${qi}" id="q${qi}o${opti}" value="${opt}" class="mr-2">
-                                        <label for="q${qi}o${opti}" class="telegram-text">${opt}</label>
-                                      </div>`;
-                    });
-                    modalHtml += `</div></div>`;
-                });
-                modalHtml += `<button id="submit-assessment-button" class="w-full telegram-button-bg telegram-button-text font-semibold py-2 px-4 rounded-lg shadow mt-4">Submit Answers</button>`;
-                
-                this.dom.modalTitle.textContent = step.title;
-                this.dom.modalBody.innerHTML = modalHtml;
-                this.dom.modalContainer.classList.remove('hidden');
-                this.dom.modalContainer.classList.add('flex');
-
-                document.getElementById('submit-assessment-button').onclick = () => {
-                    const answers = {};
-                    let allAnswered = true;
-                    step.questions.forEach((q, qi) => {
-                        const selectedOption = this.dom.modalBody.querySelector(`input[name="q${qi}"]:checked`);
-                        if (selectedOption) {
-                            answers[`q${qi}`] = selectedOption.value;
-                        } else {
-                            allAnswered = false;
-                        }
-                    });
-
-                    if (!allAnswered) {
-                        this.showError("Please answer all questions.");
-                        return;
-                    }
-                    this.markStepAsComplete(this.activeQuest.id, stepIndex, answers);
-                    this.closeModal();
-                };
-            },
-
-            // --- Achievements View (Replaces Matches) ---
-            loadAchievements() {
-                this.dom.achievementsList.innerHTML = '';
-                this.dom.noAchievementsMessage.classList.add('hidden');
-                let achievementsCount = 0;
-
-                this.QUEST_DEFINITIONS.forEach(quest => {
-                    const progress = this.userQuestProgress[quest.id];
-                    if (progress && progress.completedSteps.length === quest.steps.length) {
-                        const achievementEl = document.createElement('div');
-                        achievementEl.className = 'telegram-secondary-bg p-4 rounded-lg shadow';
-                        achievementEl.innerHTML = `
-                            <h3 class="font-semibold telegram-text">${quest.title} Completed!</h3>
-                            <p class="text-sm telegram-hint">${quest.achievement || 'Great job on completing this adventure!'}</p>
-                        `;
-                        this.dom.achievementsList.appendChild(achievementEl);
-                        achievementsCount++;
-                    }
-                });
-
-                if (achievementsCount === 0) {
-                    this.dom.noAchievementsMessage.classList.remove('hidden');
-                }
-            },
-
-            // --- Chat (Placeholder) ---
-            loadChatPlaceholder() {
-                this.dom.chatWithName.textContent = "Chat (Suggestion)";
-                this.dom.sendChatMessageButton.onclick = () => {
-                    this.showError("Please use Telegram's native chat to message users.");
-                };
-            },
-
-            // --- Journal View ---
-            loadJournalEntries() {
-                this.dom.journalEntriesList.innerHTML = '';
-                this.dom.noJournalEntriesMessage.classList.add('hidden');
-                if (this.userJournalEntries.length === 0) {
-                    this.dom.noJournalEntriesMessage.classList.remove('hidden');
-                    return;
-                }
-                // Sort by date, newest first (optional)
-                const sortedEntries = [...this.userJournalEntries].sort((a,b) => new Date(b.date) - new Date(a.date));
-
-                sortedEntries.forEach(entry => this.renderJournalEntry(entry));
-                this.updateHeaderAndMainButton('journal-view'); // Reset buttons
-            },
-            renderJournalEntry(entry) {
-                const entryEl = document.createElement('div');
-                entryEl.className = 'journal-entry-card telegram-secondary-bg p-4 rounded-lg shadow';
-                entryEl.innerHTML = `
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h3 class="font-semibold telegram-text">${entry.title}</h3>
-                            <p class="text-xs telegram-hint mb-1">${new Date(entry.date).toLocaleDateString()}</p>
-                        </div>
-                        <button data-entry-id="${entry.id}" class="delete-journal-entry-button telegram-hint hover:text-red-500 text-xl">&times;</button>
-                    </div>
-                    <p class="text-sm telegram-text mt-1 whitespace-pre-wrap">${entry.content.substring(0,150)}${entry.content.length > 150 ? '...' : ''}</p>
-                `;
-                // Add click to view full entry modal if desired
-                entryEl.querySelector('.delete-journal-entry-button').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const entryId = e.currentTarget.dataset.entryId;
-                    this.tgWebApp.showConfirm("Delete this journal entry?", (confirmed) => {
-                        if (confirmed) this.deleteJournalEntry(entryId);
-                    });
-                });
-                this.dom.journalEntriesList.appendChild(entryEl);
-            },
-            handleCreateJournalEntry: async () => {
-                app.tgWebApp.MainButton.showProgress();
-                const title = app.dom.journalEntryTitleInput.value.trim();
-                const content = app.dom.journalEntryContentInput.value.trim();
-
-                if (!title || !content) {
-                    app.showError("Title and content are required for a journal entry.");
-                    app.tgWebApp.MainButton.hideProgress();
-                    return;
-                }
-                const newEntry = {
-                    id: crypto.randomUUID(), // Simple unique ID
-                    title,
-                    content,
-                    date: new Date().toISOString()
-                };
-                app.userJournalEntries.push(newEntry);
-                app.saveToCloudStorage('userJournalEntries', app.userJournalEntries, (error) => {
-                    app.tgWebApp.MainButton.hideProgress();
-                    if (error) return;
-                    app.showSuccess("Journal entry saved!");
-                    app.dom.createJournalEntryForm.classList.add('hidden');
-                    app.dom.journalEntryTitleInput.value = '';
-                    app.dom.journalEntryContentInput.value = '';
-                    app.loadJournalEntries(); // Refresh list
-                });
-            },
-            deleteJournalEntry(entryId) {
-                this.userJournalEntries = this.userJournalEntries.filter(entry => entry.id !== entryId);
-                this.saveToCloudStorage('userJournalEntries', this.userJournalEntries, (error) => {
-                    if(error) return;
-                    this.showSuccess("Entry deleted.");
-                    this.loadJournalEntries();
-                });
-            },
-
-            setupEventListeners() {
-                this.dom.bottomNav.addEventListener('click', (e) => {
-                    const navButton = e.target.closest('.nav-item');
-                    if (navButton && navButton.dataset.view) {
-                        this.navigateTo(navButton.dataset.view);
-                        this.tgWebApp.HapticFeedback.impactOccurred('light');
-                    }
-                });
-                this.dom.profileForm.addEventListener('submit', (e) => { e.preventDefault(); this.handleProfileSave(); });
-                this.dom.modalCloseButton.addEventListener('click', () => this.closeModal());
-                this.dom.modalContainer.addEventListener('click', (e) => { if (e.target === this.dom.modalContainer) this.closeModal(); });
-
-                // Journal listeners
-                this.dom.createJournalEntryButton.addEventListener('click', () => {
-                    this.dom.createJournalEntryForm.classList.remove('hidden');
-                    this.updateHeaderAndMainButton('journal-view');
-                });
-                this.dom.cancelJournalEntryButton.addEventListener('click', () => {
-                    this.dom.createJournalEntryForm.classList.add('hidden');
-                    this.dom.journalEntryTitleInput.value = '';
-                    this.dom.journalEntryContentInput.value = '';
-                    this.updateHeaderAndMainButton('journal-view');
-                });
-                this.dom.createJournalEntryForm.addEventListener('submit', (e) => { e.preventDefault(); this.handleCreateJournalEntry(); });
-                
-                // Invite friend button
-                this.dom.inviteFriendButton.addEventListener('click', () => {
-                    const inviteText = `Check out LoveQuest, a fun app to explore connections! You can open it in Telegram.`; // Customize as needed
-                    // Option 1: Open a link to your Mini App (if you have a direct link)
-                    // this.tgWebApp.openTelegramLink(`https://t.me/your_bot_username/your_app_name`);
-                    // Option 2: Switch to inline query to share the app (more complex, requires bot setup)
-                    // this.tgWebApp.switchInlineQuery(`LoveQuest`);
-                    // Option 3: Simple share text (user copies and pastes)
-                    this.tgWebApp.showPopup({
-                        title: "Invite a Friend",
-                        message: "Share this link with your friends to invite them to LoveQuest:\n(Link to your Mini App)", // Replace with actual link
-                        buttons: [{ type: "ok" }]
-                    });
-                     // For a real share, you'd use a proper link or inline query.
-                     // For now, just show a generic message.
-                     // this.showError("Share functionality to be implemented with a Mini App link or bot inline query.");
-                });
-            },
-            
-            closeModal() { /* ... same as before ... */ 
-                this.dom.modalContainer.classList.add('hidden');
-                this.dom.modalContainer.classList.remove('flex');
-                this.dom.modalBody.innerHTML = ''; 
-            },
-            showError(message) { /* ... same as before ... */ 
-                console.error("App Error:", message);
-                this.tgWebApp.showAlert(message); 
-                this.tgWebApp.HapticFeedback.notificationOccurred('error');
-            },
-            showSuccess(message) { /* ... same as before ... */ 
-                console.log("App Success:", message);
-                this.tgWebApp.HapticFeedback.notificationOccurred('success');
-                const successToast = document.createElement('div');
-                successToast.textContent = message;
-                successToast.className = 'fixed bottom-20 left-1/2 -translate-x-1/2 telegram-button-bg telegram-button-text px-4 py-2 rounded-lg shadow-lg z-[200] text-sm';
-                document.body.appendChild(successToast);
-                setTimeout(() => { successToast.remove(); }, 2500);
-            }
+        // --- Local Storage Utilities ---
+        const getLocalStorage = (key, defaultValue) => {
+            const stored = localStorage.getItem(key);
+            return stored ? JSON.parse(stored) : defaultValue;
+        };
+        const setLocalStorage = (key, value) => {
+            localStorage.setItem(key, JSON.stringify(value));
         };
 
-        window.addEventListener('load', () => {
-            if (app.tgWebApp.initDataUnsafe && app.tgWebApp.initDataUnsafe.user) {
-                 app.init();
+        // --- Telegram Theme Application ---
+        function applyTelegramTheme() {
+            if (tg.themeParams) {
+                const root = document.documentElement;
+                root.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#ffffff');
+                root.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#000000');
+                root.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color || '#999999');
+                root.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color || '#2481cc');
+                root.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#2481cc');
+                root.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color || '#ffffff');
+                root.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color || '#f0f0f0');
+                
+                // Additional derived colors or fallbacks
+                root.style.setProperty('--tg-header-color', tg.themeParams.header_bg_color || tg.themeParams.bg_color || '#ffffff');
+                root.style.setProperty('--tg-section-header-color', tg.themeParams.section_header_text_color || tg.themeParams.text_color || '#000000');
+                root.style.setProperty('--tg-accent-text-color', tg.themeParams.accent_text_color || tg.themeParams.link_color || '#2481cc');
+                root.style.setProperty('--tg-destructive-text-color', tg.themeParams.destructive_text_color || '#ff3b30');
+                root.style.setProperty('--tg-border-color', tg.themeParams.section_bg_color || tg.themeParams.secondary_bg_color || '#e0e0e0');
+
+
+                // Update body background explicitly as it might not be covered by CSS variables if set inline
+                document.body.style.backgroundColor = tg.themeParams.bg_color || '#ffffff';
+                document.body.style.color = tg.themeParams.text_color || '#000000';
+            }
+        }
+
+
+        // --- Navigation ---
+        function showScreen(screenId) {
+            screens.forEach(screen => screen.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            navButtons.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.screen === screenId);
+            });
+
+            // Update Telegram MainButton based on screen
+            tg.MainButton.hide();
+            if (screenId === 'screen-profile') {
+                // MainButton handled by specific save button
+            } else if (screenId === 'screen-swipe' && swipeCardContainer.querySelector('.swipe-card')) {
+                 // MainButton handled by on-screen accept/reject
+            }
+            // Add more MainButton logic for other screens if needed
+        }
+
+        // --- Profile Screen Logic ---
+        function loadProfileData() {
+            currentUser = getLocalStorage(`dailyVolueenter_currentUser_${currentUser.id}`, currentUser);
+            profilePicEl.src = currentUser.photo_url || 'https://placehold.co/128x128/E0E0E0/B0B0B0?text=User';
+            profileUsernameEl.textContent = currentUser.username ? `@${currentUser.username}` : '@guest';
+            hobbiesInput.value = currentUser.profile.hobbies || '';
+            passionsInput.value = currentUser.profile.passions || '';
+            preferencesInput.value = currentUser.profile.preferences || '';
+            personalityInput.value = currentUser.profile.personality || '';
+        }
+
+        function saveProfile() {
+            currentUser.profile.hobbies = hobbiesInput.value;
+            currentUser.profile.passions = passionsInput.value;
+            currentUser.profile.preferences = preferencesInput.value;
+            currentUser.profile.personality = personalityInput.value;
+            setLocalStorage(`dailyVolueenter_currentUser_${currentUser.id}`, currentUser);
+            tg.HapticFeedback.notificationOccurred('success');
+            alertUser("Profile Saved!"); // Using custom alert
+        }
+        
+        function alertUser(message, type = 'info') { // type can be 'info', 'success', 'error'
+            // Simple alert for now, can be replaced with a styled modal
+            const alertDiv = document.createElement('div');
+            alertDiv.textContent = message;
+            alertDiv.style.position = 'fixed';
+            alertDiv.style.bottom = '70px'; // Above nav bar
+            alertDiv.style.left = '50%';
+            alertDiv.style.transform = 'translateX(-50%)';
+            alertDiv.style.padding = '10px 20px';
+            alertDiv.style.borderRadius = '8px';
+            alertDiv.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+            alertDiv.style.zIndex = '1000';
+            alertDiv.style.transition = 'opacity 0.5s ease-in-out';
+            
+            if (type === 'success') {
+                alertDiv.style.backgroundColor = 'var(--tg-theme-button-color)'; // Or a green color
+                alertDiv.style.color = 'var(--tg-theme-button-text-color)';
+            } else if (type === 'error') {
+                alertDiv.style.backgroundColor = 'var(--tg-destructive-text-color)'; // Or a red color
+                alertDiv.style.color = 'var(--tg-theme-button-text-color)';
             } else {
-                console.error("Critical: Telegram user data missing at load time.");
-                const loadingView = document.getElementById('loading-view');
-                if (loadingView) {
-                    loadingView.innerHTML = `<p class="text-red-500 text-center p-6">App cannot start: Telegram user data is missing. Please launch from Telegram.</p>`;
+                alertDiv.style.backgroundColor = 'var(--tg-theme-secondary-bg-color)';
+                alertDiv.style.color = 'var(--tg-theme-text-color)';
+            }
+            
+            document.body.appendChild(alertDiv);
+            setTimeout(() => {
+                alertDiv.style.opacity = '0';
+                setTimeout(() => alertDiv.remove(), 500);
+            }, 2000);
+        }
+
+
+        // --- Swipe Screen Logic ---
+        let currentCardIndex = 0;
+        let swipeCards = [];
+
+        function createSwipeCard(user, index) {
+            const card = document.createElement('div');
+            card.classList.add('swipe-card', 'absolute', 'w-full', 'h-full', 'bg-var(--tg-theme-secondary-bg-color)', 'rounded-xl', 'shadow-2xl', 'overflow-hidden', 'flex', 'flex-col', 'cursor-grab');
+            card.style.zIndex = MOCK_USERS_COUNT - index; // Stack cards
+            card.dataset.userId = user.id;
+
+            card.innerHTML = `
+                <img src="${user.photo_url}" alt="${user.username}" class="w-full h-3/4 object-cover">
+                <div class="p-4 flex-grow flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-2xl font-bold var(--tg-theme-text-color)">@${user.username}, ${user.age}</h3>
+                        <p class="text-sm var(--tg-theme-hint-color) truncate">${user.bio.substring(0, 50)}...</p>
+                    </div>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        ${user.tags.slice(0,3).map(tag => `<span class="tag text-xs px-2 py-1 rounded-full">${tag}</span>`).join('')}
+                    </div>
+                </div>
+                <div id="swipe-overlay-${user.id}" class="absolute inset-0 flex items-center justify-center text-4xl font-bold uppercase opacity-0 transition-opacity duration-300"></div>
+            `;
+            makeCardDraggable(card);
+            return card;
+        }
+        
+        function loadPotentialPartners() {
+            // Filter out users already swiped or the current user
+            const swipedUserIds = [...swipeHistory.accepted, ...swipeHistory.rejected, currentUser.id];
+            const availablePartners = potentialPartners.filter(p => !swipedUserIds.includes(p.id));
+            
+            swipeCardContainer.innerHTML = ''; // Clear existing cards
+            swipeCards = []; // Reset the array of card elements
+
+            if (availablePartners.length === 0) {
+                swipeEmptyState.classList.remove('hidden');
+                return;
+            }
+            swipeEmptyState.classList.add('hidden');
+
+            // Create and append new cards
+            // Show only a few cards at a time for performance, e.g., top 3
+            availablePartners.slice(0, 3).reverse().forEach((user, index) => {
+                const card = createSwipeCard(user, index);
+                swipeCards.push(card);
+                swipeCardContainer.appendChild(card);
+            });
+            currentCardIndex = swipeCards.length -1; // Start with the top card
+        }
+
+
+        function makeCardDraggable(card) {
+            let startX, startY, isDragging = false, offsetX, offsetY;
+            const overlay = card.querySelector(`#swipe-overlay-${card.dataset.userId}`);
+
+            function onPointerDown(e) {
+                if (e.target.closest('button')) return; // Don't drag if clicking a button on card
+                isDragging = true;
+                startX = e.clientX || e.touches[0].clientX;
+                startY = e.clientY || e.touches[0].clientY;
+                card.style.transition = 'none'; // Remove transition for smooth dragging
+                card.classList.add('grabbing');
+            }
+
+            function onPointerMove(e) {
+                if (!isDragging) return;
+                e.preventDefault();
+                const currentX = e.clientX || e.touches[0].clientX;
+                const currentY = e.clientY || e.touches[0].clientY;
+                offsetX = currentX - startX;
+                offsetY = currentY - startY;
+
+                card.style.transform = `translate(${offsetX}px, ${offsetY}px) rotate(${offsetX / 20}deg)`;
+                
+                // Show accept/reject overlay
+                if (offsetX > 50) {
+                    overlay.textContent = 'ACCEPT';
+                    overlay.style.color = 'green';
+                    overlay.style.opacity = Math.min(1, Math.abs(offsetX) / 100);
+                } else if (offsetX < -50) {
+                    overlay.textContent = 'REJECT';
+                    overlay.style.color = 'red';
+                    overlay.style.opacity = Math.min(1, Math.abs(offsetX) / 100);
+                } else {
+                    overlay.style.opacity = '0';
                 }
             }
-        });
+
+            function onPointerUp(e) {
+                if (!isDragging) return;
+                isDragging = false;
+                card.classList.remove('grabbing');
+                card.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
+                overlay.style.opacity = '0'; // Hide overlay quickly
+
+                const threshold = card.offsetWidth / 3;
+                if (offsetX > threshold) {
+                    handleSwipe('accept', card.dataset.userId);
+                } else if (offsetX < -threshold) {
+                    handleSwipe('reject', card.dataset.userId);
+                } else {
+                    card.style.transform = 'translate(0,0) rotate(0deg)'; // Return to center
+                }
+            }
+            
+            card.addEventListener('mousedown', onPointerDown);
+            card.addEventListener('touchstart', onPointerDown, { passive: false });
+
+            document.addEventListener('mousemove', onPointerMove);
+            document.addEventListener('touchmove', onPointerMove, { passive: false });
+            
+            document.addEventListener('mouseup', onPointerUp);
+            document.addEventListener('touchend', onPointerUp);
+        }
+
+        function handleSwipe(direction, userId) {
+            if (!userId && swipeCards.length > 0) { // From button click
+                const topCard = swipeCards[swipeCards.length - 1];
+                if (topCard) userId = topCard.dataset.userId;
+            }
+            if (!userId) return; // No card to swipe
+
+            const cardEl = swipeCardContainer.querySelector(`.swipe-card[data-user-id="${userId}"]`);
+            if (!cardEl) return;
+
+            cardEl.style.transition = 'transform 0.5s ease-out, opacity 0.5s ease-out';
+            const flyX = (direction === 'accept' ? 1 : -1) * (swipeCardContainer.offsetWidth + cardEl.offsetWidth);
+            cardEl.style.transform = `translate(${flyX}px, ${cardEl.offsetTop * 0.3}px) rotate(${direction === 'accept' ? 30 : -30}deg)`;
+            cardEl.style.opacity = '0';
+
+            tg.HapticFeedback.impactOccurred('medium');
+
+            setTimeout(() => {
+                cardEl.remove();
+                swipeCards = swipeCards.filter(c => c !== cardEl); // Remove from active cards array
+                if (swipeCards.length === 0) {
+                     loadPotentialPartners(); // Load more if needed
+                }
+            }, 500);
+
+
+            if (direction === 'accept') {
+                if (!swipeHistory.accepted.includes(userId)) swipeHistory.accepted.push(userId);
+                // Check for mutual match (simplified)
+                const partner = potentialPartners.find(p => p.id === userId);
+                // In a real app, partner.preferences.acceptedMe would come from a server.
+                // We simulate it: some users might "accept back" randomly or based on a flag.
+                if (partner && (partner.acceptsCurrentUser || Math.random() < 0.3)) { // 30% chance of mutual like for demo
+                    if (!matches.find(m => m.partnerId === userId)) {
+                        matches.push({
+                            partnerId: userId,
+                            partnerName: partner.username,
+                            partnerPic: partner.photo_url,
+                            chatLog: [{ sender: 'system', text: 'You are now matched!', time: new Date().toISOString() }]
+                        });
+                        alertUser(`It's a Match with @${partner.username}!`, 'success');
+                    }
+                }
+            } else {
+                if (!swipeHistory.rejected.includes(userId)) swipeHistory.rejected.push(userId);
+            }
+            setLocalStorage(`dailyVolueenter_swipeHistory_${currentUser.id}`, swipeHistory);
+            setLocalStorage(`dailyVolueenter_matches_${currentUser.id}`, matches);
+        }
+        
+        // --- History Screen Logic ---
+        let activeHistoryTab = 'accepted';
+        function renderHistoryScreen() {
+            historyContentEl.innerHTML = '';
+            const listToShow = activeHistoryTab === 'accepted' ? swipeHistory.accepted : swipeHistory.rejected;
+
+            if (listToShow.length === 0) {
+                historyContentEl.innerHTML = `<p class="text-center var(--tg-theme-hint-color) mt-4">No users in this list yet.</p>`;
+                return;
+            }
+
+            const ul = document.createElement('ul');
+            ul.className = 'space-y-2';
+            listToShow.forEach(userId => {
+                const partner = potentialPartners.find(p => p.id === userId);
+                if (!partner) return;
+
+                const li = document.createElement('li');
+                li.className = 'tg-list-item flex items-center justify-between p-3 bg-var(--tg-theme-secondary-bg-color) rounded-lg';
+                
+                let statusHtml = '';
+                if (activeHistoryTab === 'accepted') {
+                    const isMatch = matches.find(m => m.partnerId === userId);
+                    if (isMatch) {
+                        statusHtml = `<span class="status-accepted text-xs font-semibold">Accepted You Back</span>`;
+                    } else {
+                        statusHtml = `<span class="status-pending text-xs font-semibold">Pending Response</span>`;
+                    }
+                }
+
+                li.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <img src="${partner.photo_url}" alt="${partner.username}" class="profile-pic-md rounded-full object-cover">
+                        <div>
+                            <p class="font-semibold var(--tg-theme-text-color)">@${partner.username}</p>
+                            ${activeHistoryTab === 'accepted' ? statusHtml : ''}
+                        </div>
+                    </div>
+                    ${activeHistoryTab === 'accepted' && matches.find(m => m.partnerId === userId) ? 
+                        `<button data-chat-partner-id="${userId}" class="chat-now-btn primary-btn text-xs py-1 px-2 rounded">Chat</button>` : ''}
+                `;
+                ul.appendChild(li);
+            });
+            historyContentEl.appendChild(ul);
+            
+            document.querySelectorAll('.chat-now-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const partnerIdToChat = e.currentTarget.dataset.chatPartnerId;
+                    openChatScreen(partnerIdToChat);
+                });
+            });
+        }
+
+        // --- Adventure Screen Logic ---
+        function renderAdventureScreen() {
+            assessmentsListEl.innerHTML = '';
+            MOCK_ASSESSMENTS.forEach(assessment => {
+                const isCompleted = adventureProgress.assessments[assessment.id]?.completed;
+                const li = document.createElement('li');
+                li.className = `tg-list-item flex justify-between items-center p-3 rounded-lg ${isCompleted ? 'opacity-60' : ''}`;
+                li.innerHTML = `
+                    <span>${assessment.title}</span>
+                    <button data-type="assessment" data-id="${assessment.id}" class="start-adventure-item-btn ${isCompleted ? 'secondary-btn' : 'primary-btn'} text-sm py-1 px-3 rounded-md">
+                        ${isCompleted ? 'View' : 'Start'}
+                    </button>
+                `;
+                assessmentsListEl.appendChild(li);
+            });
+
+            challengesListEl.innerHTML = '';
+            MOCK_CHALLENGES.forEach(challenge => {
+                const isCompleted = adventureProgress.challenges[challenge.id]?.completed;
+                const li = document.createElement('li');
+                li.className = `tg-list-item flex justify-between items-center p-3 rounded-lg ${isCompleted ? 'opacity-60' : ''}`;
+                li.innerHTML = `
+                    <span>${challenge.title}</span>
+                    <button data-type="challenge" data-id="${challenge.id}" class="start-adventure-item-btn ${isCompleted ? 'secondary-btn' : 'primary-btn'} text-sm py-1 px-3 rounded-md">
+                        ${isCompleted ? 'View' : 'Start'}
+                    </button>
+                `;
+                challengesListEl.appendChild(li);
+            });
+
+            document.querySelectorAll('.start-adventure-item-btn').forEach(btn => {
+                btn.addEventListener('click', handleAdventureItemStart);
+            });
+        }
+        
+        function handleAdventureItemStart(event) {
+            const type = event.target.dataset.type;
+            const id = event.target.dataset.id;
+            currentAdventureContext = { type, id };
+
+            if (type === 'assessment') {
+                const assessment = MOCK_ASSESSMENTS.find(a => a.id === id);
+                adventureModalTitle.textContent = assessment.title;
+                let contentHTML = `<p class="var(--tg-theme-hint-color) mb-3">${assessment.question}</p><div class="space-y-2">`;
+                assessment.options.forEach((opt, index) => {
+                    contentHTML += `<div><input type="radio" name="assessmentOption" id="opt${index}" value="${opt}" class="mr-2"><label for="opt${index}">${opt}</label></div>`;
+                });
+                contentHTML += `</div>`;
+                adventureModalContent.innerHTML = contentHTML;
+                adventureModalActionBtn.textContent = "Submit Answer";
+                adventureModalActionBtn.onclick = submitAssessmentAnswer;
+            } else if (type === 'challenge') {
+                const challenge = MOCK_CHALLENGES.find(c => c.id === id);
+                adventureModalTitle.textContent = challenge.title;
+                adventureModalContent.innerHTML = `
+                    <p class="var(--tg-theme-hint-color) mb-2">${challenge.description}</p>
+                    <label for="challenge-input" class="block text-sm font-medium">${challenge.task}</label>
+                    <input type="text" id="challenge-input" class="w-full p-2 rounded-lg border mt-1" placeholder="Your answer">
+                `;
+                adventureModalActionBtn.textContent = "Submit Proof";
+                adventureModalActionBtn.onclick = submitChallengeProof;
+            }
+            adventureModal.classList.remove('hidden');
+        }
+
+        function submitAssessmentAnswer() {
+            const selectedOption = document.querySelector('input[name="assessmentOption"]:checked');
+            if (!selectedOption) {
+                alertUser("Please select an answer.", "error");
+                return;
+            }
+            if (!adventureProgress.assessments[currentAdventureContext.id]) {
+                adventureProgress.assessments[currentAdventureContext.id] = { completed: false, answers: [] };
+            }
+            adventureProgress.assessments[currentAdventureContext.id].answers.push(selectedOption.value);
+            adventureProgress.assessments[currentAdventureContext.id].completed = true; // Mark as completed after first answer
+            setLocalStorage(`dailyVolueenter_adventureProgress_${currentUser.id}`, adventureProgress);
+            alertUser("Assessment submitted!", "success");
+            closeAdventureModal();
+            renderAdventureScreen(); // Re-render to update button states
+        }
+
+        function submitChallengeProof() {
+            const challengeInput = document.getElementById('challenge-input');
+            const challenge = MOCK_CHALLENGES.find(c => c.id === currentAdventureContext.id);
+            if (challengeInput.value.trim().toLowerCase() === challenge.solution.toLowerCase()) {
+                 if (!adventureProgress.challenges[currentAdventureContext.id]) {
+                    adventureProgress.challenges[currentAdventureContext.id] = { completed: false, attempts: [] };
+                }
+                adventureProgress.challenges[currentAdventureContext.id].completed = true;
+                adventureProgress.challenges[currentAdventureContext.id].attempts.push({value: challengeInput.value, correct: true});
+                setLocalStorage(`dailyVolueenter_adventureProgress_${currentUser.id}`, adventureProgress);
+                alertUser("Challenge completed successfully!", "success");
+            } else {
+                adventureProgress.challenges[currentAdventureContext.id].attempts.push({value: challengeInput.value, correct: false});
+                setLocalStorage(`dailyVolueenter_adventureProgress_${currentUser.id}`, adventureProgress);
+                alertUser("Incorrect answer. Try again!", "error");
+            }
+            closeAdventureModal();
+            renderAdventureScreen();
+        }
+        
+        function closeAdventureModal() {
+            adventureModal.classList.add('hidden');
+            currentAdventureContext = null;
+        }
+
+        // --- Chat List & Individual Chat Logic ---
+        function renderChatListScreen() {
+            chatListContainer.innerHTML = '';
+            if (matches.length === 0) {
+                noChatsMessage.classList.remove('hidden');
+                return;
+            }
+            noChatsMessage.classList.add('hidden');
+
+            matches.forEach(match => {
+                const partner = potentialPartners.find(p => p.id === match.partnerId) || { username: match.partnerName, photo_url: match.partnerPic };
+                const lastMessage = match.chatLog && match.chatLog.length > 0 ? match.chatLog[match.chatLog.length - 1] : { text: 'No messages yet.' };
+                
+                const chatItem = document.createElement('div');
+                chatItem.className = 'tg-list-item flex items-center space-x-3 p-3 bg-var(--tg-theme-secondary-bg-color) rounded-lg cursor-pointer hover:opacity-80';
+                chatItem.dataset.partnerId = match.partnerId;
+                chatItem.innerHTML = `
+                    <img src="${partner.photo_url}" alt="${partner.username}" class="profile-pic-md rounded-full object-cover">
+                    <div class="flex-grow overflow-hidden">
+                        <p class="font-semibold var(--tg-theme-text-color)">@${partner.username}</p>
+                        <p class="text-sm var(--tg-theme-hint-color) truncate">${lastMessage.text}</p>
+                    </div>
+                    ${lastMessage.time ? `<span class="text-xs var(--tg-theme-hint-color)">${new Date(lastMessage.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>` : ''}
+                `;
+                chatItem.addEventListener('click', () => openChatScreen(match.partnerId));
+                chatListContainer.appendChild(chatItem);
+            });
+        }
+
+        function openChatScreen(partnerId) {
+            currentChatPartnerId = partnerId;
+            const match = matches.find(m => m.partnerId === partnerId);
+            if (!match) return;
+            const partner = potentialPartners.find(p => p.id === partnerId) || { username: match.partnerName, photo_url: match.partnerPic };
+
+            chatPartnerPic.src = partner.photo_url;
+            chatPartnerName.textContent = `@${partner.username}`;
+            renderChatMessages(match.chatLog || []);
+            showScreen('screen-chat-individual');
+             // Scroll to bottom
+            chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+        }
+
+        function renderChatMessages(chatLog) {
+            chatMessagesContainer.innerHTML = '';
+            chatLog.forEach(msg => {
+                const messageDiv = document.createElement('div');
+                const isCurrentUser = msg.sender === currentUser.id || msg.sender === 'me'; // 'me' for older mock data
+                messageDiv.className = `flex mb-2 ${isCurrentUser ? 'justify-end' : 'justify-start'}`;
+                messageDiv.innerHTML = `
+                    <div class="max-w-[70%] p-2.5 rounded-xl ${isCurrentUser ? 'bg-var(--tg-theme-button-color) text-var(--tg-theme-button-text-color)' : 'bg-var(--tg-theme-secondary-bg-color) text-var(--tg-theme-text-color)'}">
+                        <p class="text-sm">${msg.text}</p>
+                        <p class="text-xs opacity-70 mt-1 text-right">${new Date(msg.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                    </div>
+                `;
+                chatMessagesContainer.appendChild(messageDiv);
+            });
+             chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+        }
+
+        function sendChatMessage() {
+            const text = chatMessageInput.value.trim();
+            if (!text || !currentChatPartnerId) return;
+
+            const match = matches.find(m => m.partnerId === currentChatPartnerId);
+            if (!match) return;
+
+            if (!match.chatLog) match.chatLog = [];
+            match.chatLog.push({ sender: currentUser.id, text, time: new Date().toISOString() });
+            setLocalStorage(`dailyVolueenter_matches_${currentUser.id}`, matches);
+            renderChatMessages(match.chatLog);
+            chatMessageInput.value = '';
+            chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight; // Scroll to bottom
+            tg.HapticFeedback.impactOccurred('light');
+        }
+
+        // --- Mock Data Generation ---
+        function generateMockUsers() {
+            const firstNames = ["Alex", "Jamie", "Casey", "Riley", "Jessie", "Morgan", "Taylor", "Jordan", "Drew", "Skyler"];
+            const lastNames = ["Smith", "Jones", "Williams", "Brown", "Davis", "Miller", "Wilson", "Moore", "Lee", "Garcia"];
+            const bios = [
+                "Lover of long walks and deep talks.", "Tech enthusiast and avid reader.", "Always up for an adventure!",
+                "Seeking someone to share laughs and life with.", "Creative soul with a passion for art.", "Foodie and travel bug.",
+                "Introvert with an extroverted cat.", "Musician looking for a duet partner.", "Fitness fanatic and nature lover."
+            ];
+            const allTags = ["Travel", "Foodie", "Music", "Art", "Tech", "Books", "Movies", "Sports", "Nature", "Gaming", "Fitness", "Animals", "Photography", "Cooking", "Dancing"];
+
+            for (let i = 0; i < MOCK_USERS_COUNT; i++) {
+                const id = `mockuser${i + 1}`;
+                if (id === currentUser.id) continue; // Skip current user
+
+                const userTags = [];
+                const numTags = Math.floor(Math.random() * 3) + 2; // 2-4 tags
+                const availableTags = [...allTags];
+                for(let j=0; j<numTags; j++) {
+                    if(availableTags.length === 0) break;
+                    const tagIndex = Math.floor(Math.random() * availableTags.length);
+                    userTags.push(availableTags.splice(tagIndex, 1)[0]);
+                }
+
+                potentialPartners.push({
+                    id: id,
+                    username: `${firstNames[Math.floor(Math.random() * firstNames.length)]}${lastNames[Math.floor(Math.random() * lastNames.length)]}${Math.floor(Math.random()*100)}`.toLowerCase(),
+                    photo_url: `https://placehold.co/400x500/${Math.floor(Math.random()*16777215).toString(16)}/${Math.floor(Math.random()*16777215).toString(16)}?text=User${i+1}&font=roboto`,
+                    age: Math.floor(Math.random() * 15) + 20, // Age 20-34
+                    bio: bios[Math.floor(Math.random() * bios.length)],
+                    tags: userTags,
+                    profile: { // Mock dailyVolueenter profile data
+                        hobbies: 'mock hobby ' + i,
+                        passions: 'mock passion ' + i,
+                        preferences: Math.random() < 0.5 ? 'Looking for serious' : 'Open to casual',
+                        personality: Math.random() < 0.5 ? 'Adventurous' : 'Thoughtful'
+                    },
+                    acceptsCurrentUser: Math.random() < 0.4 // 40% chance they'd accept current user back (for demo)
+                });
+            }
+        }
+
+        // --- Initialization ---
+        function initApp() {
+            tg.ready(); // Inform Telegram app is ready
+            tg.expand(); // Expand to full height
+            applyTelegramTheme();
+
+            // Handle theme changes from Telegram
+            tg.onEvent('themeChanged', applyTelegramTheme);
+            tg.onEvent('viewportChanged', () => tg.expand()); // Re-expand if viewport changes
+
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                currentUser.id = tg.initDataUnsafe.user.id?.toString() || 'guest_tg_user';
+                currentUser.username = tg.initDataUnsafe.user.username || `user${currentUser.id.substring(0,5)}`;
+                currentUser.photo_url = tg.initDataUnsafe.user.photo_url || currentUser.photo_url;
+            } else {
+                // Fallback for environments where SDK might not fully initialize (e.g. desktop browser)
+                currentUser.id = 'guest' + Math.floor(Math.random()*10000);
+                alertUser("Running in dev mode: Telegram user data not available.");
+            }
+            
+            loadProfileData();
+            swipeHistory = getLocalStorage(`dailyVolueenter_swipeHistory_${currentUser.id}`, { accepted: [], rejected: [] });
+            matches = getLocalStorage(`dailyVolueenter_matches_${currentUser.id}`, []);
+            adventureProgress = getLocalStorage(`dailyVolueenter_adventureProgress_${currentUser.id}`, { assessments: {}, challenges: {} });
+
+            generateMockUsers();
+            loadPotentialPartners(); // Initial load for swipe screen
+
+            // Event Listeners
+            navButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const screenId = button.dataset.screen;
+                    showScreen(screenId);
+                    if (screenId === 'screen-swipe') loadPotentialPartners(); // Refresh swipe screen
+                    if (screenId === 'screen-history') renderHistoryScreen();
+                    if (screenId === 'screen-chat-list') renderChatListScreen();
+                    if (screenId === 'screen-adventure') renderAdventureScreen();
+                });
+            });
+
+            saveProfileBtn.addEventListener('click', saveProfile);
+            rejectBtn.addEventListener('click', () => handleSwipe('reject'));
+            acceptBtn.addEventListener('click', () => handleSwipe('accept'));
+
+            historyTabButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    historyTabButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    activeHistoryTab = btn.dataset.tab;
+                    renderHistoryScreen();
+                });
+            });
+            
+            chatSendBtn.addEventListener('click', sendChatMessage);
+            chatMessageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendChatMessage();
+            });
+            chatBackBtn.addEventListener('click', () => showScreen('screen-chat-list'));
+
+            adventureModalCloseBtn.addEventListener('click', closeAdventureModal);
+
+            // Set initial screen
+            showScreen('screen-swipe');
+        }
+
+        // Start the app
+        initApp();
+
     </script>
 </body>
 </html>
