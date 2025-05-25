@@ -3,955 +3,966 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>daily volueenter</title>
+    <title>Telegram Food Finder</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        // Custom Tailwind Configuration
+        tailwind.config = {
+            darkMode: 'class', // Enables dark mode based on class
+            theme: {
+                extend: {
+                    colors: {
+                        primary: 'var(--tg-theme-button-color, #5D5CDE)', // Use Telegram button color as primary
+                        'primary-dark': 'var(--tg-theme-button-color, #4A49B7)', // Darker shade or same
+                        'telegram': 'var(--tg-theme-link-color, #0088cc)', // Use Telegram link color
+                        'telegram-dark': 'var(--tg-theme-link-color, #0077b5)', // Darker shade or same
+                        'yellow-rating': '#FFCA28',
+                        'tg-bg': 'var(--tg-theme-bg-color, #F0F0F0)',
+                        'tg-text': 'var(--tg-theme-text-color, #000000)',
+                        'tg-hint': 'var(--tg-theme-hint-color, #999999)',
+                        'tg-secondary-bg': 'var(--tg-theme-secondary-bg-color, #FFFFFF)',
+                    },
+                    spacing: {
+                        '128': '32rem',
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        /* Apply Telegram Theme Variables */
+        /* Apply Telegram theme variables as CSS custom properties for broader use */
         :root {
-            --tg-theme-bg-color: #ffffff; /* Default light theme bg */
-            --tg-theme-text-color: #000000; /* Default light theme text */
-            --tg-theme-hint-color: #999999; /* Default light theme hint */
-            --tg-theme-link-color: #2481cc; /* Default light theme link */
-            --tg-theme-button-color: #2481cc; /* Default light theme button */
-            --tg-theme-button-text-color: #ffffff; /* Default light theme button text */
-            --tg-theme-secondary-bg-color: #f0f0f0; /* Default light theme secondary bg */
-            --tg-header-color: #ffffff; /* Default header color */
-            --tg-section-header-color: #000000; /* Default section header text color */
-            --tg-accent-text-color: #2481cc; /* Default accent text color */
-            --tg-destructive-text-color: #ff3b30; /* Default destructive text color */
-            --tg-border-color: #e0e0e0; /* Default border color */
+            --tg-theme-bg-color: #ffffff; /* Default light bg */
+            --tg-theme-text-color: #000000; /* Default light text */
+            --tg-theme-hint-color: #999999;
+            --tg-theme-link-color: #0088cc;
+            --tg-theme-button-color: #0088cc;
+            --tg-theme-button-text-color: #ffffff;
+            --tg-theme-secondary-bg-color: #f0f0f0;
+            --tg-header-color: #ffffff; /* For sticky header */
         }
 
+        /* Basic body styling */
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
             background-color: var(--tg-theme-bg-color);
             color: var(--tg-theme-text-color);
             margin: 0;
             padding: 0;
-            overflow-x: hidden;
-            overscroll-behavior-y: contain; /* Prevents pull-to-refresh in mini app */
+            overscroll-behavior-y: contain; /* Prevents pull-to-refresh in Mini App */
         }
-        .screen {
-            min-height: calc(100vh - 60px); /* Adjust if nav bar height changes */
-            display: none; /* Hidden by default */
-            box-sizing: border-box;
-        }
-        .screen.active {
-            display: flex; /* Use flex for centering/layout */
-            flex-direction: column;
-        }
-        /* Custom scrollbar for better aesthetics if needed */
+
+        /* Custom scrollbar to match Telegram's subtle style */
         ::-webkit-scrollbar {
-            width: 5px;
+            width: 4px;
+            height: 4px;
         }
         ::-webkit-scrollbar-track {
-            background: var(--tg-theme-secondary-bg-color);
+            background: transparent;
         }
         ::-webkit-scrollbar-thumb {
-            background: var(--tg-theme-hint-color);
-            border-radius: 5px;
+            background: var(--tg-theme-hint-color, #888);
+            border-radius: 10px;
         }
-        .nav-bar {
-            background-color: var(--tg-theme-secondary-bg-color);
-            border-top: 1px solid var(--tg-border-color);
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--tg-theme-text-color, #555);
         }
-        .nav-button {
-            color: var(--tg-theme-hint-color);
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none; /* For Chrome, Safari, and Opera */
         }
-        .nav-button.active {
-            color: var(--tg-theme-button-color);
+        .hide-scrollbar {
+            -ms-overflow-style: none;  /* For IE and Edge */
+            scrollbar-width: none;  /* For Firefox */
         }
-        .swipe-card {
-            touch-action: none; /* Important for custom swipe gestures */
-            user-select: none;
-            transform-origin: bottom center;
+
+        /* Modal styles */
+        .modal {
+            transition: opacity 0.2s ease, visibility 0.2s ease;
         }
-        .profile-pic-xl {
-            width: 128px;
-            height: 128px;
-        }
-        .profile-pic-lg {
-            width: 80px;
-            height: 80px;
-        }
-        .profile-pic-md {
-            width: 56px;
-            height: 56px;
-        }
-        .profile-pic-sm {
-            width: 40px;
-            height: 40px;
-        }
-        .tag {
-            background-color: var(--tg-theme-button-color);
-            color: var(--tg-theme-button-text-color);
-        }
-        input, textarea, select {
+        .modal-content {
+            transform: scale(0.95) translateY(20px);
+            transition: transform 0.2s ease, opacity 0.2s ease;
+            opacity: 0;
             background-color: var(--tg-theme-secondary-bg-color);
             color: var(--tg-theme-text-color);
-            border: 1px solid var(--tg-border-color);
         }
-        input::placeholder, textarea::placeholder {
-            color: var(--tg-theme-hint-color);
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
         }
-        button.primary-btn {
-            background-color: var(--tg-theme-button-color);
-            color: var(--tg-theme-button-text-color);
+        .modal.active .modal-content {
+            transform: scale(1) translateY(0);
+            opacity: 1;
         }
-        button.secondary-btn {
+
+        /* Rating stars */
+        .rating-stars { display: inline-flex; direction: rtl; }
+        .rating-stars input { display: none; }
+        .rating-stars label { cursor: pointer; color: var(--tg-theme-hint-color); transition: color 0.2s; font-size: 1.5rem; padding: 0 0.1rem;}
+        .rating-stars label:hover,
+        .rating-stars label:hover ~ label,
+        .rating-stars input:checked ~ label { color: #FFCA28; } /* yellow-rating */
+
+        /* Image effects */
+        .restaurant-image img { transition: transform 0.3s ease; }
+        .restaurant-image:hover img { transform: scale(1.05); }
+
+        /* Animations */
+        @keyframes slideInFromBottom {
+            0% { transform: translateY(20px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        .restaurant-card { animation: slideInFromBottom 0.3s ease forwards; opacity: 0; }
+        .restaurant-card:nth-child(1) { animation-delay: 0.05s; }
+        .restaurant-card:nth-child(2) { animation-delay: 0.1s; }
+        .restaurant-card:nth-child(3) { animation-delay: 0.15s; }
+        /* Add more if needed or handle dynamically */
+
+        /* Skeleton loading */
+        .skeleton {
+            background: linear-gradient(90deg, var(--tg-theme-secondary-bg-color) 25%, var(--tg-theme-hint-color) 50%, var(--tg-theme-secondary-bg-color) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            opacity: 0.5;
+        }
+        .dark .skeleton { /* This will be handled by Telegram's theme variables */
+             background: linear-gradient(90deg, var(--tg-theme-secondary-bg-color) 25%, var(--tg-theme-hint-color) 50%, var(--tg-theme-secondary-bg-color) 75%);
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        
+        /* Ensure sticky header uses Telegram theme */
+        header.sticky {
+            background-color: var(--tg-header-color); /* Use a specific var for header if needed, or secondary-bg */
+        }
+
+        /* Style for filter buttons to use Telegram button colors */
+        .filter-btn.active {
+            background-color: var(--tg-theme-button-color) !important;
+            color: var(--tg-theme-button-text-color) !important;
+        }
+        .filter-btn {
             background-color: var(--tg-theme-secondary-bg-color);
             color: var(--tg-theme-text-color);
+            border: 1px solid var(--tg-theme-hint-color);
+        }
+        .filter-btn:hover {
+            opacity: 0.8;
+        }
+        
+        /* Input styling to match Telegram */
+        input[type="text"], textarea {
+            background-color: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            border: 1px solid var(--tg-theme-hint-color);
+        }
+        input[type="text"]:focus, textarea:focus {
+            border-color: var(--tg-theme-button-color);
+            box-shadow: 0 0 0 2px var(--tg-theme-button-color);
+        }
+        
+        /* Button styling to use Telegram button colors */
+        .tg-button {
+            background-color: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+            transition: opacity 0.2s;
+        }
+        .tg-button:hover {
+            opacity: 0.85;
+        }
+        .tg-button-secondary {
+            background-color: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-button-color); /* Or text_color */
             border: 1px solid var(--tg-theme-button-color);
         }
-        .tab-button {
-            border-bottom: 2px solid transparent;
-            color: var(--tg-theme-hint-color);
+        .tg-button-secondary:hover {
+            opacity: 0.85;
         }
-        .tab-button.active {
-            border-bottom-color: var(--tg-theme-button-color);
-            color: var(--tg-theme-button-color);
-        }
-        .status-pending { color: orange; }
-        .status-accepted { color: green; }
 
-        /* Specific Telegram UI element mimicking */
-        .tg-list-item {
-            border-bottom: 1px solid var(--tg-border-color);
-        }
-        .tg-list-item:last-child {
-            border-bottom: none;
-        }
-        .tg-section-title {
-            color: var(--tg-section-header-color);
-            font-weight: 600;
-        }
     </style>
 </head>
-<body class="overscroll-none">
-
-    <div id="app-container" class="h-screen flex flex-col">
-
-        <main class="flex-grow overflow-y-auto">
-            <div id="screen-profile" class="screen p-4 space-y-4">
-                <div class="flex flex-col items-center space-y-3">
-                    <img id="profile-main-pic" src="https://placehold.co/128x128/E0E0E0/B0B0B0?text=User" alt="Profile Picture" class="profile-pic-xl rounded-full object-cover">
-                    <h2 id="profile-main-username" class="text-2xl font-semibold">@username</h2>
-                </div>
-
-                <div class="space-y-1">
-                    <label for="profile-hobbies" class="block text-sm font-medium tg-section-title">Hobbies & Interests (comma separated):</label>
-                    <textarea id="profile-hobbies" rows="3" class="w-full p-2 rounded-lg border" placeholder="e.g., hiking, coding, reading"></textarea>
-                </div>
-                <div class="space-y-1">
-                    <label for="profile-passions" class="block text-sm font-medium tg-section-title">Passions (comma separated):</label>
-                    <textarea id="profile-passions" rows="3" class="w-full p-2 rounded-lg border" placeholder="e.g., sustainable living, AI ethics"></textarea>
-                </div>
-                <div class="space-y-1">
-                    <label for="profile-preferences" class="block text-sm font-medium tg-section-title">Relationship Preferences:</label>
-                    <input type="text" id="profile-preferences" class="w-full p-2 rounded-lg border" placeholder="e.g., Looking for serious, casual">
-                </div>
-                <div class="space-y-1">
-                    <label for="profile-personality" class="block text-sm font-medium tg-section-title">Key Personality Traits (comma separated):</label>
-                    <input type="text" id="profile-personality" class="w-full p-2 rounded-lg border" placeholder="e.g., adventurous, empathetic, witty">
-                </div>
-                <button id="save-profile-btn" class="w-full primary-btn py-2.5 px-4 rounded-lg font-semibold">Save Profile</button>
-            </div>
-
-            <div id="screen-swipe" class="screen items-center justify-center p-4 relative overflow-hidden">
-                <div id="swipe-card-container" class="relative w-full max-w-sm h-[70vh] aspect-[3/4]">
-                    </div>
-                <div id="swipe-empty-state" class="hidden text-center">
-                    <p class="text-xl var(--tg-theme-hint-color)">No more profiles to show right now.</p>
-                    <p class="var(--tg-theme-hint-color)">Check back later!</p>
-                </div>
-                <div class="absolute bottom-20 left-1/2 -translate-x-1/2 flex space-x-8">
-                     <button id="reject-btn" class="bg-red-500 text-white rounded-full p-4 shadow-lg transform transition-transform hover:scale-110">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                    <button id="accept-btn" class="bg-green-500 text-white rounded-full p-4 shadow-lg transform transition-transform hover:scale-110">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-
-            <div id="screen-adventure" class="screen p-4 space-y-6">
-                <h2 class="text-2xl font-bold tg-section-title text-center">Your Adventure</h2>
-
-                <div class="bg-var(--tg-theme-secondary-bg-color) p-4 rounded-lg shadow">
-                    <h3 class="text-lg font-semibold tg-section-title mb-2">Personality Assessments</h3>
-                    <ul id="assessments-list" class="space-y-2">
-                        </ul>
-                </div>
-
-                <div class="bg-var(--tg-theme-secondary-bg-color) p-4 rounded-lg shadow">
-                    <h3 class="text-lg font-semibold tg-section-title mb-2">Local Challenges</h3>
-                    <ul id="challenges-list" class="space-y-2">
-                        </ul>
-                </div>
-                 <div id="adventure-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
-                    <div class="bg-var(--tg-theme-bg-color) p-6 rounded-lg shadow-xl w-full max-w-md space-y-4">
-                        <h3 id="adventure-modal-title" class="text-xl font-semibold tg-section-title">Modal Title</h3>
-                        <div id="adventure-modal-content"></div>
-                        <div class="flex justify-end space-x-2">
-                            <button id="adventure-modal-close-btn" class="secondary-btn py-2 px-4 rounded-lg">Close</button>
-                            <button id="adventure-modal-action-btn" class="primary-btn py-2 px-4 rounded-lg">Submit</button>
+<body class="min-h-screen transition-colors duration-200">
+    <div id="app">
+        <div id="main-screen" class="block">
+            <header class="shadow-md sticky top-0 z-20" style="background-color: var(--tg-header-color);">
+                <div class="container mx-auto px-4 py-3">
+                    <div class="flex items-center justify-between">
+                        <h1 class="text-xl font-bold" style="color: var(--tg-theme-text-color);">Food Finder</h1>
+                        <div class="flex items-center">
+                            <div id="location-display" class="flex items-center text-sm mr-2" style="color: var(--tg-theme-hint-color);">
+                                <i class="fas fa-location-dot mr-1" style="color: var(--tg-theme-button-color);"></i>
+                                <span id="current-location">Loading location...</span>
+                            </div>
+                            <button id="refresh-location" class="p-2" style="color: var(--tg-theme-button-color);">
+                                <i class="fas fa-arrow-rotate-right"></i>
+                            </button>
                         </div>
                     </div>
+                    
+                    <div class="relative mt-2">
+                        <input type="text" id="search-input" class="w-full pl-10 pr-4 py-2 rounded-full text-base focus:outline-none" placeholder="Search restaurants, cuisines...">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2" style="color: var(--tg-theme-hint-color);"></i>
+                    </div>
+                    
+                    <div id="category-filters-container" class="flex space-x-2 mt-3 pb-1 overflow-x-auto hide-scrollbar">
+                        </div>
+                </div>
+            </header>
+            
+            <div class="container mx-auto px-4 py-4">
+                <div id="restaurant-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="skeleton-card rounded-lg shadow-md overflow-hidden" style="background-color: var(--tg-theme-secondary-bg-color);"> <div class="skeleton h-48 w-full"></div> <div class="p-4"> <div class="skeleton h-6 w-3/4 rounded mb-2"></div> <div class="skeleton h-4 w-1/2 rounded mb-3"></div> <div class="skeleton h-4 w-full rounded mb-2"></div> <div class="skeleton h-4 w-2/3 rounded"></div> </div> </div>
+                    <div class="skeleton-card rounded-lg shadow-md overflow-hidden" style="background-color: var(--tg-theme-secondary-bg-color);"> <div class="skeleton h-48 w-full"></div> <div class="p-4"> <div class="skeleton h-6 w-3/4 rounded mb-2"></div> <div class="skeleton h-4 w-1/2 rounded mb-3"></div> <div class="skeleton h-4 w-full rounded mb-2"></div> <div class="skeleton h-4 w-2/3 rounded"></div> </div> </div>
+                    <div class="skeleton-card rounded-lg shadow-md overflow-hidden" style="background-color: var(--tg-theme-secondary-bg-color);"> <div class="skeleton h-48 w-full"></div> <div class="p-4"> <div class="skeleton h-6 w-3/4 rounded mb-2"></div> <div class="skeleton h-4 w-1/2 rounded mb-3"></div> <div class="skeleton h-4 w-full rounded mb-2"></div> <div class="skeleton h-4 w-2/3 rounded"></div> </div> </div>
+                </div>
+                
+                <div id="no-results" class="hidden text-center py-8">
+                    <i class="fas fa-utensils text-4xl mb-3" style="color: var(--tg-theme-hint-color);"></i>
+                    <p style="color: var(--tg-theme-hint-color);">No restaurants found.</p>
+                    <button id="clear-filters-main" class="mt-2 tg-button px-3 py-1 rounded-md text-sm">Clear Filters</button>
                 </div>
             </div>
-
-            <div id="screen-history" class="screen p-4 space-y-4">
-                <h2 class="text-2xl font-bold tg-section-title text-center">Swipe History</h2>
-                <div class="flex border-b border-var(--tg-border-color)">
-                    <button data-tab="accepted" class="history-tab-btn tab-button flex-1 py-2 font-medium active">Accepted</button>
-                    <button data-tab="rejected" class="history-tab-btn tab-button flex-1 py-2 font-medium">Rejected</button>
+        </div>
+        
+        <div id="detail-screen" class="hidden">
+            <div class="relative">
+                <div id="restaurant-cover" class="h-48 md:h-60 bg-gray-300 bg-center bg-cover" style="background-color: var(--tg-theme-secondary-bg-color);">
                 </div>
-                <div id="history-content" class="space-y-3">
+                <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4 text-white">
+                    <h1 id="detail-name" class="text-2xl font-bold mb-1">Restaurant Name</h1>
+                    <div class="flex items-center text-sm">
+                        <div id="detail-rating-stars" class="flex items-center mr-3">
+                            </div>
+                        <span id="detail-rating-text" class="mr-3"></span>
+                        <div id="detail-cuisine" class="opacity-90">Cuisine</div>
                     </div>
+                </div>
             </div>
-
-            <div id="screen-chat-list" class="screen p-4 space-y-3">
-                <h2 class="text-2xl font-bold tg-section-title text-center">Your Matches & Chats</h2>
-                <div id="chat-list-container" class="space-y-2">
+            
+            <div class="container mx-auto px-4 py-4">
+                <div class="rounded-lg shadow-md p-4 mb-4" style="background-color: var(--tg-theme-secondary-bg-color);">
+                    <div class="flex flex-wrap gap-x-6 gap-y-3 mb-3 text-sm">
+                        <div class="flex items-center">
+                            <i class="fas fa-location-dot mr-2" style="color: var(--tg-theme-button-color);"></i>
+                            <span id="detail-distance">Loading...</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-clock mr-2" style="color: var(--tg-theme-button-color);"></i>
+                            <span id="detail-hours">Loading...</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-phone mr-2" style="color: var(--tg-theme-button-color);"></i>
+                            <a id="detail-phone" href="tel:" style="color: var(--tg-theme-link-color);">Loading...</a>
+                        </div>
                     </div>
-                <p id="no-chats-message" class="text-center var(--tg-theme-hint-color) hidden">No active chats yet. Keep swiping!</p>
-            </div>
-
-            <div id="screen-chat-individual" class="screen flex flex-col h-full">
-                <header class="bg-var(--tg-theme-secondary-bg-color) p-3 flex items-center space-x-3 border-b border-var(--tg-border-color) sticky top-0 z-10">
-                    <button id="chat-back-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 var(--tg-theme-text-color)">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                        </svg>
-                    </button>
-                    <img id="chat-partner-pic" src="https://placehold.co/40x40/E0E0E0/B0B0B0?text=P" alt="Partner Pic" class="profile-pic-sm rounded-full object-cover">
-                    <h3 id="chat-partner-name" class="font-semibold text-lg">Partner Name</h3>
-                </header>
-                <div id="chat-messages-container" class="flex-grow p-4 space-y-3 overflow-y-auto">
-                    </div>
-                <footer class="bg-var(--tg-theme-secondary-bg-color) p-3 border-t border-var(--tg-border-color) sticky bottom-0 z-10">
-                    <div class="flex items-center space-x-2">
-                        <input type="text" id="chat-message-input" class="flex-grow p-2.5 rounded-lg border" placeholder="Type a message...">
-                        <button id="chat-send-btn" class="primary-btn p-2.5 rounded-lg">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                            </svg>
+                    <p id="detail-description" class="mb-4" style="color: var(--tg-theme-text-color);"></p>
+                    <div class="flex space-x-2">
+                        <button id="share-restaurant" class="flex-1 tg-button py-2 px-4 rounded-md flex justify-center items-center text-sm">
+                            <i class="fas fa-share-alt mr-2"></i>Share
+                        </button>
+                        <button id="view-location" class="flex-1 tg-button py-2 px-4 rounded-md flex justify-center items-center text-sm">
+                            <i class="fas fa-map-marker-alt mr-2"></i>View Map
                         </button>
                     </div>
-                </footer>
+                </div>
+                
+                <div class="rounded-lg shadow-md p-4 mb-4" style="background-color: var(--tg-theme-secondary-bg-color);">
+                    <h2 class="text-xl font-bold mb-3" style="color: var(--tg-theme-text-color);">Menu</h2>
+                    <div id="menu-categories" class="flex space-x-2 mb-3 overflow-x-auto pb-1 hide-scrollbar">
+                        </div>
+                    <div id="menu-items" class="space-y-3">
+                        </div>
+                </div>
+                
+                <div class="rounded-lg shadow-md p-4 mb-4" style="background-color: var(--tg-theme-secondary-bg-color);">
+                    <div class="flex justify-between items-center mb-3">
+                        <h2 class="text-xl font-bold" style="color: var(--tg-theme-text-color);">Reviews (<span id="review-count">0</span>)</h2>
+                        <button id="add-review" class="tg-button py-1 px-3 rounded-md text-sm">
+                            Write a Review
+                        </button>
+                    </div>
+                    <div id="review-list" class="space-y-4">
+                        </div>
+                </div>
             </div>
-
-        </main>
-
-        <nav class="nav-bar grid grid-cols-5 gap-1 p-1 sticky bottom-0">
-            <button data-screen="screen-profile" class="nav-button p-2 rounded-lg flex flex-col items-center space-y-0.5">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
-                <span class="text-xs">Profile</span>
-            </button>
-            <button data-screen="screen-swipe" class="nav-button p-2 rounded-lg flex flex-col items-center space-y-0.5 active">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 3.75H6A2.25 2.25 0 003.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0120.25 6v1.5m0 9V18A2.25 2.25 0 0118 20.25h-1.5m-9 0H6A2.25 2.25 0 013.75 18v-1.5M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                <span class="text-xs">Discover</span>
-            </button>
-            <button data-screen="screen-adventure" class="nav-button p-2 rounded-lg flex flex-col items-center space-y-0.5">
-                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503-6.998l4.875-2.172a.75.75 0 01.921.921l-2.173 4.875M14.25 12l-4.875 2.172a.75.75 0 01-.921-.921L10.5 8.25M12 15.75H9" /></svg>
-                <span class="text-xs">Adventure</span>
-            </button>
-            <button data-screen="screen-history" class="nav-button p-2 rounded-lg flex flex-col items-center space-y-0.5">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" /></svg>
-                <span class="text-xs">History</span>
-            </button>
-            <button data-screen="screen-chat-list" class="nav-button p-2 rounded-lg flex flex-col items-center space-y-0.5">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 011.037-.443 48.282 48.282 0 005.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" /></svg>
-                <span class="text-xs">Chats</span>
-            </button>
-        </nav>
+        </div>
+        
+        <div id="review-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 opacity-0 invisible">
+            <div class="modal-content rounded-lg shadow-lg max-w-md w-11/12 mx-auto">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold" style="color: var(--tg-theme-text-color);">Write a Review</h3>
+                        <button class="close-modal-btn text-2xl" style="color: var(--tg-theme-hint-color);">&times;</button>
+                    </div>
+                    <form id="review-form">
+                        <input type="hidden" id="review-restaurant-id">
+                        
+                        <div class="mb-4 text-center">
+                            <div class="text-sm mb-1" style="color: var(--tg-theme-text-color);">Rate your experience</div>
+                            <div class="rating-stars">
+                                <input type="radio" id="star5" name="rating" value="5" required/><label for="star5"><i class="fas fa-star"></i></label>
+                                <input type="radio" id="star4" name="rating" value="4" /><label for="star4"><i class="fas fa-star"></i></label>
+                                <input type="radio" id="star3" name="rating" value="3" /><label for="star3"><i class="fas fa-star"></i></label>
+                                <input type="radio" id="star2" name="rating" value="2" /><label for="star2"><i class="fas fa-star"></i></label>
+                                <input type="radio" id="star1" name="rating" value="1" /><label for="star1"><i class="fas fa-star"></i></label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="review-title" class="block text-sm font-medium mb-1" style="color: var(--tg-theme-text-color);">Title</label>
+                            <input type="text" id="review-title" class="w-full px-3 py-2 border rounded-md text-base focus:outline-none" required placeholder="Summarize your experience">
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label for="review-text" class="block text-sm font-medium mb-1" style="color: var(--tg-theme-text-color);">Your Review</label>
+                            <textarea id="review-text" rows="3" class="w-full px-3 py-2 border rounded-md text-base focus:outline-none" required placeholder="Tell others about your experience"></textarea>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" class="close-modal-btn tg-button-secondary px-4 py-2 rounded-lg text-sm">Cancel</button>
+                            <button type="submit" class="tg-button px-4 py-2 rounded-lg text-sm">Submit Review</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
+    // --- Telegram WebApp SDK ---
+    const tg = window.Telegram.WebApp;
 
-        // --- App State & Data ---
-        let currentUser = {
+    // --- App State ---
+    const appState = {
+        userLocation: null, // { latitude, longitude }
+        currentRestaurantId: null,
+        userProfile: { // Will be populated by Telegram data
             id: null,
-            username: 'guest',
-            photo_url: 'https://placehold.co/128x128/E0E0E0/B0B0B0?text=User',
-            profile: { hobbies: '', passions: '', preferences: '', personality: '' }
-        };
-        let potentialPartners = []; // Will be populated with mock data
-        let swipeHistory = { accepted: [], rejected: [] };
-        let matches = []; // { partnerId, partnerName, partnerPic, chatLog: [{sender, text, time}] }
-        let adventureProgress = { assessments: {}, challenges: {} }; // { 'assessmentId': {completed: true, answers: []} }
+            name: 'Guest',
+            photo: 'https://placehold.co/40x40/E0E0E0/B0B0B0?text=U'
+        },
+        restaurants: [], // Full list of restaurants
+        reviews: [],     // Full list of reviews
+        activeFilter: 'all',
+        searchQuery: '',
+        activeMenuCategory: 'all',
+        isLoading: true,
+    };
 
-        const MOCK_USERS_COUNT = 20;
-        const MOCK_ASSESSMENTS = [
-            { id: 'assess1', title: 'Weekend Vibes', question: 'Your ideal weekend is:', options: ['Adventure outdoors', 'Cozy at home', 'Socializing with friends', 'Learning something new'], completed: false },
-            { id: 'assess2', title: 'Communication Style', question: 'When resolving conflict, you prefer:', options: ['Direct conversation', 'Time to think first', 'Mediator help', 'Humor to lighten mood'], completed: false },
-        ];
-        const MOCK_CHALLENGES = [
-            { id: 'challenge1', title: 'Cafe Connoisseur', description: "Visit 'The Daily Grind Cafe' and find the 'Secret Brew' name on their chalkboard.", task: "Enter the Secret Brew name:", completed: false, solution: "Moonbeam Mocha" },
-            { id: 'challenge2', title: 'Bookworm Quest', description: "At 'Readers' Nook Bookstore', ask for the book recommended for 'dreamers'.", task: "What's the book title?", completed: false, solution: "The Starless Sea" },
-        ];
-
-        // --- DOM Elements ---
-        const screens = document.querySelectorAll('.screen');
-        const navButtons = document.querySelectorAll('.nav-button');
-        const profilePicEl = document.getElementById('profile-main-pic');
-        const profileUsernameEl = document.getElementById('profile-main-username');
-        const hobbiesInput = document.getElementById('profile-hobbies');
-        const passionsInput = document.getElementById('profile-passions');
-        const preferencesInput = document.getElementById('profile-preferences');
-        const personalityInput = document.getElementById('profile-personality');
-        const saveProfileBtn = document.getElementById('save-profile-btn');
-        const swipeCardContainer = document.getElementById('swipe-card-container');
-        const swipeEmptyState = document.getElementById('swipe-empty-state');
-        const rejectBtn = document.getElementById('reject-btn');
-        const acceptBtn = document.getElementById('accept-btn');
-        const historyContentEl = document.getElementById('history-content');
-        const historyTabButtons = document.querySelectorAll('.history-tab-btn');
-        const chatListContainer = document.getElementById('chat-list-container');
-        const noChatsMessage = document.getElementById('no-chats-message');
-        const chatPartnerPic = document.getElementById('chat-partner-pic');
-        const chatPartnerName = document.getElementById('chat-partner-name');
-        const chatMessagesContainer = document.getElementById('chat-messages-container');
-        const chatMessageInput = document.getElementById('chat-message-input');
-        const chatSendBtn = document.getElementById('chat-send-btn');
-        const chatBackBtn = document.getElementById('chat-back-btn');
-        const assessmentsListEl = document.getElementById('assessments-list');
-        const challengesListEl = document.getElementById('challenges-list');
-        const adventureModal = document.getElementById('adventure-modal');
-        const adventureModalTitle = document.getElementById('adventure-modal-title');
-        const adventureModalContent = document.getElementById('adventure-modal-content');
-        const adventureModalCloseBtn = document.getElementById('adventure-modal-close-btn');
-        const adventureModalActionBtn = document.getElementById('adventure-modal-action-btn');
-
-        let currentAdventureContext = null; // To store which assessment/challenge is active in modal
-        let currentChatPartnerId = null;
+    // --- DOM Elements ---
+    const mainScreen = document.getElementById('main-screen');
+    const detailScreen = document.getElementById('detail-screen');
+    const reviewModal = document.getElementById('review-modal');
+    const restaurantListEl = document.getElementById('restaurant-list');
+    const currentLocationEl = document.getElementById('current-location');
+    const noResultsEl = document.getElementById('no-results');
+    const categoryFiltersContainerEl = document.getElementById('category-filters-container');
+    const searchInputEl = document.getElementById('search-input');
+    // Detail Screen Elements
+    const detailNameEl = document.getElementById('detail-name');
+    const detailRatingStarsEl = document.getElementById('detail-rating-stars');
+    const detailRatingTextEl = document.getElementById('detail-rating-text');
+    const detailCuisineEl = document.getElementById('detail-cuisine');
+    const detailDistanceEl = document.getElementById('detail-distance');
+    const detailHoursEl = document.getElementById('detail-hours');
+    const detailPhoneEl = document.getElementById('detail-phone');
+    const detailDescriptionEl = document.getElementById('detail-description');
+    const restaurantCoverEl = document.getElementById('restaurant-cover');
+    const menuCategoriesEl = document.getElementById('menu-categories');
+    const menuItemsEl = document.getElementById('menu-items');
+    const reviewListEl = document.getElementById('review-list');
+    const reviewCountEl = document.getElementById('review-count');
+    // Review Modal Elements
+    const reviewFormEl = document.getElementById('review-form');
+    const reviewRestaurantIdInput = document.getElementById('review-restaurant-id');
+    const reviewTitleInput = document.getElementById('review-title');
+    const reviewTextInput = document.getElementById('review-text');
 
 
-        // --- Local Storage Utilities ---
-        const getLocalStorage = (key, defaultValue) => {
-            const stored = localStorage.getItem(key);
-            return stored ? JSON.parse(stored) : defaultValue;
-        };
-        const setLocalStorage = (key, value) => {
-            localStorage.setItem(key, JSON.stringify(value));
-        };
-
-        // --- Telegram Theme Application ---
-        function applyTelegramTheme() {
-            if (tg.themeParams) {
-                const root = document.documentElement;
-                root.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#ffffff');
-                root.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#000000');
-                root.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color || '#999999');
-                root.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color || '#2481cc');
-                root.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#2481cc');
-                root.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color || '#ffffff');
-                root.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color || '#f0f0f0');
-                
-                // Additional derived colors or fallbacks
-                root.style.setProperty('--tg-header-color', tg.themeParams.header_bg_color || tg.themeParams.bg_color || '#ffffff');
-                root.style.setProperty('--tg-section-header-color', tg.themeParams.section_header_text_color || tg.themeParams.text_color || '#000000');
-                root.style.setProperty('--tg-accent-text-color', tg.themeParams.accent_text_color || tg.themeParams.link_color || '#2481cc');
-                root.style.setProperty('--tg-destructive-text-color', tg.themeParams.destructive_text_color || '#ff3b30');
-                root.style.setProperty('--tg-border-color', tg.themeParams.section_bg_color || tg.themeParams.secondary_bg_color || '#e0e0e0');
-
-
-                // Update body background explicitly as it might not be covered by CSS variables if set inline
-                document.body.style.backgroundColor = tg.themeParams.bg_color || '#ffffff';
-                document.body.style.color = tg.themeParams.text_color || '#000000';
-            }
-        }
-
-
-        // --- Navigation ---
-        function showScreen(screenId) {
-            screens.forEach(screen => screen.classList.remove('active'));
-            document.getElementById(screenId).classList.add('active');
-            navButtons.forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.screen === screenId);
-            });
-
-            // Update Telegram MainButton based on screen
-            tg.MainButton.hide();
-            if (screenId === 'screen-profile') {
-                // MainButton handled by specific save button
-            } else if (screenId === 'screen-swipe' && swipeCardContainer.querySelector('.swipe-card')) {
-                 // MainButton handled by on-screen accept/reject
-            }
-            // Add more MainButton logic for other screens if needed
-        }
-
-        // --- Profile Screen Logic ---
-        function loadProfileData() {
-            currentUser = getLocalStorage(`dailyVolueenter_currentUser_${currentUser.id}`, currentUser);
-            profilePicEl.src = currentUser.photo_url || 'https://placehold.co/128x128/E0E0E0/B0B0B0?text=User';
-            profileUsernameEl.textContent = currentUser.username ? `@${currentUser.username}` : '@guest';
-            hobbiesInput.value = currentUser.profile.hobbies || '';
-            passionsInput.value = currentUser.profile.passions || '';
-            preferencesInput.value = currentUser.profile.preferences || '';
-            personalityInput.value = currentUser.profile.personality || '';
-        }
-
-        function saveProfile() {
-            currentUser.profile.hobbies = hobbiesInput.value;
-            currentUser.profile.passions = passionsInput.value;
-            currentUser.profile.preferences = preferencesInput.value;
-            currentUser.profile.personality = personalityInput.value;
-            setLocalStorage(`dailyVolueenter_currentUser_${currentUser.id}`, currentUser);
-            tg.HapticFeedback.notificationOccurred('success');
-            alertUser("Profile Saved!"); // Using custom alert
-        }
+    // --- Telegram SDK Integration Functions ---
+    function applyTelegramTheme(themeParams) {
+        const root = document.documentElement;
+        root.style.setProperty('--tg-theme-bg-color', themeParams.bg_color || '#ffffff');
+        root.style.setProperty('--tg-theme-text-color', themeParams.text_color || '#000000');
+        root.style.setProperty('--tg-theme-hint-color', themeParams.hint_color || '#999999');
+        root.style.setProperty('--tg-theme-link-color', themeParams.link_color || '#0088cc');
+        root.style.setProperty('--tg-theme-button-color', themeParams.button_color || '#0088cc');
+        root.style.setProperty('--tg-theme-button-text-color', themeParams.button_text_color || '#ffffff');
+        root.style.setProperty('--tg-theme-secondary-bg-color', themeParams.secondary_bg_color || '#f0f0f0');
         
-        function alertUser(message, type = 'info') { // type can be 'info', 'success', 'error'
-            // Simple alert for now, can be replaced with a styled modal
-            const alertDiv = document.createElement('div');
-            alertDiv.textContent = message;
-            alertDiv.style.position = 'fixed';
-            alertDiv.style.bottom = '70px'; // Above nav bar
-            alertDiv.style.left = '50%';
-            alertDiv.style.transform = 'translateX(-50%)';
-            alertDiv.style.padding = '10px 20px';
-            alertDiv.style.borderRadius = '8px';
-            alertDiv.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
-            alertDiv.style.zIndex = '1000';
-            alertDiv.style.transition = 'opacity 0.5s ease-in-out';
-            
-            if (type === 'success') {
-                alertDiv.style.backgroundColor = 'var(--tg-theme-button-color)'; // Or a green color
-                alertDiv.style.color = 'var(--tg-theme-button-text-color)';
-            } else if (type === 'error') {
-                alertDiv.style.backgroundColor = 'var(--tg-destructive-text-color)'; // Or a red color
-                alertDiv.style.color = 'var(--tg-theme-button-text-color)';
+        // For sticky header, try to use secondary_bg_color or bg_color if it's distinct enough
+        // This is a heuristic, might need adjustment based on typical Telegram themes
+        let headerColor = themeParams.secondary_bg_color;
+        if (headerColor === themeParams.bg_color || !headerColor) { // If secondary is same as main bg or not defined
+             // A simple check to see if bg_color is very dark. If so, use a slightly lighter shade for header or a fixed light color.
+            const isDarkBg = themeParams.bg_color && themeParams.bg_color.startsWith('#') && parseInt(themeParams.bg_color.substring(1, 3), 16) < 60; // very rough check
+            headerColor = isDarkBg ? '#2c2c2c' : '#ffffff'; // Example fixed colors if heuristic is complex
+        }
+         root.style.setProperty('--tg-header-color', headerColor || themeParams.bg_color || '#ffffff');
+
+
+        if (themeParams.bg_color) {
+            const body = document.body;
+            // Determine if the theme is dark
+            // A common heuristic: if the background color is dark, assume dark theme.
+            // This is simplified; Telegram might use a more complex logic or a direct property.
+            const color = themeParams.bg_color.replace('#', '');
+            const r = parseInt(color.substring(0, 2), 16);
+            const g = parseInt(color.substring(2, 4), 16);
+            const b = parseInt(color.substring(4, 6), 16);
+            const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+            if (brightness < 128) { // Arbitrary threshold for darkness
+                document.documentElement.classList.add('dark');
             } else {
-                alertDiv.style.backgroundColor = 'var(--tg-theme-secondary-bg-color)';
-                alertDiv.style.color = 'var(--tg-theme-text-color)';
+                document.documentElement.classList.remove('dark');
             }
-            
-            document.body.appendChild(alertDiv);
+        }
+        // Force a re-render or update of components that depend on these CSS variables if necessary
+        // For Tailwind, it should mostly pick up changes to CSS variables if used in `tailwind.config.js` correctly.
+    }
+
+    function setupTelegramFeatures() {
+        tg.expand(); // Expand the Mini App
+        tg.MainButton.hide(); // Hide by default, show when contextually relevant
+        tg.BackButton.onClick(goBackToMainScreen); // Set back button action
+
+        // Apply initial theme
+        if (tg.themeParams) {
+            applyTelegramTheme(tg.themeParams);
+        }
+        // Listen for theme changes
+        tg.onEvent('themeChanged', () => applyTelegramTheme(tg.themeParams));
+        tg.onEvent('viewportChanged', (event) => {
+            if (!event.isStateStable) { // if false, the viewport is still changing
+                // handle intermediate state if needed
+            } else { // if true, the viewport is now stable
+                // final handling, e.g. re-layout if necessary
+            }
+        });
+
+
+        // Populate user profile from Telegram
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            const tgUser = tg.initDataUnsafe.user;
+            appState.userProfile.id = tgUser.id;
+            appState.userProfile.name = `${tgUser.first_name}${tgUser.last_name ? ' ' + tgUser.last_name : ''}`;
+            appState.userProfile.photo = tgUser.photo_url || appState.userProfile.photo;
+        }
+    }
+    
+    // --- Utility Functions ---
+    function showLoadingSkeletons(count = 3) {
+        restaurantListEl.innerHTML = ''; // Clear previous content
+        noResultsEl.classList.add('hidden');
+        for (let i = 0; i < count; i++) {
+            const skeletonCard = `
+                <div class="skeleton-card rounded-lg shadow-md overflow-hidden" style="background-color: var(--tg-theme-secondary-bg-color);">
+                    <div class="skeleton h-48 w-full"></div>
+                    <div class="p-4">
+                        <div class="skeleton h-6 w-3/4 rounded mb-2"></div>
+                        <div class="skeleton h-4 w-1/2 rounded mb-3"></div>
+                        <div class="skeleton h-4 w-full rounded mb-2"></div>
+                        <div class="skeleton h-4 w-2/3 rounded"></div>
+                    </div>
+                </div>`;
+            restaurantListEl.innerHTML += skeletonCard;
+        }
+    }
+
+    function hideLoadingSkeletons() {
+        const skeletons = restaurantListEl.querySelectorAll('.skeleton-card');
+        // If actual content will replace skeletons, just clearing innerHTML is fine.
+        // If they need to be hidden before content is ready, then:
+        // skeletons.forEach(sk => sk.classList.add('hidden'));
+    }
+
+    // --- Data Loading and Processing ---
+    function loadSampleData() { // Simulates fetching data
+        appState.isLoading = true;
+        showLoadingSkeletons(6); // Show more skeletons for initial load
+
+        return new Promise(resolve => {
             setTimeout(() => {
-                alertDiv.style.opacity = '0';
-                setTimeout(() => alertDiv.remove(), 500);
-            }, 2000);
+                // Sample data (similar to what user provided, but expanded)
+                appState.restaurants = [
+                    { id: 1, name: "The Burger Joint", cuisine: "Fast Food", cuisineType: "fastfood", description: "Classic American burgers, fries, and shakes.", distance: 0.5, rating: 4.5, reviewCount: 150, hours: "10:00 AM - 11:00 PM", phone: "+15550100", image: "https://placehold.co/600x400/FFDDC1/333333?text=Burger+Joint", location: { lat: 38.8951, lng: -77.0364 }, menu: [{ category: "Burgers", items: [{ name: "Classic Burger", price: 8.99, description: "Beef patty, lettuce, tomato, onion, pickles."},{ name: "Cheese Burger", price: 9.99, description: "Classic with cheese."}]},{ category: "Sides", items: [{ name: "Fries", price: 3.50, description: "Crispy golden fries."}]}]},
+                    { id: 2, name: "Pasta Palace", cuisine: "Italian", cuisineType: "italian", description: "Authentic Italian pasta dishes and pizzas.", distance: 1.2, rating: 4.8, reviewCount: 210, hours: "11:00 AM - 10:00 PM", phone: "+15550101", image: "https://placehold.co/600x400/C1FFD7/333333?text=Pasta+Palace", location: { lat: 38.8977, lng: -77.0365 }, menu: [{ category: "Pasta", items: [{ name: "Spaghetti Carbonara", price: 15.00, description: "Creamy and delicious."},{ name: "Lasagna", price: 16.50, description: "Layered perfection."}]},{ category: "Pizza", items: [{ name: "Margherita", price: 12.00, description: "Classic tomato and mozzarella."}]}]},
+                    { id: 3, name: "Sushi Central", cuisine: "Japanese", cuisineType: "asian", description: "Fresh sushi and sashimi, vibrant atmosphere.", distance: 2.1, rating: 4.6, reviewCount: 180, hours: "12:00 PM - 10:00 PM", phone: "+15550102", image: "https://placehold.co/600x400/C1D4FF/333333?text=Sushi+Central", location: { lat: 38.9000, lng: -77.0400 }, menu: [{ category: "Sushi Rolls", items: [{ name: "California Roll", price: 7.00},{ name: "Spicy Tuna Roll", price: 8.50}]},{ category: "Nigiri", items: [{ name: "Salmon Nigiri", price: 3.00},{ name: "Tuna Nigiri", price: 3.50}]}]},
+                    { id: 4, name: "Morning Brew Cafe", cuisine: "Café", cuisineType: "cafe", description: "Cozy spot for coffee, pastries, and light meals.", distance: 0.8, rating: 4.3, reviewCount: 95, hours: "07:00 AM - 06:00 PM", phone: "+15550103", image: "https://placehold.co/600x400/FFF0C1/333333?text=Morning+Brew", location: { lat: 38.8920, lng: -77.0300 }, menu: [{ category: "Coffee", items: [{ name: "Espresso", price: 3.00},{ name: "Latte", price: 4.50}]},{ category: "Pastries", items: [{ name: "Croissant", price: 3.25},{ name: "Muffin", price: 3.00}]}]},
+                    { id: 5, name: "Sweet Escape Desserts", cuisine: "Desserts", cuisineType: "desserts", description: "Indulgent cakes, ice creams, and sweet treats.", distance: 1.5, rating: 4.9, reviewCount: 120, hours: "11:00 AM - 09:00 PM", phone: "+15550104", image: "https://placehold.co/600x400/FFC1F5/333333?text=Sweet+Escape", location: { lat: 38.8985, lng: -77.0321 }, menu: [{ category: "Cakes", items: [{ name: "Chocolate Lava Cake", price: 7.50},{ name: "Cheesecake Slice", price: 6.50}]},{ category: "Ice Cream", items: [{ name: "Vanilla Bean Scoop", price: 4.00},{ name: "Strawberry Swirl", price: 4.50}]}]},
+                    { id: 6, name: "Curry House", cuisine: "Indian", cuisineType: "asian", description: "Flavorful Indian curries and tandoori specialties.", distance: 3.0, rating: 4.7, reviewCount: 190, hours: "11:30 AM - 10:30 PM", phone: "+15550105", image: "https://placehold.co/600x400/FFDAB9/333333?text=Curry+House", location: { lat: 38.8940, lng: -77.0380 }, menu: [{ category: "Curries", items: [{ name: "Chicken Tikka Masala", price: 15.99},{ name: "Vegetable Korma", price: 13.99}]},{ category: "Breads", items: [{ name: "Naan", price: 3.00},{ name: "Garlic Naan", price: 3.50}]}]}
+                ];
+                appState.reviews = [
+                    { id: 1, restaurantId: 1, userId: "user123", userName: "Alice Wonderland", userPhoto: "https://placehold.co/40x40/A0C4FF/333333?text=AW", rating: 5, title: "Best Burgers!", text: "The classic burger was juicy and delicious. Fries were perfect too!", date: new Date('2024-05-20T10:00:00Z') },
+                    { id: 2, restaurantId: 1, userId: "user456", userName: "Bob The Builder", userPhoto: "https://placehold.co/40x40/FFB3BA/333333?text=BB", rating: 4, title: "Good stuff", text: "Quick service and tasty food. A bit crowded though.", date: new Date('2024-05-18T14:30:00Z') },
+                    { id: 3, restaurantId: 2, userId: "user123", userName: "Alice Wonderland", userPhoto: "https://placehold.co/40x40/A0C4FF/333333?text=AW", rating: 5, title: "Authentic Italian", text: "Loved the Carbonara! Felt like I was in Italy.", date: new Date('2024-05-22T19:00:00Z') },
+                ];
+                appState.isLoading = false;
+                resolve();
+            }, 1000); // Simulate network delay
+        });
+    }
+
+    // --- Rendering Functions ---
+    function renderRatingStars(rating, container) {
+        container.innerHTML = '';
+        for (let i = 1; i <= 5; i++) {
+            const star = document.createElement('i');
+            star.classList.add('fas', 'fa-star', 'text-sm');
+            star.style.color = i <= rating ? '#FFCA28' : 'var(--tg-theme-hint-color)';
+            container.appendChild(star);
+        }
+    }
+
+    function renderRestaurantCard(restaurant) {
+        const card = document.createElement('div');
+        card.className = 'restaurant-card rounded-lg shadow-lg overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-xl';
+        card.style.backgroundColor = 'var(--tg-theme-secondary-bg-color)';
+        card.addEventListener('click', () => {
+            tg.HapticFeedback.impactOccurred('light');
+            showDetailScreen(restaurant.id);
+        });
+
+        let avgRating = restaurant.rating;
+        let numReviews = restaurant.reviewCount;
+        // If reviews are in appState, calculate from there
+        const restaurantReviews = appState.reviews.filter(r => r.restaurantId === restaurant.id);
+        if (restaurantReviews.length > 0) {
+            avgRating = restaurantReviews.reduce((sum, r) => sum + r.rating, 0) / restaurantReviews.length;
+            numReviews = restaurantReviews.length;
         }
 
 
-        // --- Swipe Screen Logic ---
-        let currentCardIndex = 0;
-        let swipeCards = [];
-
-        function createSwipeCard(user, index) {
-            const card = document.createElement('div');
-            card.classList.add('swipe-card', 'absolute', 'w-full', 'h-full', 'bg-var(--tg-theme-secondary-bg-color)', 'rounded-xl', 'shadow-2xl', 'overflow-hidden', 'flex', 'flex-col', 'cursor-grab');
-            card.style.zIndex = MOCK_USERS_COUNT - index; // Stack cards
-            card.dataset.userId = user.id;
-
-            card.innerHTML = `
-                <img src="${user.photo_url}" alt="${user.username}" class="w-full h-3/4 object-cover">
-                <div class="p-4 flex-grow flex flex-col justify-between">
-                    <div>
-                        <h3 class="text-2xl font-bold var(--tg-theme-text-color)">@${user.username}, ${user.age}</h3>
-                        <p class="text-sm var(--tg-theme-hint-color) truncate">${user.bio.substring(0, 50)}...</p>
+        card.innerHTML = `
+            <div class="restaurant-image h-48 w-full overflow-hidden">
+                <img src="${restaurant.image}" alt="${restaurant.name}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/600x400/cccccc/969696?text=Image+Error';">
+            </div>
+            <div class="p-4">
+                <h3 class="text-lg font-semibold mb-1 truncate" style="color: var(--tg-theme-text-color);">${restaurant.name}</h3>
+                <div class="flex items-center text-xs mb-2" style="color: var(--tg-theme-hint-color);">
+                    <div class="flex items-center mr-2">
+                        ${[...Array(5)].map((_, i) => `<i class="fas fa-star ${i < Math.round(avgRating) ? 'text-yellow-rating' : 'text-gray-300 dark:text-gray-600'}"></i>`).join('')}
                     </div>
-                    <div class="flex flex-wrap gap-1 mt-2">
-                        ${user.tags.slice(0,3).map(tag => `<span class="tag text-xs px-2 py-1 rounded-full">${tag}</span>`).join('')}
+                    <span>${avgRating.toFixed(1)} (${numReviews} reviews)</span>
+                </div>
+                <p class="text-xs mb-1 truncate" style="color: var(--tg-theme-hint-color);">${restaurant.cuisine}</p>
+                <p class="text-xs" style="color: var(--tg-theme-hint-color);"><i class="fas fa-location-dot text-xs mr-1" style="color: var(--tg-theme-button-color);"></i>${restaurant.distance} km away</p>
+            </div>
+        `;
+        return card;
+    }
+
+    function renderRestaurantList() {
+        restaurantListEl.innerHTML = ''; // Clear skeletons or previous items
+        const query = appState.searchQuery.toLowerCase();
+        const filteredRestaurants = appState.restaurants.filter(r => {
+            const matchesCategory = appState.activeFilter === 'all' || r.cuisineType === appState.activeFilter;
+            const matchesSearch = !query || r.name.toLowerCase().includes(query) || r.cuisine.toLowerCase().includes(query);
+            return matchesCategory && matchesSearch;
+        });
+
+        if (filteredRestaurants.length === 0) {
+            noResultsEl.classList.remove('hidden');
+        } else {
+            noResultsEl.classList.add('hidden');
+            filteredRestaurants.forEach(r => {
+                restaurantListEl.appendChild(renderRestaurantCard(r));
+            });
+        }
+    }
+    
+    function renderCategoryFilters() {
+        categoryFiltersContainerEl.innerHTML = '';
+        const categories = ['all', ...new Set(appState.restaurants.map(r => r.cuisineType))];
+        
+        categories.forEach(cat => {
+            const button = document.createElement('button');
+            button.className = 'filter-btn whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-medium transition-colors';
+            button.dataset.filter = cat;
+            button.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+            if (cat === appState.activeFilter) {
+                button.classList.add('active');
+            }
+            button.addEventListener('click', () => {
+                tg.HapticFeedback.impactOccurred('light');
+                appState.activeFilter = cat;
+                document.querySelectorAll('#category-filters-container .filter-btn').forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                renderRestaurantList();
+            });
+            categoryFiltersContainerEl.appendChild(button);
+        });
+    }
+
+    function renderRestaurantDetail(restaurant) {
+        appState.currentRestaurantId = restaurant.id;
+        detailNameEl.textContent = restaurant.name;
+        restaurantCoverEl.style.backgroundImage = `url(${restaurant.image})`;
+        
+        const restaurantReviews = appState.reviews.filter(r => r.restaurantId === restaurant.id);
+        const avgRating = restaurantReviews.length > 0 ? (restaurantReviews.reduce((sum, r) => sum + r.rating, 0) / restaurantReviews.length) : restaurant.rating;
+        const numReviews = restaurantReviews.length > 0 ? restaurantReviews.length : restaurant.reviewCount;
+
+        renderRatingStars(avgRating, detailRatingStarsEl);
+        detailRatingTextEl.textContent = `${avgRating.toFixed(1)} (${numReviews} reviews)`;
+
+        detailCuisineEl.textContent = restaurant.cuisine;
+        detailDistanceEl.textContent = `${restaurant.distance} km away`; // Potentially calculate actual distance if userLocation is available
+        detailHoursEl.textContent = restaurant.hours;
+        detailPhoneEl.textContent = restaurant.phone;
+        detailPhoneEl.href = `tel:${restaurant.phone}`;
+        detailDescriptionEl.textContent = restaurant.description;
+
+        // Render Menu
+        menuCategoriesEl.innerHTML = '';
+        menuItemsEl.innerHTML = '';
+        const menuCats = ['all', ...new Set(restaurant.menu.map(mc => mc.category))];
+        appState.activeMenuCategory = 'all';
+
+        menuCats.forEach(cat => {
+            const btn = document.createElement('button');
+            btn.className = 'filter-btn whitespace-nowrap px-3 py-1 rounded-full text-xs';
+            btn.textContent = cat;
+            btn.dataset.category = cat;
+            if (cat === 'all') btn.classList.add('active');
+            btn.addEventListener('click', () => {
+                tg.HapticFeedback.impactOccurred('light');
+                appState.activeMenuCategory = cat;
+                document.querySelectorAll('#menu-categories .filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                renderMenuItemsForDetail(restaurant);
+            });
+            menuCategoriesEl.appendChild(btn);
+        });
+        renderMenuItemsForDetail(restaurant);
+        renderReviewList(restaurant.id);
+    }
+
+    function renderMenuItemsForDetail(restaurant) {
+        menuItemsEl.innerHTML = '';
+        restaurant.menu.forEach(menuCategory => {
+            if (appState.activeMenuCategory === 'all' || menuCategory.category === appState.activeMenuCategory) {
+                if (appState.activeMenuCategory !== 'all') { // Show category title if not 'all'
+                    const catTitle = document.createElement('h4');
+                    catTitle.className = 'text-md font-semibold mt-3 mb-1';
+                    catTitle.textContent = menuCategory.category;
+                    catTitle.style.color = 'var(--tg-theme-text-color)';
+                    menuItemsEl.appendChild(catTitle);
+                }
+                menuCategory.items.forEach(item => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'py-2 border-b';
+                    itemDiv.style.borderColor = 'var(--tg-theme-hint-color)';
+                    itemDiv.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <h5 class="font-medium" style="color: var(--tg-theme-text-color);">${item.name}</h5>
+                            <span class="font-semibold" style="color: var(--tg-theme-text-color);">$${item.price.toFixed(2)}</span>
+                        </div>
+                        ${item.description ? `<p class="text-xs mt-1" style="color: var(--tg-theme-hint-color);">${item.description}</p>` : ''}
+                    `;
+                    menuItemsEl.appendChild(itemDiv);
+                });
+            }
+        });
+    }
+
+    function renderReviewList(restaurantId) {
+        reviewListEl.innerHTML = '';
+        const reviews = appState.reviews.filter(r => r.restaurantId === restaurantId)
+                                     .sort((a,b) => b.date - a.date); // Newest first
+        reviewCountEl.textContent = reviews.length;
+
+        if (reviews.length === 0) {
+            reviewListEl.innerHTML = `<p class="text-sm text-center py-4" style="color: var(--tg-theme-hint-color);">No reviews yet. Be the first!</p>`;
+            return;
+        }
+        reviews.forEach(review => {
+            const reviewDiv = document.createElement('div');
+            reviewDiv.className = 'py-3 border-b';
+            reviewDiv.style.borderColor = 'var(--tg-theme-hint-color)';
+            reviewDiv.innerHTML = `
+                <div class="flex items-start space-x-3">
+                    <img src="${review.userPhoto}" alt="${review.userName}" class="w-10 h-10 rounded-full object-cover">
+                    <div>
+                        <div class="flex items-center mb-0.5">
+                            <h5 class="font-semibold text-sm mr-2" style="color: var(--tg-theme-text-color);">${review.userName}</h5>
+                            <div class="flex items-center">
+                                ${[...Array(5)].map((_, i) => `<i class="fas fa-star text-xs ${i < review.rating ? 'text-yellow-rating' : ''}" style="${i < review.rating ? '' : 'color: var(--tg-theme-hint-color);'}"></i>`).join('')}
+                            </div>
+                        </div>
+                        <p class="text-xs mb-1" style="color: var(--tg-theme-hint-color);">${new Date(review.date).toLocaleDateString()}</p>
+                        <h6 class="font-medium text-sm mb-1" style="color: var(--tg-theme-text-color);">${review.title}</h6>
+                        <p class="text-sm" style="color: var(--tg-theme-text-color);">${review.text}</p>
                     </div>
                 </div>
-                <div id="swipe-overlay-${user.id}" class="absolute inset-0 flex items-center justify-center text-4xl font-bold uppercase opacity-0 transition-opacity duration-300"></div>
             `;
-            makeCardDraggable(card);
-            return card;
+            reviewListEl.appendChild(reviewDiv);
+        });
+    }
+
+    // --- Navigation and Modal Logic ---
+    function showMainScreen() {
+        mainScreen.classList.remove('hidden');
+        detailScreen.classList.add('hidden');
+        tg.BackButton.hide();
+        tg.MainButton.hide(); // Or set MainButton for main screen context
+        appState.currentRestaurantId = null;
+        // Potentially refresh list if data could have changed
+        // renderRestaurantList(); 
+    }
+
+    function showDetailScreen(restaurantId) {
+        const restaurant = appState.restaurants.find(r => r.id === restaurantId);
+        if (!restaurant) {
+            tg.showAlert('Restaurant not found!');
+            return;
         }
-        
-        function loadPotentialPartners() {
-            // Filter out users already swiped or the current user
-            const swipedUserIds = [...swipeHistory.accepted, ...swipeHistory.rejected, currentUser.id];
-            const availablePartners = potentialPartners.filter(p => !swipedUserIds.includes(p.id));
-            
-            swipeCardContainer.innerHTML = ''; // Clear existing cards
-            swipeCards = []; // Reset the array of card elements
+        mainScreen.classList.add('hidden');
+        detailScreen.classList.remove('hidden');
+        renderRestaurantDetail(restaurant);
+        tg.BackButton.show();
+        // Example: Use MainButton to "Book Table" or "Order"
+        // tg.MainButton.setText('Book a Table (Not Impl.)');
+        // tg.MainButton.show();
+        // tg.MainButton.onClick(() => tg.showAlert(`Booking for ${restaurant.name} (Not Implemented)`));
+        window.scrollTo(0, 0); // Scroll to top of detail view
+    }
+    
+    function goBackToMainScreen() { // Called by Telegram BackButton
+        tg.HapticFeedback.impactOccurred('light');
+        showMainScreen();
+    }
 
-            if (availablePartners.length === 0) {
-                swipeEmptyState.classList.remove('hidden');
-                return;
+    function showReviewModal() {
+        if (!appState.currentRestaurantId) return;
+        tg.HapticFeedback.impactOccurred('medium');
+        reviewRestaurantIdInput.value = appState.currentRestaurantId;
+        reviewFormEl.reset(); // Clear previous input
+        // Reset stars
+        document.querySelectorAll('.rating-stars input').forEach(input => input.checked = false);
+
+        reviewModal.classList.add('active');
+    }
+
+    function hideReviewModal() {
+        reviewModal.classList.remove('active');
+    }
+
+    // --- Event Handlers ---
+    function handleSearch(event) {
+        appState.searchQuery = event.target.value;
+        // Debounce rendering for better performance if needed
+        renderRestaurantList();
+    }
+
+    function handleReviewSubmit(event) {
+        event.preventDefault();
+        tg.HapticFeedback.notificationOccurred('success');
+        const newReview = {
+            id: Date.now(), // Simple unique ID
+            restaurantId: parseInt(reviewRestaurantIdInput.value),
+            userId: appState.userProfile.id,
+            userName: appState.userProfile.name,
+            userPhoto: appState.userProfile.photo,
+            rating: parseInt(event.target.rating.value),
+            title: reviewTitleInput.value,
+            text: reviewTextInput.value,
+            date: new Date()
+        };
+        appState.reviews.push(newReview);
+        // In a real app, send to backend here
+        hideReviewModal();
+        renderReviewList(newReview.restaurantId); // Re-render reviews for current restaurant
+        // Update rating on main list if needed (more complex, requires re-rendering list or updating specific card)
+        const restaurant = appState.restaurants.find(r => r.id === newReview.restaurantId);
+        if(restaurant) { // Update the main restaurant object's review count and potentially rating for card display
+            const restaurantReviews = appState.reviews.filter(r => r.restaurantId === restaurant.id);
+            restaurant.rating = restaurantReviews.reduce((sum, r) => sum + r.rating, 0) / restaurantReviews.length;
+            restaurant.reviewCount = restaurantReviews.length;
+            renderRestaurantList(); // Re-render the whole list to reflect new average rating on cards
+        }
+
+        tg.showPopup({
+            title: 'Review Submitted!',
+            message: 'Thank you for your feedback.',
+            buttons: [{ type: 'ok' }]
+        });
+    }
+    
+    function shareRestaurant() {
+        if (!appState.currentRestaurantId) return;
+        const restaurant = appState.restaurants.find(r => r.id === appState.currentRestaurantId);
+        if (!restaurant) return;
+
+        tg.HapticFeedback.impactOccurred('light');
+        // For a real app, this URL should point to your Mini App with params to open this specific restaurant
+        const shareUrl = `https://t.me/${tg.initDataUnsafe.bot_username || 'your_bot_username'}/${tg.WebApp.appName}?startapp=restaurant-${restaurant.id}`;
+        const text = `Check out ${restaurant.name} on Food Finder! Great ${restaurant.cuisine}.`;
+
+        try {
+            // Try using the Web Share API if available and not in Telegram context (for local testing)
+            if (navigator.share) {
+                 navigator.share({
+                    title: restaurant.name,
+                    text: text,
+                    url: shareUrl,
+                });
+            } else {
+                // Fallback to Telegram's way of sharing
+                tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`);
             }
-            swipeEmptyState.classList.add('hidden');
+        } catch (e) {
+            tg.showAlert('Sharing failed. You can manually copy the link.');
+            console.error("Share error: ", e);
+        }
+    }
 
-            // Create and append new cards
-            // Show only a few cards at a time for performance, e.g., top 3
-            availablePartners.slice(0, 3).reverse().forEach((user, index) => {
-                const card = createSwipeCard(user, index);
-                swipeCards.push(card);
-                swipeCardContainer.appendChild(card);
+    function viewRestaurantLocation() {
+        if (!appState.currentRestaurantId) return;
+        const restaurant = appState.restaurants.find(r => r.id === appState.currentRestaurantId);
+        if (!restaurant || !restaurant.location) {
+            tg.showAlert('Location data not available for this restaurant.');
+            return;
+        }
+        tg.HapticFeedback.impactOccurred('light');
+        // tg.openLink(`https://www.google.com/maps?q=${restaurant.location.lat},${restaurant.location.lng}`);
+        // More native: request to show point on map
+        try {
+            tg.showMap(restaurant.location.lat, restaurant.location.lng);
+        } catch (e) {
+            // Fallback if showMap is not available or fails
+            tg.openLink(`https://maps.google.com/?q=${restaurant.location.lat},${restaurant.location.lng}`, {try_instant_view: true});
+            console.error("showMap error, falling back to openLink: ", e);
+        }
+    }
+    
+    function requestUserLocation() {
+        currentLocationEl.textContent = 'Fetching location...';
+        if (tg.CloudStorage && tg.CloudStorage.getItem) { // Check if CloudStorage is available
+            tg.CloudStorage.getItem('user_city', (error, value) => {
+                if (error) {
+                    console.warn('Error getting city from cloud:', error);
+                }
+                if (value) {
+                    currentLocationEl.textContent = `City: ${value}`;
+                    // Potentially use this city to filter/sort restaurants if lat/lng not available
+                } else {
+                    // If no city in cloud or cloud not used, try geolocation
+                    fetchGeoLocation();
+                }
             });
-            currentCardIndex = swipeCards.length -1; // Start with the top card
+        } else {
+            fetchGeoLocation();
         }
+    }
 
-
-        function makeCardDraggable(card) {
-            let startX, startY, isDragging = false, offsetX, offsetY;
-            const overlay = card.querySelector(`#swipe-overlay-${card.dataset.userId}`);
-
-            function onPointerDown(e) {
-                if (e.target.closest('button')) return; // Don't drag if clicking a button on card
-                isDragging = true;
-                startX = e.clientX || e.touches[0].clientX;
-                startY = e.clientY || e.touches[0].clientY;
-                card.style.transition = 'none'; // Remove transition for smooth dragging
-                card.classList.add('grabbing');
-            }
-
-            function onPointerMove(e) {
-                if (!isDragging) return;
-                e.preventDefault();
-                const currentX = e.clientX || e.touches[0].clientX;
-                const currentY = e.clientY || e.touches[0].clientY;
-                offsetX = currentX - startX;
-                offsetY = currentY - startY;
-
-                card.style.transform = `translate(${offsetX}px, ${offsetY}px) rotate(${offsetX / 20}deg)`;
-                
-                // Show accept/reject overlay
-                if (offsetX > 50) {
-                    overlay.textContent = 'ACCEPT';
-                    overlay.style.color = 'green';
-                    overlay.style.opacity = Math.min(1, Math.abs(offsetX) / 100);
-                } else if (offsetX < -50) {
-                    overlay.textContent = 'REJECT';
-                    overlay.style.color = 'red';
-                    overlay.style.opacity = Math.min(1, Math.abs(offsetX) / 100);
-                } else {
-                    overlay.style.opacity = '0';
-                }
-            }
-
-            function onPointerUp(e) {
-                if (!isDragging) return;
-                isDragging = false;
-                card.classList.remove('grabbing');
-                card.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
-                overlay.style.opacity = '0'; // Hide overlay quickly
-
-                const threshold = card.offsetWidth / 3;
-                if (offsetX > threshold) {
-                    handleSwipe('accept', card.dataset.userId);
-                } else if (offsetX < -threshold) {
-                    handleSwipe('reject', card.dataset.userId);
-                } else {
-                    card.style.transform = 'translate(0,0) rotate(0deg)'; // Return to center
-                }
-            }
-            
-            card.addEventListener('mousedown', onPointerDown);
-            card.addEventListener('touchstart', onPointerDown, { passive: false });
-
-            document.addEventListener('mousemove', onPointerMove);
-            document.addEventListener('touchmove', onPointerMove, { passive: false });
-            
-            document.addEventListener('mouseup', onPointerUp);
-            document.addEventListener('touchend', onPointerUp);
+    function fetchGeoLocation() {
+         if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    appState.userLocation = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                    };
+                    currentLocationEl.textContent = `Lat: ${appState.userLocation.latitude.toFixed(2)}, Lon: ${appState.userLocation.longitude.toFixed(2)}`;
+                    tg.HapticFeedback.notificationOccurred('success');
+                    // TODO: In a real app, re-fetch or sort restaurants by distance
+                    // For now, we just display it. If restaurants have lat/lng, we could calculate distance.
+                    // For example, update restaurant.distance here.
+                    appState.restaurants.forEach(r => {
+                        if (r.location && appState.userLocation) {
+                            r.distance = calculateDistance(appState.userLocation.latitude, appState.userLocation.longitude, r.location.lat, r.location.lng);
+                        }
+                    });
+                    appState.restaurants.sort((a,b) => a.distance - b.distance); // Sort by new distance
+                    renderRestaurantList(); // Re-render with updated distances and order
+                },
+                (error) => {
+                    console.warn("Error getting location:", error.message);
+                    currentLocationEl.textContent = "Location access denied.";
+                    tg.HapticFeedback.notificationOccurred('error');
+                    tg.showAlert(`Could not get location: ${error.message}. Some features might be limited.`);
+                },
+                { timeout: 10000, enableHighAccuracy: true }
+            );
+        } else {
+            currentLocationEl.textContent = "Geolocation not supported.";
+            tg.showAlert("Geolocation is not supported by your browser.");
         }
+    }
 
-        function handleSwipe(direction, userId) {
-            if (!userId && swipeCards.length > 0) { // From button click
-                const topCard = swipeCards[swipeCards.length - 1];
-                if (topCard) userId = topCard.dataset.userId;
-            }
-            if (!userId) return; // No card to swipe
+    function calculateDistance(lat1, lon1, lat2, lon2) { // Haversine formula
+        const R = 6371; // Radius of the earth in km
+        const dLat = deg2rad(lat2-lat1);
+        const dLon = deg2rad(lon2-lon1);
+        const a =
+            Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const d = R * c; // Distance in km
+        return parseFloat(d.toFixed(1));
+    }
+    function deg2rad(deg) {
+        return deg * (Math.PI/180)
+    }
 
-            const cardEl = swipeCardContainer.querySelector(`.swipe-card[data-user-id="${userId}"]`);
-            if (!cardEl) return;
 
-            cardEl.style.transition = 'transform 0.5s ease-out, opacity 0.5s ease-out';
-            const flyX = (direction === 'accept' ? 1 : -1) * (swipeCardContainer.offsetWidth + cardEl.offsetWidth);
-            cardEl.style.transform = `translate(${flyX}px, ${cardEl.offsetTop * 0.3}px) rotate(${direction === 'accept' ? 30 : -30}deg)`;
-            cardEl.style.opacity = '0';
+    function clearAllFilters() {
+        tg.HapticFeedback.impactOccurred('light');
+        appState.activeFilter = 'all';
+        appState.searchQuery = '';
+        searchInputEl.value = '';
+        document.querySelectorAll('#category-filters-container .filter-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector('#category-filters-container .filter-btn[data-filter="all"]').classList.add('active');
+        renderRestaurantList();
+    }
 
+
+    // --- Initialization ---
+    async function initApp() {
+        setupTelegramFeatures(); // Initialize Telegram SDK features first
+        
+        // Attempt to get location
+        requestUserLocation(); // This will also trigger initial render after location or on error
+
+        await loadSampleData(); // Load mock data
+        
+        // Initial Render
+        renderCategoryFilters();
+        renderRestaurantList(); // This will be called again if location updates distances
+
+        // Attach Event Listeners
+        document.getElementById('refresh-location').addEventListener('click', () => {
             tg.HapticFeedback.impactOccurred('medium');
+            requestUserLocation();
+        });
+        searchInputEl.addEventListener('input', handleSearch);
+        document.getElementById('clear-filters-main').addEventListener('click', clearAllFilters);
 
-            setTimeout(() => {
-                cardEl.remove();
-                swipeCards = swipeCards.filter(c => c !== cardEl); // Remove from active cards array
-                if (swipeCards.length === 0) {
-                     loadPotentialPartners(); // Load more if needed
-                }
-            }, 500);
-
-
-            if (direction === 'accept') {
-                if (!swipeHistory.accepted.includes(userId)) swipeHistory.accepted.push(userId);
-                // Check for mutual match (simplified)
-                const partner = potentialPartners.find(p => p.id === userId);
-                // In a real app, partner.preferences.acceptedMe would come from a server.
-                // We simulate it: some users might "accept back" randomly or based on a flag.
-                if (partner && (partner.acceptsCurrentUser || Math.random() < 0.3)) { // 30% chance of mutual like for demo
-                    if (!matches.find(m => m.partnerId === userId)) {
-                        matches.push({
-                            partnerId: userId,
-                            partnerName: partner.username,
-                            partnerPic: partner.photo_url,
-                            chatLog: [{ sender: 'system', text: 'You are now matched!', time: new Date().toISOString() }]
-                        });
-                        alertUser(`It's a Match with @${partner.username}!`, 'success');
-                    }
-                }
-            } else {
-                if (!swipeHistory.rejected.includes(userId)) swipeHistory.rejected.push(userId);
-            }
-            setLocalStorage(`dailyVolueenter_swipeHistory_${currentUser.id}`, swipeHistory);
-            setLocalStorage(`dailyVolueenter_matches_${currentUser.id}`, matches);
-        }
+        // Detail screen buttons
+        document.getElementById('add-review').addEventListener('click', showReviewModal);
+        document.getElementById('share-restaurant').addEventListener('click', shareRestaurant);
+        document.getElementById('view-location').addEventListener('click', viewRestaurantLocation);
         
-        // --- History Screen Logic ---
-        let activeHistoryTab = 'accepted';
-        function renderHistoryScreen() {
-            historyContentEl.innerHTML = '';
-            const listToShow = activeHistoryTab === 'accepted' ? swipeHistory.accepted : swipeHistory.rejected;
-
-            if (listToShow.length === 0) {
-                historyContentEl.innerHTML = `<p class="text-center var(--tg-theme-hint-color) mt-4">No users in this list yet.</p>`;
-                return;
-            }
-
-            const ul = document.createElement('ul');
-            ul.className = 'space-y-2';
-            listToShow.forEach(userId => {
-                const partner = potentialPartners.find(p => p.id === userId);
-                if (!partner) return;
-
-                const li = document.createElement('li');
-                li.className = 'tg-list-item flex items-center justify-between p-3 bg-var(--tg-theme-secondary-bg-color) rounded-lg';
-                
-                let statusHtml = '';
-                if (activeHistoryTab === 'accepted') {
-                    const isMatch = matches.find(m => m.partnerId === userId);
-                    if (isMatch) {
-                        statusHtml = `<span class="status-accepted text-xs font-semibold">Accepted You Back</span>`;
-                    } else {
-                        statusHtml = `<span class="status-pending text-xs font-semibold">Pending Response</span>`;
-                    }
-                }
-
-                li.innerHTML = `
-                    <div class="flex items-center space-x-3">
-                        <img src="${partner.photo_url}" alt="${partner.username}" class="profile-pic-md rounded-full object-cover">
-                        <div>
-                            <p class="font-semibold var(--tg-theme-text-color)">@${partner.username}</p>
-                            ${activeHistoryTab === 'accepted' ? statusHtml : ''}
-                        </div>
-                    </div>
-                    ${activeHistoryTab === 'accepted' && matches.find(m => m.partnerId === userId) ? 
-                        `<button data-chat-partner-id="${userId}" class="chat-now-btn primary-btn text-xs py-1 px-2 rounded">Chat</button>` : ''}
-                `;
-                ul.appendChild(li);
+        // Review Modal
+        reviewFormEl.addEventListener('submit', handleReviewSubmit);
+        document.querySelectorAll('.close-modal-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                tg.HapticFeedback.impactOccurred('light');
+                hideReviewModal();
             });
-            historyContentEl.appendChild(ul);
-            
-            document.querySelectorAll('.chat-now-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const partnerIdToChat = e.currentTarget.dataset.chatPartnerId;
-                    openChatScreen(partnerIdToChat);
-                });
-            });
-        }
-
-        // --- Adventure Screen Logic ---
-        function renderAdventureScreen() {
-            assessmentsListEl.innerHTML = '';
-            MOCK_ASSESSMENTS.forEach(assessment => {
-                const isCompleted = adventureProgress.assessments[assessment.id]?.completed;
-                const li = document.createElement('li');
-                li.className = `tg-list-item flex justify-between items-center p-3 rounded-lg ${isCompleted ? 'opacity-60' : ''}`;
-                li.innerHTML = `
-                    <span>${assessment.title}</span>
-                    <button data-type="assessment" data-id="${assessment.id}" class="start-adventure-item-btn ${isCompleted ? 'secondary-btn' : 'primary-btn'} text-sm py-1 px-3 rounded-md">
-                        ${isCompleted ? 'View' : 'Start'}
-                    </button>
-                `;
-                assessmentsListEl.appendChild(li);
-            });
-
-            challengesListEl.innerHTML = '';
-            MOCK_CHALLENGES.forEach(challenge => {
-                const isCompleted = adventureProgress.challenges[challenge.id]?.completed;
-                const li = document.createElement('li');
-                li.className = `tg-list-item flex justify-between items-center p-3 rounded-lg ${isCompleted ? 'opacity-60' : ''}`;
-                li.innerHTML = `
-                    <span>${challenge.title}</span>
-                    <button data-type="challenge" data-id="${challenge.id}" class="start-adventure-item-btn ${isCompleted ? 'secondary-btn' : 'primary-btn'} text-sm py-1 px-3 rounded-md">
-                        ${isCompleted ? 'View' : 'Start'}
-                    </button>
-                `;
-                challengesListEl.appendChild(li);
-            });
-
-            document.querySelectorAll('.start-adventure-item-btn').forEach(btn => {
-                btn.addEventListener('click', handleAdventureItemStart);
-            });
-        }
+        });
         
-        function handleAdventureItemStart(event) {
-            const type = event.target.dataset.type;
-            const id = event.target.dataset.id;
-            currentAdventureContext = { type, id };
+        tg.ready(); // Inform Telegram that the app is ready
+    }
 
-            if (type === 'assessment') {
-                const assessment = MOCK_ASSESSMENTS.find(a => a.id === id);
-                adventureModalTitle.textContent = assessment.title;
-                let contentHTML = `<p class="var(--tg-theme-hint-color) mb-3">${assessment.question}</p><div class="space-y-2">`;
-                assessment.options.forEach((opt, index) => {
-                    contentHTML += `<div><input type="radio" name="assessmentOption" id="opt${index}" value="${opt}" class="mr-2"><label for="opt${index}">${opt}</label></div>`;
-                });
-                contentHTML += `</div>`;
-                adventureModalContent.innerHTML = contentHTML;
-                adventureModalActionBtn.textContent = "Submit Answer";
-                adventureModalActionBtn.onclick = submitAssessmentAnswer;
-            } else if (type === 'challenge') {
-                const challenge = MOCK_CHALLENGES.find(c => c.id === id);
-                adventureModalTitle.textContent = challenge.title;
-                adventureModalContent.innerHTML = `
-                    <p class="var(--tg-theme-hint-color) mb-2">${challenge.description}</p>
-                    <label for="challenge-input" class="block text-sm font-medium">${challenge.task}</label>
-                    <input type="text" id="challenge-input" class="w-full p-2 rounded-lg border mt-1" placeholder="Your answer">
-                `;
-                adventureModalActionBtn.textContent = "Submit Proof";
-                adventureModalActionBtn.onclick = submitChallengeProof;
-            }
-            adventureModal.classList.remove('hidden');
-        }
-
-        function submitAssessmentAnswer() {
-            const selectedOption = document.querySelector('input[name="assessmentOption"]:checked');
-            if (!selectedOption) {
-                alertUser("Please select an answer.", "error");
-                return;
-            }
-            if (!adventureProgress.assessments[currentAdventureContext.id]) {
-                adventureProgress.assessments[currentAdventureContext.id] = { completed: false, answers: [] };
-            }
-            adventureProgress.assessments[currentAdventureContext.id].answers.push(selectedOption.value);
-            adventureProgress.assessments[currentAdventureContext.id].completed = true; // Mark as completed after first answer
-            setLocalStorage(`dailyVolueenter_adventureProgress_${currentUser.id}`, adventureProgress);
-            alertUser("Assessment submitted!", "success");
-            closeAdventureModal();
-            renderAdventureScreen(); // Re-render to update button states
-        }
-
-        function submitChallengeProof() {
-            const challengeInput = document.getElementById('challenge-input');
-            const challenge = MOCK_CHALLENGES.find(c => c.id === currentAdventureContext.id);
-            if (challengeInput.value.trim().toLowerCase() === challenge.solution.toLowerCase()) {
-                 if (!adventureProgress.challenges[currentAdventureContext.id]) {
-                    adventureProgress.challenges[currentAdventureContext.id] = { completed: false, attempts: [] };
-                }
-                adventureProgress.challenges[currentAdventureContext.id].completed = true;
-                adventureProgress.challenges[currentAdventureContext.id].attempts.push({value: challengeInput.value, correct: true});
-                setLocalStorage(`dailyVolueenter_adventureProgress_${currentUser.id}`, adventureProgress);
-                alertUser("Challenge completed successfully!", "success");
-            } else {
-                adventureProgress.challenges[currentAdventureContext.id].attempts.push({value: challengeInput.value, correct: false});
-                setLocalStorage(`dailyVolueenter_adventureProgress_${currentUser.id}`, adventureProgress);
-                alertUser("Incorrect answer. Try again!", "error");
-            }
-            closeAdventureModal();
-            renderAdventureScreen();
-        }
-        
-        function closeAdventureModal() {
-            adventureModal.classList.add('hidden');
-            currentAdventureContext = null;
-        }
-
-        // --- Chat List & Individual Chat Logic ---
-        function renderChatListScreen() {
-            chatListContainer.innerHTML = '';
-            if (matches.length === 0) {
-                noChatsMessage.classList.remove('hidden');
-                return;
-            }
-            noChatsMessage.classList.add('hidden');
-
-            matches.forEach(match => {
-                const partner = potentialPartners.find(p => p.id === match.partnerId) || { username: match.partnerName, photo_url: match.partnerPic };
-                const lastMessage = match.chatLog && match.chatLog.length > 0 ? match.chatLog[match.chatLog.length - 1] : { text: 'No messages yet.' };
-                
-                const chatItem = document.createElement('div');
-                chatItem.className = 'tg-list-item flex items-center space-x-3 p-3 bg-var(--tg-theme-secondary-bg-color) rounded-lg cursor-pointer hover:opacity-80';
-                chatItem.dataset.partnerId = match.partnerId;
-                chatItem.innerHTML = `
-                    <img src="${partner.photo_url}" alt="${partner.username}" class="profile-pic-md rounded-full object-cover">
-                    <div class="flex-grow overflow-hidden">
-                        <p class="font-semibold var(--tg-theme-text-color)">@${partner.username}</p>
-                        <p class="text-sm var(--tg-theme-hint-color) truncate">${lastMessage.text}</p>
-                    </div>
-                    ${lastMessage.time ? `<span class="text-xs var(--tg-theme-hint-color)">${new Date(lastMessage.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>` : ''}
-                `;
-                chatItem.addEventListener('click', () => openChatScreen(match.partnerId));
-                chatListContainer.appendChild(chatItem);
-            });
-        }
-
-        function openChatScreen(partnerId) {
-            currentChatPartnerId = partnerId;
-            const match = matches.find(m => m.partnerId === partnerId);
-            if (!match) return;
-            const partner = potentialPartners.find(p => p.id === partnerId) || { username: match.partnerName, photo_url: match.partnerPic };
-
-            chatPartnerPic.src = partner.photo_url;
-            chatPartnerName.textContent = `@${partner.username}`;
-            renderChatMessages(match.chatLog || []);
-            showScreen('screen-chat-individual');
-             // Scroll to bottom
-            chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
-        }
-
-        function renderChatMessages(chatLog) {
-            chatMessagesContainer.innerHTML = '';
-            chatLog.forEach(msg => {
-                const messageDiv = document.createElement('div');
-                const isCurrentUser = msg.sender === currentUser.id || msg.sender === 'me'; // 'me' for older mock data
-                messageDiv.className = `flex mb-2 ${isCurrentUser ? 'justify-end' : 'justify-start'}`;
-                messageDiv.innerHTML = `
-                    <div class="max-w-[70%] p-2.5 rounded-xl ${isCurrentUser ? 'bg-var(--tg-theme-button-color) text-var(--tg-theme-button-text-color)' : 'bg-var(--tg-theme-secondary-bg-color) text-var(--tg-theme-text-color)'}">
-                        <p class="text-sm">${msg.text}</p>
-                        <p class="text-xs opacity-70 mt-1 text-right">${new Date(msg.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
-                    </div>
-                `;
-                chatMessagesContainer.appendChild(messageDiv);
-            });
-             chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
-        }
-
-        function sendChatMessage() {
-            const text = chatMessageInput.value.trim();
-            if (!text || !currentChatPartnerId) return;
-
-            const match = matches.find(m => m.partnerId === currentChatPartnerId);
-            if (!match) return;
-
-            if (!match.chatLog) match.chatLog = [];
-            match.chatLog.push({ sender: currentUser.id, text, time: new Date().toISOString() });
-            setLocalStorage(`dailyVolueenter_matches_${currentUser.id}`, matches);
-            renderChatMessages(match.chatLog);
-            chatMessageInput.value = '';
-            chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight; // Scroll to bottom
-            tg.HapticFeedback.impactOccurred('light');
-        }
-
-        // --- Mock Data Generation ---
-        function generateMockUsers() {
-            const firstNames = ["Alex", "Jamie", "Casey", "Riley", "Jessie", "Morgan", "Taylor", "Jordan", "Drew", "Skyler"];
-            const lastNames = ["Smith", "Jones", "Williams", "Brown", "Davis", "Miller", "Wilson", "Moore", "Lee", "Garcia"];
-            const bios = [
-                "Lover of long walks and deep talks.", "Tech enthusiast and avid reader.", "Always up for an adventure!",
-                "Seeking someone to share laughs and life with.", "Creative soul with a passion for art.", "Foodie and travel bug.",
-                "Introvert with an extroverted cat.", "Musician looking for a duet partner.", "Fitness fanatic and nature lover."
-            ];
-            const allTags = ["Travel", "Foodie", "Music", "Art", "Tech", "Books", "Movies", "Sports", "Nature", "Gaming", "Fitness", "Animals", "Photography", "Cooking", "Dancing"];
-
-            for (let i = 0; i < MOCK_USERS_COUNT; i++) {
-                const id = `mockuser${i + 1}`;
-                if (id === currentUser.id) continue; // Skip current user
-
-                const userTags = [];
-                const numTags = Math.floor(Math.random() * 3) + 2; // 2-4 tags
-                const availableTags = [...allTags];
-                for(let j=0; j<numTags; j++) {
-                    if(availableTags.length === 0) break;
-                    const tagIndex = Math.floor(Math.random() * availableTags.length);
-                    userTags.push(availableTags.splice(tagIndex, 1)[0]);
-                }
-
-                potentialPartners.push({
-                    id: id,
-                    username: `${firstNames[Math.floor(Math.random() * firstNames.length)]}${lastNames[Math.floor(Math.random() * lastNames.length)]}${Math.floor(Math.random()*100)}`.toLowerCase(),
-                    photo_url: `https://placehold.co/400x500/${Math.floor(Math.random()*16777215).toString(16)}/${Math.floor(Math.random()*16777215).toString(16)}?text=User${i+1}&font=roboto`,
-                    age: Math.floor(Math.random() * 15) + 20, // Age 20-34
-                    bio: bios[Math.floor(Math.random() * bios.length)],
-                    tags: userTags,
-                    profile: { // Mock dailyVolueenter profile data
-                        hobbies: 'mock hobby ' + i,
-                        passions: 'mock passion ' + i,
-                        preferences: Math.random() < 0.5 ? 'Looking for serious' : 'Open to casual',
-                        personality: Math.random() < 0.5 ? 'Adventurous' : 'Thoughtful'
-                    },
-                    acceptsCurrentUser: Math.random() < 0.4 // 40% chance they'd accept current user back (for demo)
-                });
-            }
-        }
-
-        // --- Initialization ---
-        function initApp() {
-            tg.ready(); // Inform Telegram app is ready
-            tg.expand(); // Expand to full height
-            applyTelegramTheme();
-
-            // Handle theme changes from Telegram
-            tg.onEvent('themeChanged', applyTelegramTheme);
-            tg.onEvent('viewportChanged', () => tg.expand()); // Re-expand if viewport changes
-
-            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                currentUser.id = tg.initDataUnsafe.user.id?.toString() || 'guest_tg_user';
-                currentUser.username = tg.initDataUnsafe.user.username || `user${currentUser.id.substring(0,5)}`;
-                currentUser.photo_url = tg.initDataUnsafe.user.photo_url || currentUser.photo_url;
-            } else {
-                // Fallback for environments where SDK might not fully initialize (e.g. desktop browser)
-                currentUser.id = 'guest' + Math.floor(Math.random()*10000);
-                alertUser("Running in dev mode: Telegram user data not available.");
-            }
-            
-            loadProfileData();
-            swipeHistory = getLocalStorage(`dailyVolueenter_swipeHistory_${currentUser.id}`, { accepted: [], rejected: [] });
-            matches = getLocalStorage(`dailyVolueenter_matches_${currentUser.id}`, []);
-            adventureProgress = getLocalStorage(`dailyVolueenter_adventureProgress_${currentUser.id}`, { assessments: {}, challenges: {} });
-
-            generateMockUsers();
-            loadPotentialPartners(); // Initial load for swipe screen
-
-            // Event Listeners
-            navButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const screenId = button.dataset.screen;
-                    showScreen(screenId);
-                    if (screenId === 'screen-swipe') loadPotentialPartners(); // Refresh swipe screen
-                    if (screenId === 'screen-history') renderHistoryScreen();
-                    if (screenId === 'screen-chat-list') renderChatListScreen();
-                    if (screenId === 'screen-adventure') renderAdventureScreen();
-                });
-            });
-
-            saveProfileBtn.addEventListener('click', saveProfile);
-            rejectBtn.addEventListener('click', () => handleSwipe('reject'));
-            acceptBtn.addEventListener('click', () => handleSwipe('accept'));
-
-            historyTabButtons.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    historyTabButtons.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    activeHistoryTab = btn.dataset.tab;
-                    renderHistoryScreen();
-                });
-            });
-            
-            chatSendBtn.addEventListener('click', sendChatMessage);
-            chatMessageInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') sendChatMessage();
-            });
-            chatBackBtn.addEventListener('click', () => showScreen('screen-chat-list'));
-
-            adventureModalCloseBtn.addEventListener('click', closeAdventureModal);
-
-            // Set initial screen
-            showScreen('screen-swipe');
-        }
-
-        // Start the app
-        initApp();
+    // Start the app
+    document.addEventListener('DOMContentLoaded', initApp);
 
     </script>
 </body>
