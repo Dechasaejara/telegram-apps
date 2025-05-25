@@ -1,2376 +1,681 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Luxe Dine - Exclusive Food Discovery</title>
-
-    <!-- Tailwind CSS -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>MemeGen Mini App</title>
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Leaflet CSS -->
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    />
-
-    <!-- Font Awesome -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
-
-    <!-- Google Fonts -->
-    <link
-      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-
-    <script>
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            colors: {
-              luxury: {
-                gold: "#D4AF37",
-                lightGold: "#F4E9C9",
-                darkGold: "#AA8C2C",
-                black: "#1A1A1A",
-                charcoal: "#2D2D2D",
-                cream: "#F9F6EE",
-                navy: "#0F1A30",
-              },
-            },
-            fontFamily: {
-              playfair: ['"Playfair Display"', "serif"],
-              sans: ["Montserrat", "sans-serif"],
-            },
-            boxShadow: {
-              luxury: "0 4px 20px rgba(0, 0, 0, 0.15)",
-              "luxury-dark": "0 4px 20px rgba(212, 175, 55, 0.15)",
-            },
-          },
-        },
-      };
-    </script>
-
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-      /* Custom Scrollbar */
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-
-      ::-webkit-scrollbar-track {
-        background: #f1f1f1;
-      }
-
-      .dark ::-webkit-scrollbar-track {
-        background: #1a1a1a;
-      }
-
-      ::-webkit-scrollbar-thumb {
-        background: #d4af37;
-        border-radius: 4px;
-      }
-
-      ::-webkit-scrollbar-thumb:hover {
-        background: #aa8c2c;
-      }
-
-      /* Map styles */
-      .map-container {
-        height: 300px;
-        width: 100%;
-        border-radius: 0.5rem;
-        overflow: hidden;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      }
-
-      .dark .map-container {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      }
-
-      .dark .leaflet-tile {
-        filter: brightness(0.8) contrast(1.2) saturate(0.7);
-      }
-
-      /* Custom marker */
-      .map-marker {
-        background-color: #d4af37;
-        border-radius: 50%;
-        width: 24px;
-        height: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-        font-weight: bold;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-      }
-
-      /* Badge system */
-      .badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.15rem 0.5rem;
-        border-radius: 0.5rem;
-        font-size: 0.75rem;
-        font-weight: 600;
-      }
-
-      .badge-gold {
-        background-color: #d4af37;
-        color: white;
-      }
-
-      .badge-silver {
-        background-color: #c0c0c0;
-        color: #1a1a1a;
-      }
-
-      .badge-special {
-        background-color: #800020;
-        color: white;
-      }
-
-      /* Star ratings */
-      .stars {
-        display: inline-flex;
-        align-items: center;
-      }
-
-      .stars i {
-        color: #d4af37;
-        font-size: 0.875rem;
-      }
-
-      /* Category pills */
-      .category-pill {
-        cursor: pointer;
-        transition: all 0.3s ease;
-        white-space: nowrap;
-      }
-
-      .category-pill.active {
-        background-color: #d4af37;
-        color: white;
-      }
-
-      .dark .category-pill.active {
-        box-shadow: 0 2px 8px rgba(212, 175, 55, 0.5);
-      }
-
-      /* Animations */
-      .fade-in {
-        animation: fadeIn 0.5s ease-in-out;
-      }
-
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
+        /* Apply Telegram theme variables for better integration */
+        body {
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            overscroll-behavior-y: none; /* Prevent pull-to-refresh issues */
         }
-        to {
-          opacity: 1;
-          transform: translateY(0);
+        .nav-button.active {
+            color: var(--tg-theme-button-color, #007aff);
+            border-bottom: 2px solid var(--tg-theme-button-color, #007aff);
         }
-      }
-
-      .slide-in {
-        animation: slideIn 0.3s ease-in-out;
-      }
-
-      @keyframes slideIn {
-        from {
-          transform: translateX(-20px);
-          opacity: 0;
+        input, select, textarea, button {
+            border-radius: 8px;
         }
-        to {
-          transform: translateX(0);
-          opacity: 1;
+        input[type="text"], input[type="number"], select, textarea {
+            background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            border: 1px solid var(--tg-theme-hint-color, #c7c7cc);
+            color: var(--tg-theme-text-color, #000000);
+            padding: 10px 12px;
         }
-      }
-
-      /* Toast notification */
-      .toast {
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 0.75rem 1.5rem;
-        border-radius: 4px;
-        color: white;
-        z-index: 1000;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
-        opacity: 0;
-        pointer-events: none;
-      }
-
-      .toast.show {
-        opacity: 1;
-      }
-      /* Fix z-index for modal and map */
-      #mapView {
-        z-index: 10; /* Ensure map is below modals */
-      }
-
-      #detailModal,
-      #businessEditModal,
-      #menuEditModal,
-      #reviewModal {
-        z-index: 1000; /* Ensure modals are above all other elements */
-      }
-      .toast.success {
-        background-color: #10b981;
-      }
-
-      .toast.error {
-        background-color: #ef4444;
-      }
-
-      /* Loading spinner */
-      .loader {
-        border: 3px solid rgba(212, 175, 55, 0.3);
-        border-radius: 50%;
-        border-top: 3px solid #d4af37;
-        width: 24px;
-        height: 24px;
-        animation: spin 1s linear infinite;
-      }
-
-      @keyframes spin {
-        0% {
-          transform: rotate(0deg);
+        input[type="color"] {
+             min-height: 44px; /* Ensure color input is tappable */
         }
-        100% {
-          transform: rotate(360deg);
+        button.primary-action {
+            background-color: var(--tg-theme-button-color, #007aff);
+            color: var(--tg-theme-button-text-color, #ffffff);
         }
-      }
+        button.secondary-action {
+            background-color: var(--tg-theme-secondary-bg-color, #e5e5ea);
+            color: var(--tg-theme-button-color, #007aff); /* Or text color if more appropriate */
+        }
+        .tab-content {
+            padding-bottom: 70px; /* Space for bottom nav */
+        }
+        .meme-card {
+            background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            border: 1px solid var(--tg-theme-hint-color, #e0e0e0);
+        }
+        .leaderboard-item {
+             background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
+        }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: var(--tg-theme-hint-color, #c7c7cc); border-radius: 10px; }
+        .sub-tab-button.active {
+            background-color: var(--tg-theme-button-color, #007aff) !important;
+            color: var(--tg-theme-button-text-color, #ffffff) !important;
+        }
+        .sub-tab-button {
+            background-color: var(--tg-theme-secondary-bg-color, #e5e5ea);
+            color: var(--tg-theme-text-color, #000000);
+        }
+        #memeCanvas {
+            max-width: 100%;
+            height: auto;
+            display: block; 
+            background-color: var(--tg-theme-secondary-bg-color, #e0e0e0); /* BG for canvas area */
+        }
+        .text-band {
+            font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-align: center;
+            color: white;
+            -webkit-text-stroke: 1px black; /* Safari/Chrome */
+            text-stroke: 1px black; /* Standard */
+            paint-order: stroke fill; /* Ensures stroke is behind fill */
+        }
     </style>
-  </head>
-
-  <body
-    class="font-sans bg-white dark:bg-luxury-black text-luxury-black dark:text-white min-h-screen"
-  >
-    <!-- Toast Notification -->
-    <div id="toast" class="toast"></div>
-
-    <!-- App Header -->
-    <header
-      class="sticky top-0 z-50 bg-white dark:bg-luxury-black border-b border-gray-200 dark:border-luxury-charcoal shadow-sm"
-    >
-      <div
-        class="container mx-auto px-4 py-3 flex justify-between items-center"
-      >
-        <div class="flex items-center">
-          <h1 class="text-2xl font-playfair font-bold text-luxury-gold">
-            Luxe<span class="text-luxury-black dark:text-white">Dine</span>
-          </h1>
-        </div>
-        <div class="flex items-center space-x-3">
-          <button
-            id="darkModeToggle"
-            class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-luxury-charcoal transition"
-          >
-            <i class="fas fa-moon dark:hidden"></i>
-            <i class="fas fa-sun hidden dark:block text-luxury-gold"></i>
-          </button>
-          <button
-            id="filterButton"
-            class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-luxury-charcoal transition"
-          >
-            <i
-              class="fas fa-sliders-h text-luxury-black dark:text-luxury-gold"
-            ></i>
-          </button>
-          <button
-            id="profileButton"
-            class="p-2 rounded-full bg-luxury-gold text-white shadow-luxury hover:bg-luxury-darkGold transition"
-          >
-            <i class="fas fa-user"></i>
-          </button>
-        </div>
-      </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="container mx-auto px-4 py-6 pb-20">
-      <!-- Location and Search -->
-      <div class="mb-6">
-        <div class="flex items-center justify-between mb-2">
-          <div>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-              Current Location
-            </p>
-            <div class="flex items-center">
-              <i class="fas fa-map-marker-alt text-luxury-gold mr-2"></i>
-              <span id="currentLocation" class="font-medium"
-                >Loading location...</span
-              >
-            </div>
-          </div>
-          <button
-            id="refreshLocation"
-            class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-luxury-charcoal transition"
-          >
-            <i class="fas fa-sync-alt text-luxury-gold"></i>
-          </button>
-        </div>
-
-        <div class="relative mt-3">
-          <i
-            class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-          ></i>
-          <input
-            type="text"
-            id="searchInput"
-            placeholder="Search for restaurants, cuisines, or dishes"
-            class="w-full pl-10 pr-4 py-3 bg-gray-100 dark:bg-luxury-charcoal border-none rounded-lg focus:ring-2 focus:ring-luxury-gold focus:outline-none text-base"
-          />
-        </div>
-      </div>
-
-      <!-- Filter Panel (hidden by default) -->
-      <div
-        id="filterPanel"
-        class="bg-white dark:bg-luxury-charcoal rounded-lg p-4 mb-6 shadow-luxury dark:shadow-luxury-dark hidden fade-in"
-      >
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="font-playfair font-semibold text-lg">
-            Refine Your Search
-          </h3>
-          <button id="closeFilter" class="text-gray-500 hover:text-luxury-gold">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-
-        <div class="space-y-4">
-          <!-- Price Range -->
-          <div>
-            <label class="block mb-2 text-sm font-medium">Price Range</label>
-            <div class="flex space-x-2">
-              <button
-                data-price="$"
-                class="price-filter flex-1 py-2 px-3 border border-gray-200 dark:border-gray-700 rounded-md text-center hover:border-luxury-gold hover:text-luxury-gold transition"
-              >
-                $
-              </button>
-              <button
-                data-price="$$"
-                class="price-filter flex-1 py-2 px-3 border border-gray-200 dark:border-gray-700 rounded-md text-center hover:border-luxury-gold hover:text-luxury-gold transition"
-              >
-                $$
-              </button>
-              <button
-                data-price="$$$"
-                class="price-filter flex-1 py-2 px-3 border border-gray-200 dark:border-gray-700 rounded-md text-center hover:border-luxury-gold hover:text-luxury-gold transition"
-              >
-                $$$
-              </button>
-              <button
-                data-price="$$$$"
-                class="price-filter flex-1 py-2 px-3 border border-gray-200 dark:border-gray-700 rounded-md text-center hover:border-luxury-gold hover:text-luxury-gold transition"
-              >
-                $$$$
-              </button>
-            </div>
-          </div>
-
-          <!-- Rating -->
-          <div>
-            <label class="block mb-2 text-sm font-medium">Minimum Rating</label>
-            <div class="flex space-x-2">
-              <button
-                data-rating="3"
-                class="rating-filter flex-1 py-2 px-3 border border-gray-200 dark:border-gray-700 rounded-md text-center hover:border-luxury-gold hover:text-luxury-gold transition"
-              >
-                3+
-              </button>
-              <button
-                data-rating="4"
-                class="rating-filter flex-1 py-2 px-3 border border-gray-200 dark:border-gray-700 rounded-md text-center hover:border-luxury-gold hover:text-luxury-gold transition"
-              >
-                4+
-              </button>
-              <button
-                data-rating="4.5"
-                class="rating-filter flex-1 py-2 px-3 border border-gray-200 dark:border-gray-700 rounded-md text-center hover:border-luxury-gold hover:text-luxury-gold transition"
-              >
-                4.5+
-              </button>
-            </div>
-          </div>
-
-          <!-- Badges -->
-          <div>
-            <label class="block mb-2 text-sm font-medium">Special Badges</label>
-            <div class="flex flex-wrap gap-2">
-              <button
-                data-badge="luxury"
-                class="badge-filter py-1 px-3 border border-gray-200 dark:border-gray-700 rounded-full text-sm hover:border-luxury-gold hover:text-luxury-gold transition"
-              >
-                Luxury
-              </button>
-              <button
-                data-badge="trending"
-                class="badge-filter py-1 px-3 border border-gray-200 dark:border-gray-700 rounded-full text-sm hover:border-luxury-gold hover:text-luxury-gold transition"
-              >
-                Trending
-              </button>
-              <button
-                data-badge="special-offer"
-                class="badge-filter py-1 px-3 border border-gray-200 dark:border-gray-700 rounded-full text-sm hover:border-luxury-gold hover:text-luxury-gold transition"
-              >
-                Special Offer
-              </button>
-              <button
-                data-badge="exclusive"
-                class="badge-filter py-1 px-3 border border-gray-200 dark:border-gray-700 rounded-full text-sm hover:border-luxury-gold hover:text-luxury-gold transition"
-              >
-                Exclusive
-              </button>
-            </div>
-          </div>
-
-          <!-- Distance -->
-          <div>
-            <label class="block mb-2 text-sm font-medium"
-              >Maximum Distance</label
-            >
-            <input
-              type="range"
-              min="1"
-              max="10"
-              value="5"
-              class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-luxury-gold"
-              id="distanceRange"
-            />
-            <div class="flex justify-between text-xs text-gray-500 mt-1">
-              <span>1 km</span>
-              <span id="distanceValue">5 km</span>
-              <span>10 km</span>
-            </div>
-          </div>
-
-          <div class="flex justify-end mt-4">
-            <button
-              id="resetFilters"
-              class="mr-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-luxury-charcoal transition"
-            >
-              Reset
-            </button>
-            <button
-              id="applyFilters"
-              class="px-4 py-2 bg-luxury-gold text-white rounded-md hover:bg-luxury-darkGold transition shadow-sm"
-            >
-              Apply Filters
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Map View -->
-      <div class="mb-6 z-100">
-        <div class="flex justify-between items-center mb-3">
-          <h2 class="font-playfair font-bold text-xl">Nearby Establishments</h2>
-          <button
-            id="toggleMapView"
-            class="text-sm text-luxury-gold hover:underline"
-          >
-            Show List
-          </button>
-        </div>
-
-        <div id="mapView" class="map-container"></div>
-
-        <div id="listView" class="hidden space-y-4 mt-3">
-          <!-- Business list will be populated here by JavaScript -->
-        </div>
-      </div>
-
-      <!-- Category Tabs -->
-      <div class="mb-6">
-        <div class="overflow-x-auto pb-2">
-          <div class="flex space-x-2">
-            <button
-              class="category-pill active px-4 py-2 rounded-full bg-gray-100 dark:bg-luxury-charcoal"
-              data-category="all"
-            >
-              All
-            </button>
-            <button
-              class="category-pill px-4 py-2 rounded-full bg-gray-100 dark:bg-luxury-charcoal"
-              data-category="fine-dining"
-            >
-              Fine Dining
-            </button>
-            <button
-              class="category-pill px-4 py-2 rounded-full bg-gray-100 dark:bg-luxury-charcoal"
-              data-category="ethiopian"
-            >
-              Ethiopian
-            </button>
-            <button
-              class="category-pill px-4 py-2 rounded-full bg-gray-100 dark:bg-luxury-charcoal"
-              data-category="cafe"
-            >
-              Café & Bistro
-            </button>
-            <button
-              class="category-pill px-4 py-2 rounded-full bg-gray-100 dark:bg-luxury-charcoal"
-              data-category="bar"
-            >
-              Bars & Lounges
-            </button>
-            <button
-              class="category-pill px-4 py-2 rounded-full bg-gray-100 dark:bg-luxury-charcoal"
-              data-category="dessert"
-            >
-              Dessert
-            </button>
-            <button
-              class="category-pill px-4 py-2 rounded-full bg-gray-100 dark:bg-luxury-charcoal"
-              data-category="pizza"
-            >
-              Pizza
-            </button>
-            <button
-              class="category-pill px-4 py-2 rounded-full bg-gray-100 dark:bg-luxury-charcoal"
-              data-category="fusion"
-            >
-              Fusion
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Featured Offers -->
-      <div class="mb-8">
-        <h2 class="font-playfair font-bold text-xl mb-4">Featured Offers</h2>
-        <div
-          id="featuredOffersList"
-          class="grid grid-cols-1 md:grid-cols-2 gap-4"
-        >
-          <!-- Special offers will be populated here by JavaScript -->
-        </div>
-      </div>
-
-      <!-- Restaurant Listings -->
-      <div class="mb-8">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="font-playfair font-bold text-xl">
-            Premium Establishments
-          </h2>
-          <div class="flex items-center">
-            <span class="text-sm mr-2">Sort by:</span>
-            <select
-              id="sortOption"
-              class="text-sm bg-gray-100 dark:bg-luxury-charcoal border-none rounded-md focus:ring-luxury-gold focus:outline-none"
-            >
-              <option value="rating">Top Rated</option>
-              <option value="distance">Nearest</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-            </select>
-          </div>
-        </div>
-
-        <div
-          id="restaurantList"
-          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-        >
-          <!-- Restaurant listings will be populated here by JavaScript -->
-        </div>
-
-        <div id="loadMoreContainer" class="text-center mt-8">
-          <button
-            id="loadMoreBtn"
-            class="px-6 py-2 border border-luxury-gold text-luxury-gold rounded-md hover:bg-luxury-gold hover:text-white transition"
-          >
-            Load More
-          </button>
-        </div>
-      </div>
-    </main>
-
-    <!-- Bottom Navigation -->
-    <nav
-      class="fixed bottom-0 left-0 right-0 bg-white dark:bg-luxury-black border-t border-gray-200 dark:border-luxury-charcoal shadow-lg z-40"
-    >
-      <div class="flex justify-around">
-        <button
-          class="nav-item active flex flex-col items-center py-2 px-4 w-1/5"
-          data-target="home"
-        >
-          <i class="fas fa-home text-luxury-gold"></i>
-          <span class="text-xs mt-1">Home</span>
-        </button>
-        <button
-          class="nav-item flex flex-col items-center py-2 px-4 w-1/5"
-          data-target="explore"
-        >
-          <i class="fas fa-compass"></i>
-          <span class="text-xs mt-1">Explore</span>
-        </button>
-        <button
-          class="nav-item flex flex-col items-center py-2 px-4 w-1/5"
-          data-target="favorites"
-        >
-          <i class="fas fa-heart"></i>
-          <span class="text-xs mt-1">Favorites</span>
-        </button>
-        <button
-          class="nav-item flex flex-col items-center py-2 px-4 w-1/5"
-          data-target="reservations"
-        >
-          <i class="fas fa-calendar-alt"></i>
-          <span class="text-xs mt-1">Bookings</span>
-        </button>
-        <button
-          class="nav-item flex flex-col items-center py-2 px-4 w-1/5"
-          data-target="community"
-        >
-          <i class="fas fa-users"></i>
-          <span class="text-xs mt-1">Community</span>
-        </button>
-      </div>
-    </nav>
-
-    <!-- Detail Modal -->
-    <div
-      id="detailModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden"
-    >
-      <div
-        class="bg-white dark:bg-luxury-charcoal rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto mx-4"
-      >
-        <div id="modalContent" class="p-4">
-          <!-- Modal content will be populated by JavaScript -->
-        </div>
-      </div>
-    </div>
-
-    <!-- Business Edit Modal -->
-    <div
-      id="businessEditModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden"
-    >
-      <div
-        class="bg-white dark:bg-luxury-charcoal rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto mx-4"
-      >
-        <div class="p-4">
-          <div class="flex justify-between items-center mb-4">
-            <h3 class="font-playfair font-bold text-xl">Edit Business</h3>
-            <button class="close-modal text-gray-500 hover:text-luxury-gold">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          <form id="businessEditForm" class="space-y-4">
-            <input type="hidden" id="businessId" />
-            <div>
-              <label class="block text-sm font-medium mb-1"
-                >Business Name</label
-              >
-              <input
-                type="text"
-                id="businessName"
-                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium mb-1">Description</label>
-              <textarea
-                id="businessDescription"
-                rows="3"
-                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base"
-              ></textarea>
-            </div>
-            <div>
-              <label class="block text-sm font-medium mb-1">Address</label>
-              <input
-                type="text"
-                id="businessAddress"
-                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium mb-1">Category</label>
-              <select
-                id="businessCategory"
-                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base"
-              >
-                <option value="fine-dining">Fine Dining</option>
-                <option value="ethiopian">Ethiopian</option>
-                <option value="cafe">Café & Bistro</option>
-                <option value="bar">Bars & Lounges</option>
-                <option value="dessert">Dessert</option>
-                <option value="pizza">Pizza</option>
-                <option value="fusion">Fusion</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium mb-1">Price Range</label>
-              <select
-                id="businessPrice"
-                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base"
-              >
-                <option value="$">$</option>
-                <option value="$$">$$</option>
-                <option value="$$$">$$$</option>
-                <option value="$$$$">$$$$</option>
-              </select>
-            </div>
-            <div class="flex justify-end mt-4">
-              <button
-                type="button"
-                class="close-modal mr-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-luxury-black"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                class="px-4 py-2 bg-luxury-gold text-white rounded-md hover:bg-luxury-darkGold"
-              >
-                Save Changes
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Menu Item Edit Modal -->
-    <div
-      id="menuEditModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden"
-    >
-      <div
-        class="bg-white dark:bg-luxury-charcoal rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto mx-4"
-      >
-        <div class="p-4">
-          <div class="flex justify-between items-center mb-4">
-            <h3 class="font-playfair font-bold text-xl">Edit Menu Item</h3>
-            <button class="close-modal text-gray-500 hover:text-luxury-gold">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          <form id="menuEditForm" class="space-y-4">
-            <input type="hidden" id="menuItemId" />
-            <input type="hidden" id="menuBusinessId" />
-            <div>
-              <label class="block text-sm font-medium mb-1">Item Name</label>
-              <input
-                type="text"
-                id="menuItemName"
-                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium mb-1">Description</label>
-              <textarea
-                id="menuItemDescription"
-                rows="3"
-                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base"
-              ></textarea>
-            </div>
-            <div>
-              <label class="block text-sm font-medium mb-1">Price ($)</label>
-              <input
-                type="number"
-                id="menuItemPrice"
-                step="0.01"
-                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium mb-1">Category</label>
-              <select
-                id="menuItemCategory"
-                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base"
-              >
-                <option value="appetizer">Appetizer</option>
-                <option value="main">Main Course</option>
-                <option value="dessert">Dessert</option>
-                <option value="beverage">Beverage</option>
-                <option value="special">Chef's Special</option>
-              </select>
-            </div>
-            <div class="flex items-center">
-              <input
-                type="checkbox"
-                id="menuItemSpecialOffer"
-                class="mr-2 accent-luxury-gold"
-              />
-              <label for="menuItemSpecialOffer" class="text-sm font-medium"
-                >Special Offer</label
-              >
-            </div>
-            <div class="flex justify-end mt-4">
-              <button
-                type="button"
-                class="close-modal mr-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-luxury-black"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                class="px-4 py-2 bg-luxury-gold text-white rounded-md hover:bg-luxury-darkGold"
-              >
-                Save Changes
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Review Modal -->
-    <div
-      id="reviewModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden"
-    >
-      <div
-        class="bg-white dark:bg-luxury-charcoal rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto mx-4"
-      >
-        <div class="p-4">
-          <div class="flex justify-between items-center mb-4">
-            <h3 class="font-playfair font-bold text-xl">Write a Review</h3>
-            <button class="close-modal text-gray-500 hover:text-luxury-gold">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          <form id="reviewForm" class="space-y-4">
-            <input type="hidden" id="reviewBusinessId" />
-            <div>
-              <label class="block text-sm font-medium mb-1">Your Rating</label>
-              <div class="flex space-x-1" id="ratingStars">
-                <i
-                  class="fas fa-star text-gray-300 hover:text-luxury-gold cursor-pointer text-xl"
-                  data-rating="1"
-                ></i>
-                <i
-                  class="fas fa-star text-gray-300 hover:text-luxury-gold cursor-pointer text-xl"
-                  data-rating="2"
-                ></i>
-                <i
-                  class="fas fa-star text-gray-300 hover:text-luxury-gold cursor-pointer text-xl"
-                  data-rating="3"
-                ></i>
-                <i
-                  class="fas fa-star text-gray-300 hover:text-luxury-gold cursor-pointer text-xl"
-                  data-rating="4"
-                ></i>
-                <i
-                  class="fas fa-star text-gray-300 hover:text-luxury-gold cursor-pointer text-xl"
-                  data-rating="5"
-                ></i>
-              </div>
-            </div>
-            <div>
-              <label class="block text-sm font-medium mb-1">Your Review</label>
-              <textarea
-                id="reviewContent"
-                rows="4"
-                placeholder="Share your experience..."
-                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-luxury-black text-base"
-              ></textarea>
-            </div>
-            <div class="flex justify-end mt-4">
-              <button
-                type="button"
-                class="close-modal mr-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-luxury-black"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                class="px-4 py-2 bg-luxury-gold text-white rounded-md hover:bg-luxury-darkGold"
-              >
-                Submit Review
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-    <script>
-      // Check for dark mode preference
-      if (
-        localStorage.getItem("darkMode") === "true" ||
-        (window.matchMedia &&
-          window.matchMedia("(prefers-color-scheme: dark)").matches &&
-          !localStorage.getItem("darkMode"))
-      ) {
-        document.documentElement.classList.add("dark");
-      }
-
-      // Listen for changes in color scheme preference
-      window
-        .matchMedia("(prefers-color-scheme: dark)")
-        .addEventListener("change", (event) => {
-          if (!localStorage.getItem("darkMode")) {
-            // Only if no manual toggle override
-            if (event.matches) {
-              document.documentElement.classList.add("dark");
-            } else {
-              document.documentElement.classList.remove("dark");
-            }
-          }
-        });
-
-      // Data Store (Mock Database) - Addis Ababa Data
-      const appData = {
-        user: {
-          id: "user123",
-          name: "John Doe", // Generic user
-          badges: ["Foodie Level 3", "Top Reviewer", "Connoisseur"],
-          favorites: [],
-        },
-        businesses: [
-          {
-            id: "b1",
-            name: "Yod Abyssinia Cultural Restaurant",
-            description:
-              "Experience authentic Ethiopian culture with traditional music, dance, and a wide array of delicious national dishes served in a vibrant atmosphere.",
-            address: "Bole Medhanealem Area, Addis Ababa",
-            lat: 9.005,
-            lng: 38.791,
-            distance: 2.5,
-            category: "ethiopian",
-            price: "$$$",
-            rating: 4.7,
-            reviews: 150,
-            badges: ["luxury", "trending"],
-            specialOffer: "Complimentary Tej (honey wine) tasting with dinner",
-            images: [],
-            cuisine: "Ethiopian Traditional",
-          },
-          {
-            id: "b2",
-            name: "Tomoca Coffee",
-            description:
-              "A historic Addis Ababa institution, serving rich, aromatic Ethiopian coffee roasted on-site. Enjoy a classic coffee ceremony experience.",
-            address: "Wawel St, Piazza, Addis Ababa",
-            lat: 9.033,
-            lng: 38.75,
-            distance: 1.0,
-            category: "cafe",
-            price: "$$",
-            rating: 4.9,
-            reviews: 210,
-            badges: ["trending", "exclusive"],
-            specialOffer: "Buy 1kg of coffee beans, get a free espresso",
-            images: [],
-            cuisine: "Ethiopian Coffee",
-          },
-          {
-            id: "b3",
-            name: "Gusto Ristorante",
-            description:
-              "An upscale Italian restaurant offering a sophisticated dining experience with authentic Italian cuisine, fine wines, and elegant decor.",
-            address: "Olympia, Meskel Flower Road, Addis Ababa",
-            lat: 9.012,
-            lng: 38.765,
-            distance: 1.8,
-            category: "fine-dining",
-            price: "$$$$",
-            rating: 4.6,
-            reviews: 95,
-            badges: ["luxury"],
-            specialOffer: "Chef's Special Pasta of the Day - 15% off",
-            images: [],
-            cuisine: "Italian",
-          },
-          {
-            id: "b4",
-            name: "Kategna Restaurant",
-            description:
-              "A popular spot for modern yet traditional Ethiopian cuisine, known for its delicious food, stylish ambiance, and excellent service.",
-            address: "Atlas Area, Near Bole, Addis Ababa",
-            lat: 9.015,
-            lng: 38.77,
-            distance: 1.5,
-            category: "ethiopian",
-            price: "$$$",
-            rating: 4.5,
-            reviews: 180,
-            badges: ["trending"],
-            specialOffer:
-              "Kategna Special Platter for two at a promotional price",
-            images: [],
-            cuisine: "Ethiopian Modern",
-          },
-          {
-            id: "b5",
-            name: "The Oriental",
-            description:
-              "Indulge in a fusion of exquisite Asian flavors, from sushi to Thai curries, in a chic and contemporary setting.",
-            address: "Boston Day Spa Building, Bole, Addis Ababa",
-            lat: 9.008,
-            lng: 38.795,
-            distance: 2.8,
-            category: "fusion",
-            price: "$$$$",
-            rating: 4.4,
-            reviews: 70,
-            badges: ["luxury", "exclusive"],
-            specialOffer: "Sushi Happy Hour: 5-7 PM weekdays",
-            images: [],
-            cuisine: "Asian Fusion",
-          },
-          {
-            id: "b6",
-            name: "Effoi Pizza",
-            description:
-              "Famous for its unique Ethiopian-style pizzas with creative toppings and a relaxed, artsy atmosphere. A local favorite.",
-            address: "Near Chechnya, CMC Road, Addis Ababa",
-            lat: 9.02,
-            lng: 38.82,
-            distance: 4.5,
-            category: "pizza",
-            price: "$$",
-            rating: 4.3,
-            reviews: 120,
-            badges: [],
-            specialOffer: "Two-for-One Pizza on Tuesdays",
-            images: [],
-            cuisine: "Pizza / Ethiopian Fusion",
-          },
-        ],
-        menuItems: [
-          {
-            id: "m1",
-            businessId: "b1",
-            name: "Doro Wat",
-            description:
-              "Spicy chicken stew served with injera and a hard-boiled egg. A national delicacy.",
-            price: 15.0,
-            category: "main",
-            special: true,
-          },
-          {
-            id: "m2",
-            businessId: "b1",
-            name: "Kitfo",
-            description:
-              "Minced raw beef marinated in mitmita (spicy chili powder) and niter kibbeh (clarified butter).",
-            price: 18.0,
-            category: "main",
-            special: false,
-          },
-          {
-            id: "m3",
-            businessId: "b1",
-            name: "Vegetarian Beyaynetu",
-            description:
-              "A platter of various vegan stews and salads served on injera.",
-            price: 12.0,
-            category: "main",
-            special: false,
-          },
-          {
-            id: "m4",
-            businessId: "b2",
-            name: "Macchiato",
-            description:
-              "Strong Ethiopian coffee with a dollop of foamed milk.",
-            price: 2.0,
-            category: "beverage",
-            special: false,
-          },
-          {
-            id: "m5",
-            businessId: "b2",
-            name: "Full Coffee Ceremony",
-            description: "Traditional Ethiopian coffee ceremony experience.",
-            price: 10.0,
-            category: "special",
-            special: true,
-          },
-          {
-            id: "m6",
-            businessId: "b2",
-            name: "Samosa (Sambusa)",
-            description: "Crispy pastry filled with lentils or minced meat.",
-            price: 1.5,
-            category: "appetizer",
-            special: false,
-          },
-          {
-            id: "m7",
-            businessId: "b3",
-            name: "Lasagna Bolognese",
-            description:
-              "Classic baked lasagna with rich meat sauce and béchamel.",
-            price: 20.0,
-            category: "main",
-            special: false,
-          },
-          {
-            id: "m8",
-            businessId: "b3",
-            name: "Tiramisu",
-            description:
-              "Traditional Italian dessert made with mascarpone, coffee, and ladyfingers.",
-            price: 8.0,
-            category: "dessert",
-            special: true,
-          },
-          {
-            id: "m9",
-            businessId: "b4",
-            name: "Special Tibs Firfir",
-            description:
-              "Sautéed meat mixed with pieces of injera, berbere, and spices.",
-            price: 16.0,
-            category: "main",
-            special: true,
-          },
-          {
-            id: "m10",
-            businessId: "b4",
-            name: "Shiro Wat",
-            description:
-              "Smooth chickpea or broad bean flour stew, often vegan.",
-            price: 10.0,
-            category: "main",
-            special: false,
-          },
-          {
-            id: "m11",
-            businessId: "b5",
-            name: "Dragon Roll Sushi",
-            description: "Eel and cucumber topped with avocado and tobiko.",
-            price: 22.0,
-            category: "main",
-            special: false,
-          },
-          {
-            id: "m12",
-            businessId: "b5",
-            name: "Green Curry Chicken",
-            description: "Thai green curry with chicken and bamboo shoots.",
-            price: 18.0,
-            category: "main",
-            special: false,
-          },
-          {
-            id: "m13",
-            businessId: "b6",
-            name: "Effoi Special Pizza",
-            description:
-              "Unique pizza with local spices and toppings, often with a doro wat base.",
-            price: 14.0,
-            category: "main",
-            special: true,
-          },
-          {
-            id: "m14",
-            businessId: "b6",
-            name: "Veggie Delight Pizza",
-            description: "Pizza loaded with fresh local vegetables.",
-            price: 12.0,
-            category: "main",
-            special: false,
-          },
-        ],
-        reviews: [
-          {
-            id: "r1",
-            businessId: "b1",
-            userId: "userAbebe",
-            userName: "Abebe T.",
-            rating: 5,
-            content:
-              "Yod Abyssinia is a fantastic place for tourists and locals alike! The music and dance are incredible. Doro Wat was perfect.",
-            date: "2024-03-10",
-            likes: 25,
-          },
-          {
-            id: "r2",
-            businessId: "b2",
-            userId: "userHana",
-            userName: "Hana G.",
-            rating: 5,
-            content:
-              "Tomoca is the best coffee in Addis, period. I buy my beans here every week. The macchiato is legendary.",
-            date: "2024-03-15",
-            likes: 30,
-          },
-          {
-            id: "r3",
-            businessId: "b3",
-            userId: "userChris",
-            userName: "Chris B.",
-            rating: 4,
-            content:
-              "Gusto offers a very good Italian fine dining experience. A bit pricey for Addis, but worth it for a special occasion. Great wine list.",
-            date: "2024-02-20",
-            likes: 12,
-          },
-          {
-            id: "r4",
-            businessId: "b4",
-            userId: "userSofia",
-            userName: "Sofia M.",
-            rating: 4,
-            content:
-              "Kategna is consistently good. Their tibs firfir is amazing. Can get crowded, so book ahead.",
-            date: "2024-03-05",
-            likes: 18,
-          },
-        ],
-        filters: {
-          price: null,
-          rating: null,
-          badges: [],
-          distance: 5,
-          category: "all",
-        },
-      };
-
-      // DOM Elements
-      const currentLocationEl = document.getElementById("currentLocation");
-      const mapView = document.getElementById("mapView");
-      const listView = document.getElementById("listView");
-      const toggleMapViewBtn = document.getElementById("toggleMapView");
-      const darkModeToggleBtn = document.getElementById("darkModeToggle");
-      const filterButton = document.getElementById("filterButton");
-      const filterPanel = document.getElementById("filterPanel");
-      const closeFilterBtn = document.getElementById("closeFilter");
-      const distanceRange = document.getElementById("distanceRange");
-      const distanceValue = document.getElementById("distanceValue");
-      const categoryPills = document.querySelectorAll(".category-pill");
-      const detailModal = document.getElementById("detailModal");
-      const modalContent = document.getElementById("modalContent");
-      const restaurantList = document.getElementById("restaurantList");
-      const featuredOffersList = document.getElementById("featuredOffersList");
-      const searchInput = document.getElementById("searchInput");
-      const applyFiltersBtn = document.getElementById("applyFilters");
-      const resetFiltersBtn = document.getElementById("resetFilters");
-      const priceFilters = document.querySelectorAll(".price-filter");
-      const ratingFilters = document.querySelectorAll(".rating-filter");
-      const badgeFilters = document.querySelectorAll(".badge-filter");
-      const businessEditModal = document.getElementById("businessEditModal");
-      const menuEditModal = document.getElementById("menuEditModal");
-      const reviewModal = document.getElementById("reviewModal");
-      const toast = document.getElementById("toast");
-      const loadMoreBtn = document.getElementById("loadMoreBtn");
-
-      // State Variables
-      let map;
-      let markers = [];
-      let currentPosition = { lat: 9.02497, lng: 38.74689 }; // Default to Addis Ababa
-      let isMapView = true;
-      let currentPage = 1;
-      let itemsPerPage = 6;
-      let selectedRating = 0;
-      let currentBusinessDetail = null;
-
-      // Initialize App
-      function initApp() {
-        initMap();
-        setupEventListeners();
-        loadRestaurants();
-        loadFeaturedOffers();
-        getCurrentLocation();
-      }
-
-      // Initialize Leaflet Map
-      function initMap() {
-        const defaultLocation = [9.02497, 38.74689]; // Addis Ababa
-        const defaultZoom = 13;
-
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              currentPosition = {
-                lat: position.coords.latitude,
-                lng: position.coords.longitude,
-              };
-              map = L.map(mapView).setView(
-                [currentPosition.lat, currentPosition.lng],
-                defaultZoom
-              );
-              L.tileLayer(
-                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                {
-                  attribution:
-                    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                }
-              ).addTo(map);
-              addBusinessMarkers();
-            },
-            () => {
-              console.error(
-                "Geolocation failed. Using default location Addis Ababa."
-              );
-              currentPosition = {
-                lat: defaultLocation[0],
-                lng: defaultLocation[1],
-              };
-              map = L.map(mapView).setView(defaultLocation, defaultZoom);
-              L.tileLayer(
-                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                {
-                  attribution:
-                    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                }
-              ).addTo(map);
-              addBusinessMarkers();
-            }
-          );
-        } else {
-          console.error(
-            "Geolocation not supported. Using default location Addis Ababa."
-          );
-          currentPosition = {
-            lat: defaultLocation[0],
-            lng: defaultLocation[1],
-          };
-          map = L.map(mapView).setView(defaultLocation, defaultZoom);
-          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            attribution:
-              '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-          }).addTo(map);
-          addBusinessMarkers();
-        }
-      }
-
-      // Add business markers to map
-      function addBusinessMarkers() {
-        markers.forEach((marker) => map.removeLayer(marker));
-        markers = [];
-        const filteredBusinesses = filterBusinesses();
-
-        filteredBusinesses.forEach((business) => {
-          const marker = L.marker([business.lat, business.lng]).addTo(map);
-          marker.bindPopup(`
-            <div class="p-2">
-                <h3 class="font-bold">${business.name}</h3>
-                <div class="text-sm text-gray-500">${business.category.replace(
-                  "-",
-                  " "
-                )}</div>
-                <div class="text-sm">${business.price} · ${
-            business.rating
-          } ★</div>
-                <button onclick="openBusinessDetail('${
-                  business.id
-                }')" class="mt-2 text-sm text-blue-500 hover:underline">View Details</button>
-            </div>
-          `);
-          markers.push(marker);
-        });
-
-        if (currentPosition.lat && currentPosition.lng) {
-          const userMarker = L.marker(
-            [currentPosition.lat, currentPosition.lng],
-            {
-              icon: L.divIcon({
-                className: "custom-div-icon",
-                html: `<div class="w-4 h-4 bg-blue-500 rounded-full border-2 border-white"></div>`,
-                iconSize: [20, 20],
-              }),
-            }
-          ).addTo(map);
-          userMarker.bindPopup("Your location");
-          markers.push(userMarker);
-        }
-      }
-
-      // Setup Event Listeners
-      function setupEventListeners() {
-        darkModeToggleBtn.addEventListener("click", () => {
-          const isDark = document.documentElement.classList.toggle("dark");
-          localStorage.setItem("darkMode", isDark);
-        });
-
-        toggleMapViewBtn.addEventListener("click", () => {
-          isMapView = !isMapView;
-          toggleMapViewBtn.textContent = isMapView ? "Show List" : "Show Map";
-          mapView.classList.toggle("hidden", !isMapView);
-          listView.classList.toggle("hidden", isMapView);
-          if (isMapView && map) {
-            setTimeout(() => map.invalidateSize(), 10);
-          }
-        });
-
-        filterButton.addEventListener("click", () =>
-          filterPanel.classList.toggle("hidden")
-        );
-        closeFilterBtn.addEventListener("click", () =>
-          filterPanel.classList.add("hidden")
-        );
-
-        distanceRange.addEventListener("input", (e) => {
-          distanceValue.textContent = `${e.target.value} km`;
-          appData.filters.distance = parseInt(e.target.value);
-        });
-
-        categoryPills.forEach((pill) => {
-          pill.addEventListener("click", () => {
-            categoryPills.forEach((p) => p.classList.remove("active"));
-            pill.classList.add("active");
-            appData.filters.category = pill.dataset.category;
-            loadRestaurants();
-            if (map) addBusinessMarkers();
-          });
-        });
-
-        detailModal.addEventListener("click", (e) => {
-          if (e.target === detailModal) closeModal();
-        });
-
-        searchInput.addEventListener(
-          "input",
-          debounce(() => {
-            loadRestaurants();
-            if (map) addBusinessMarkers();
-          }, 300)
-        );
-
-        priceFilters.forEach((btn) => {
-          btn.addEventListener("click", () => {
-            priceFilters.forEach((b) =>
-              b.classList.remove("bg-luxury-gold", "text-white")
-            );
-            if (appData.filters.price === btn.dataset.price) {
-              appData.filters.price = null;
-            } else {
-              btn.classList.add("bg-luxury-gold", "text-white");
-              appData.filters.price = btn.dataset.price;
-            }
-          });
-        });
-
-        ratingFilters.forEach((btn) => {
-          btn.addEventListener("click", () => {
-            ratingFilters.forEach((b) =>
-              b.classList.remove("bg-luxury-gold", "text-white")
-            );
-            if (appData.filters.rating === parseFloat(btn.dataset.rating)) {
-              appData.filters.rating = null;
-            } else {
-              btn.classList.add("bg-luxury-gold", "text-white");
-              appData.filters.rating = parseFloat(btn.dataset.rating);
-            }
-          });
-        });
-
-        badgeFilters.forEach((btn) => {
-          btn.addEventListener("click", () => {
-            btn.classList.toggle("bg-luxury-gold");
-            btn.classList.toggle("text-white");
-            const badge = btn.dataset.badge;
-            if (appData.filters.badges.includes(badge)) {
-              appData.filters.badges = appData.filters.badges.filter(
-                (b) => b !== badge
-              );
-            } else {
-              appData.filters.badges.push(badge);
-            }
-          });
-        });
-
-        applyFiltersBtn.addEventListener("click", () => {
-          filterPanel.classList.add("hidden");
-          loadRestaurants();
-          if (map) addBusinessMarkers();
-        });
-
-        resetFiltersBtn.addEventListener("click", () => {
-          appData.filters = {
-            price: null,
-            rating: null,
-            badges: [],
-            distance: 5,
-            category: "all",
-          };
-          priceFilters.forEach((b) =>
-            b.classList.remove("bg-luxury-gold", "text-white")
-          );
-          ratingFilters.forEach((b) =>
-            b.classList.remove("bg-luxury-gold", "text-white")
-          );
-          badgeFilters.forEach((b) =>
-            b.classList.remove("bg-luxury-gold", "text-white")
-          );
-          distanceRange.value = 5;
-          distanceValue.textContent = "5 km";
-          categoryPills.forEach((p) => p.classList.remove("active"));
-          document
-            .querySelector('[data-category="all"]')
-            .classList.add("active");
-          loadRestaurants();
-          if (map) addBusinessMarkers();
-        });
-
-        document.querySelectorAll(".close-modal").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            businessEditModal.classList.add("hidden");
-            menuEditModal.classList.add("hidden");
-            reviewModal.classList.add("hidden");
-          });
-        });
-
-        document
-          .getElementById("businessEditForm")
-          .addEventListener("submit", (e) => {
-            e.preventDefault();
-            updateBusiness();
-          });
-        document
-          .getElementById("menuEditForm")
-          .addEventListener("submit", (e) => {
-            e.preventDefault();
-            updateMenuItem();
-          });
-        document
-          .getElementById("reviewForm")
-          .addEventListener("submit", (e) => {
-            e.preventDefault();
-            submitReview();
-          });
-
-        const stars = document.querySelectorAll("#ratingStars i");
-        stars.forEach((star) => {
-          star.addEventListener("click", () => {
-            selectedRating = parseInt(star.dataset.rating);
-            stars.forEach((s, index) => {
-              s.classList.toggle("text-luxury-gold", index < selectedRating);
-              s.classList.toggle("text-gray-300", index >= selectedRating);
-            });
-          });
-        });
-
-        loadMoreBtn.addEventListener("click", () => {
-          currentPage++;
-          loadMoreRestaurants();
-        });
-
-        document.querySelectorAll(".nav-item").forEach((item) => {
-          item.addEventListener("click", () => {
-            document.querySelectorAll(".nav-item").forEach((i) => {
-              i.classList.remove("active");
-              i.querySelector("i").classList.remove("text-luxury-gold");
-            });
-            item.classList.add("active");
-            item.querySelector("i").classList.add("text-luxury-gold");
-            showToast(
-              `${
-                item.dataset.target.charAt(0).toUpperCase() +
-                item.dataset.target.slice(1)
-              } section would be displayed`,
-              "success"
-            );
-          });
-        });
-        document
-          .getElementById("refreshLocation")
-          .addEventListener("click", getCurrentLocation);
-      }
-
-      // Get current location
-      function getCurrentLocation() {
-        currentLocationEl.textContent = "Detecting location...";
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              currentPosition = {
-                lat: position.coords.latitude,
-                lng: position.coords.longitude,
-              };
-              // For simulation, let's try to reverse geocode or use a generic name
-              // This is a complex task, so we'll keep it simple
-              currentLocationEl.textContent = `Lat: ${currentPosition.lat.toFixed(
-                2
-              )}, Lng: ${currentPosition.lng.toFixed(2)}`;
-              if (map) {
-                map.setView([currentPosition.lat, currentPosition.lng], 13);
-                addBusinessMarkers(); // Re-add markers, including user's new location
-              }
-              showToast("Location updated!", "success");
-            },
-            () => {
-              // Fallback to Addis if detection fails after initial load
-              currentPosition = { lat: 9.02497, lng: 38.74689 };
-              currentLocationEl.textContent = "Addis Ababa, Ethiopia (Default)";
-              if (map) {
-                map.setView([currentPosition.lat, currentPosition.lng], 13);
-                addBusinessMarkers();
-              }
-              showToast(
-                "Could not get precise location, using default.",
-                "error"
-              );
-            }
-          );
-        } else {
-          // Geolocation not supported, fallback to default location
-          currentPosition = { lat: 9.02497, lng: 38.74689 }; // Addis Ababa center
-          currentLocationEl.textContent =
-            "Addis Ababa, Ethiopia (Geolocation not supported)";
-          if (map) {
-            map.setView([currentPosition.lat, currentPosition.lng], 13);
-            addBusinessMarkers();
-          }
-        }
-      }
-
-      // Filter businesses
-      function filterBusinesses() {
-        let filtered = [...appData.businesses];
-        const searchQuery = searchInput.value.toLowerCase();
-
-        if (searchQuery) {
-          filtered = filtered.filter(
-            (business) =>
-              business.name.toLowerCase().includes(searchQuery) ||
-              business.description.toLowerCase().includes(searchQuery) ||
-              business.cuisine.toLowerCase().includes(searchQuery)
-          );
-        }
-        if (appData.filters.category && appData.filters.category !== "all") {
-          filtered = filtered.filter(
-            (business) => business.category === appData.filters.category
-          );
-        }
-        if (appData.filters.price) {
-          filtered = filtered.filter(
-            (business) => business.price === appData.filters.price
-          );
-        }
-        if (appData.filters.rating) {
-          filtered = filtered.filter(
-            (business) => business.rating >= appData.filters.rating
-          );
-        }
-        if (appData.filters.badges.length > 0) {
-          filtered = filtered.filter((business) =>
-            appData.filters.badges.some((badge) =>
-              business.badges.includes(badge)
-            )
-          );
-        }
-        if (appData.filters.distance) {
-          filtered = filtered.filter(
-            (business) => business.distance <= appData.filters.distance
-          );
-        }
-        return filtered;
-      }
-
-      // Load restaurants
-      function loadRestaurants() {
-        const filteredBusinesses = filterBusinesses();
-        currentPage = 1;
-        renderBusinessList(filteredBusinesses);
-        loadMoreBtn.parentElement.classList.toggle(
-          "hidden",
-          filteredBusinesses.length <= itemsPerPage
-        );
-      }
-
-      // Load more restaurants
-      function loadMoreRestaurants() {
-        const filteredBusinesses = filterBusinesses();
-        const displayBusinesses = filteredBusinesses.slice(
-          0,
-          currentPage * itemsPerPage
-        );
-        renderBusinessList(displayBusinesses, true); // Pass true to append
-        loadMoreBtn.parentElement.classList.toggle(
-          "hidden",
-          currentPage * itemsPerPage >= filteredBusinesses.length
-        );
-      }
-
-      // Render business list
-      function renderBusinessList(businesses, append = false) {
-        if (!append) {
-          restaurantList.innerHTML = "";
-          listView.innerHTML = "";
-        }
-
-        const startIndex = append ? (currentPage - 1) * itemsPerPage : 0;
-        const businessesToRender = businesses.slice(startIndex);
-
-        if (businesses.length === 0 && !append) {
-          restaurantList.innerHTML = `
-            <div class="col-span-full text-center py-8">
-                <i class="fas fa-search text-4xl text-gray-300 mb-3"></i>
-                <p class="text-gray-500">No establishments found matching your criteria</p>
-                <button id="clearFilters" class="mt-3 px-4 py-2 text-luxury-gold border border-luxury-gold rounded-md hover:bg-luxury-gold hover:text-white transition">Clear Filters</button>
-            </div>`;
-          document
-            .getElementById("clearFilters")
-            ?.addEventListener("click", () => resetFiltersBtn.click());
-          return;
-        }
-
-        businessesToRender.forEach((business) => {
-          const businessCard = document.createElement("div");
-          businessCard.className =
-            "bg-white dark:bg-luxury-charcoal rounded-lg overflow-hidden shadow-luxury dark:shadow-luxury-dark transition-transform hover:scale-[1.02] cursor-pointer";
-          businessCard.innerHTML = `
-            <div class="relative h-48 bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                <div class="absolute inset-0 flex items-center justify-center"><div class="text-4xl text-gray-400">${business.name.charAt(
-                  0
-                )}</div></div>
-                <div class="absolute top-0 right-0 p-2 flex space-x-1">
-                    ${business.badges
-                      .map(
-                        (badge) => `
-                        <span class="badge badge-${
-                          badge === "luxury"
-                            ? "gold"
-                            : badge === "exclusive"
-                            ? "special"
-                            : "silver"
-                        }">
-                            <i class="fas fa-${
-                              badge === "luxury"
-                                ? "crown"
-                                : badge === "trending"
-                                ? "fire"
-                                : badge === "special-offer"
-                                ? "tag"
-                                : "gem"
-                            } mr-1"></i>
-                            ${badge.replace("-", " ")}
-                        </span>`
-                      )
-                      .join("")}
-                </div>
-            </div>
-            <div class="p-4">
-                <div class="flex justify-between items-start">
-                    <h3 class="font-playfair font-bold text-lg">${
-                      business.name
-                    }</h3>
-                    <span class="text-luxury-gold font-medium">${
-                      business.price
-                    }</span>
-                </div>
-                <div class="flex items-center mt-1 mb-2">
-                    <div class="stars">${Array.from(
-                      { length: 5 },
-                      (_, i) =>
-                        `<i class="fas fa-star${
-                          i < Math.floor(business.rating)
-                            ? ""
-                            : i < business.rating
-                            ? "-half-alt"
-                            : " text-gray-300"
-                        }"></i>`
-                    ).join("")}</div>
-                    <span class="ml-1 text-sm">${business.rating}</span>
-                    <span class="mx-1 text-gray-400">•</span>
-                    <span class="text-sm text-gray-600 dark:text-gray-400">${
-                      business.reviews
-                    } reviews</span>
-                </div>
-                <div class="text-sm text-gray-600 dark:text-gray-400 mb-2"><i class="fas fa-map-marker-alt text-luxury-gold mr-1"></i> ${
-                  business.distance
-                } km away</div>
-                <div class="text-sm text-gray-600 dark:text-gray-400 mb-2"><i class="fas fa-utensils text-luxury-gold mr-1"></i> ${
-                  business.cuisine
-                }</div>
-                <p class="text-sm line-clamp-2 mb-3">${business.description}</p>
-                <div class="flex justify-between items-center">
-                    <button class="text-sm text-luxury-gold hover:underline view-details-btn" data-business-id="${
-                      business.id
-                    }">View Details</button>
-                    <button class="favorite-btn text-gray-400 hover:text-luxury-gold ${
-                      appData.user.favorites.includes(business.id)
-                        ? "text-luxury-gold"
-                        : ""
-                    }" data-business-id="${business.id}">
-                        <i class="${
-                          appData.user.favorites.includes(business.id)
-                            ? "fas"
-                            : "far"
-                        } fa-heart"></i>
+</head>
+<body class="text-sm md:text-base">
+    <div id="app" class="h-screen flex flex-col max-w-3xl mx-auto">
+        <main class="flex-grow overflow-y-auto">
+            <section id="home-tab" class="tab-content p-4">
+                <div class="text-center space-y-4">
+                    <img src="https://placehold.co/120x120/007AFF/FFFFFF?text=MemeGen" alt="App Logo" class="mx-auto rounded-full shadow-lg">
+                    <h1 class="text-2xl font-bold" style="color: var(--tg-theme-text-color);">Welcome to MemeGen!</h1>
+                    <p style="color: var(--tg-theme-hint-color);">Create classic memes, choose templates, and share. Navigate using the tabs below.</p>
+                    <button id="goToGeneratorBtn" class="primary-action px-6 py-3 text-lg font-semibold rounded-lg shadow hover:opacity-90 transition-opacity">
+                        Create a Meme!
                     </button>
                 </div>
-            </div>`;
-          businessCard.addEventListener("click", (e) => {
-            if (e.target.closest(".favorite-btn")) {
-              e.stopPropagation();
-              toggleFavorite(
-                business.id,
-                e.target.closest(".favorite-btn").querySelector("i")
-              );
-              return;
-            }
-            if (e.target.closest(".view-details-btn")) {
-              openBusinessDetail(business.id);
-            } else {
-              // Click on card itself
-              openBusinessDetail(business.id);
-            }
-          });
-          restaurantList.appendChild(businessCard);
+            </section>
 
-          const listItem = document.createElement("div");
-          listItem.className =
-            "bg-white dark:bg-luxury-charcoal rounded-lg p-3 shadow-sm flex items-center cursor-pointer";
-          listItem.innerHTML = `
-            <div class="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center mr-3"><div class="text-2xl text-gray-400">${business.name.charAt(
-              0
-            )}</div></div>
-            <div class="flex-1">
-                <div class="flex justify-between"><h3 class="font-medium">${
-                  business.name
-                }</h3><span class="text-luxury-gold">${
-            business.price
-          }</span></div>
-                <div class="flex items-center text-sm">
-                    <div class="stars">${Array.from(
-                      { length: 5 },
-                      (_, i) =>
-                        `<i class="fas fa-star${
-                          i < Math.floor(business.rating)
-                            ? ""
-                            : i < business.rating
-                            ? "-half-alt"
-                            : " text-gray-300"
-                        }"></i>`
-                    ).join("")}</div>
-                    <span class="ml-1">${business.rating}</span>
+            <section id="generator-tab" class="tab-content p-2 md:p-4 hidden space-y-3">
+                <div>
+                    <label for="imageUpload" class="block text-xs font-medium mb-1" style="color: var(--tg-theme-hint-color);">1. Upload Image:</label>
+                    <input type="file" id="imageUpload" accept="image/*" class="mt-1 block w-full text-xs p-2 border shadow-sm focus:ring-blue-500 focus:border-blue-500">
                 </div>
-                <div class="text-xs text-gray-600 dark:text-gray-400">${
-                  business.distance
-                } km • ${business.cuisine}</div>
-            </div>`;
-          listItem.addEventListener("click", () =>
-            openBusinessDetail(business.id)
-          );
-          listView.appendChild(listItem);
-        });
-      }
 
-      // Load featured offers
-      function loadFeaturedOffers() {
-        featuredOffersList.innerHTML = "";
-        const specialOffers = appData.businesses
-          .filter((b) => b.specialOffer)
-          .slice(0, 4);
-        specialOffers.forEach((business) => {
-          const offerCard = document.createElement("div");
-          offerCard.className =
-            "bg-white dark:bg-luxury-charcoal rounded-lg overflow-hidden shadow-luxury dark:shadow-luxury-dark cursor-pointer";
-          offerCard.innerHTML = `
-            <div class="relative h-40 bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                <div class="absolute inset-0 flex items-center justify-center"><div class="text-4xl text-gray-400">${business.name.charAt(
-                  0
-                )}</div></div>
-                <div class="absolute top-0 left-0 bg-luxury-gold text-white px-3 py-1 rounded-br-lg"><i class="fas fa-gift mr-1"></i> Special Offer</div>
-            </div>
-            <div class="p-4">
-                <h3 class="font-playfair font-bold text-lg mb-2">${
-                  business.name
-                }</h3>
-                <p class="text-sm mb-3">${business.specialOffer}</p>
-                <div class="flex justify-between items-center">
-                    <div><span class="text-xs text-gray-600 dark:text-gray-400">${business.category.replace(
-                      "-",
-                      " "
-                    )} • ${business.price}</span></div>
-                    <button class="text-sm text-luxury-gold hover:underline" data-business-id="${
-                      business.id
-                    }">View Details</button>
+                <div>
+                    <label for="templateSelector" class="block text-xs font-medium mb-1" style="color: var(--tg-theme-hint-color);">2. Choose Template:</label>
+                    <select id="templateSelector" class="mt-1 block w-full text-xs p-2 border shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <option value="classic">Classic Meme (Auto-adjusts)</option>
+                        <option value="facebook">Facebook Post (1.91:1)</option>
+                        <option value="tiktok">TikTok Story (9:16)</option>
+                    </select>
                 </div>
-            </div>`;
-          offerCard.addEventListener("click", () =>
-            openBusinessDetail(business.id)
-          );
-          featuredOffersList.appendChild(offerCard);
-        });
-      }
+                
+                <canvas id="memeCanvas" class="w-full border-2 rounded-lg shadow-lg" style="border-color: var(--tg-theme-hint-color);"></canvas>
 
-      // Open business detail
-      function openBusinessDetail(businessId) {
-        const business = appData.businesses.find((b) => b.id === businessId);
-        if (!business) return;
-        currentBusinessDetail = business;
-        const menuItems = appData.menuItems.filter(
-          (item) => item.businessId === businessId
-        );
-        const reviews = appData.reviews.filter(
-          (review) => review.businessId === businessId
-        );
+                <div>
+                    <label for="topTextInput" class="block text-xs font-medium mb-1" style="color: var(--tg-theme-hint-color);">3. Top Text:</label>
+                    <textarea id="topTextInput" rows="2" class="mt-1 block w-full text-xs" placeholder="Enter top text"></textarea>
+                </div>
+                <div>
+                    <label for="bottomTextInput" class="block text-xs font-medium mb-1" style="color: var(--tg-theme-hint-color);">4. Bottom Text:</label>
+                    <textarea id="bottomTextInput" rows="2" class="mt-1 block w-full text-xs" placeholder="Enter bottom text"></textarea>
+                </div>
+                 <div> <label for="fontSizeMultiplier" class="block text-xs font-medium mb-1" style="color: var(--tg-theme-hint-color);">Font Size Adjust:</label>
+                    <input type="range" id="fontSizeMultiplier" min="0.5" max="1.5" value="1" step="0.1" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                </div>
 
-        modalContent.innerHTML = `
-            <div class="relative overflow-hidden">
-                <div class="flex justify-between items-start mb-4">
-                    <h2 class="font-playfair font-bold text-2xl">${
-                      business.name
-                    }</h2>
-                    <button class="text-gray-500 hover:text-luxury-gold" onclick="closeModal()"><i class="fas fa-times"></i></button>
+
+                <hr class="my-3" style="border-color: var(--tg-theme-hint-color);">
+                <h3 class="text-sm font-semibold" style="color: var(--tg-theme-text-color);">5. Actions:</h3>
+
+                <div class="grid grid-cols-2 gap-2 mt-1">
+                    <button id="saveMemeButton" class="secondary-action py-2 text-sm font-medium">Save to Device</button>
+                    <button id="saveToCollectionButton" class="primary-action py-2 text-sm font-medium">Save to My Collection</button>
                 </div>
-                <div class="flex items-center mb-2">
-                    <div class="stars">${Array.from(
-                      { length: 5 },
-                      (_, i) =>
-                        `<i class="fas fa-star${
-                          i < Math.floor(business.rating)
-                            ? ""
-                            : i < business.rating
-                            ? "-half-alt"
-                            : " text-gray-300"
-                        }"></i>`
-                    ).join("")}</div>
-                    <span class="ml-1">${
-                      business.rating
-                    }</span><span class="mx-1 text-gray-400">•</span><span class="text-gray-600 dark:text-gray-400">${
-          business.reviews
-        } reviews</span>
-                </div>
-                <div class="flex flex-wrap gap-1 mb-3">
-                    ${business.badges
-                      .map(
-                        (badge) =>
-                          `<span class="badge badge-${
-                            badge === "luxury"
-                              ? "gold"
-                              : badge === "exclusive"
-                              ? "special"
-                              : "silver"
-                          }"><i class="fas fa-${
-                            badge === "luxury"
-                              ? "crown"
-                              : badge === "trending"
-                              ? "fire"
-                              : badge === "special-offer"
-                              ? "tag"
-                              : "gem"
-                          } mr-1"></i> ${badge.replace("-", " ")}</span>`
-                      )
-                      .join("")}
-                    <span class="badge bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"><i class="fas fa-tag mr-1"></i> ${
-                      business.price
-                    }</span>
-                    <span class="badge bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"><i class="fas fa-utensils mr-1"></i> ${
-                      business.cuisine
-                    }</span>
-                </div>
-                <p class="mb-4">${business.description}</p>
-                <div class="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
-                    <div class="flex items-center"><i class="fas fa-map-marker-alt text-luxury-gold mr-2"></i><span>${
-                      business.address
-                    }</span></div>
-                    <div class="flex items-center sm:ml-4"><i class="fas fa-route text-luxury-gold mr-2"></i><span>${
-                      business.distance
-                    } km away</span></div>
-                </div>
-                ${
-                  business.specialOffer
-                    ? `<div class="bg-luxury-lightGold dark:bg-luxury-darkGold bg-opacity-20 dark:bg-opacity-20 border-l-4 border-luxury-gold p-3 rounded mb-4"><div class="flex items-center"><i class="fas fa-gift text-luxury-gold mr-2"></i><span class="font-medium">Special Offer:</span></div><p class="text-sm mt-1">${business.specialOffer}</p></div>`
-                    : ""
-                }
-                <div class="flex flex-wrap gap-2 mb-4">
-                    <button id="showMenuBtn" class="px-4 py-2 bg-luxury-gold text-white rounded-md hover:bg-luxury-darkGold transition"><i class="fas fa-utensils mr-1"></i> View Menu</button>
-                    <button id="showReviewsBtn" class="px-4 py-2 border border-luxury-gold text-luxury-gold rounded-md hover:bg-luxury-gold hover:text-white transition"><i class="fas fa-star mr-1"></i> Reviews</button>
-                    <button id="writeReviewBtn" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-luxury-black transition"><i class="fas fa-pen mr-1"></i> Write Review</button>
-                </div>
-                <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mb-4">
-                    <h3 class="font-playfair font-bold text-xl mb-3">Available Menu</h3>
-                    ${
-                      menuItems.length > 0
-                        ? `
-                        <div class="space-y-3">
-                            ${menuItems
-                              .map(
-                                (item) => `
-                                <div class="bg-gray-50 dark:bg-luxury-black p-3 rounded-lg">
-                                    <div class="flex justify-between items-start">
-                                        <div><h4 class="font-medium">${
-                                          item.name
-                                        }</h4><p class="text-sm text-gray-600 dark:text-gray-400 mt-1">${
-                                  item.description
-                                }</p></div>
-                                        <div class="font-medium text-luxury-gold">$${item.price.toFixed(
-                                          2
-                                        )}</div>
-                                    </div>
-                                    ${
-                                      item.special
-                                        ? `<div class="mt-2"><span class="badge badge-special"><i class="fas fa-star mr-1"></i> Chef's Special</span></div>`
-                                        : ""
-                                    }
-                                    <div class="flex justify-end mt-2"><button class="edit-menu-item text-sm text-luxury-gold hover:underline" data-item-id="${
-                                      item.id
-                                    }"><i class="fas fa-edit mr-1"></i> Edit</button></div>
-                                </div>`
-                              )
-                              .join("")}
-                        </div>
-                        <button id="addMenuItemBtn" class="mt-4 w-full py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-md text-gray-500 hover:text-luxury-gold hover:border-luxury-gold transition"><i class="fas fa-plus mr-1"></i> Add Menu Item</button>
-                    `
-                        : `
-                        <div class="text-center py-6">
-                            <i class="fas fa-utensils text-gray-300 text-4xl mb-2"></i><p class="text-gray-500 mb-3">No menu items available yet</p>
-                            <button id="addMenuItemBtn" class="px-4 py-2 border border-luxury-gold text-luxury-gold rounded-md hover:bg-luxury-gold hover:text-white transition"><i class="fas fa-plus mr-1"></i> Add First Menu Item</button>
-                        </div>`
-                    }
-                </div>
-                <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mb-4">
-                    <div class="flex justify-between items-center mb-3"><h3 class="font-playfair font-bold text-xl">Customer Reviews</h3><button id="seeAllReviewsBtn" class="text-sm text-luxury-gold hover:underline">See All</button></div>
-                    ${
-                      reviews.length > 0
-                        ? `
-                        <div class="space-y-4">
-                            ${reviews
-                              .slice(0, 2)
-                              .map(
-                                (review) => `
-                                <div class="bg-gray-50 dark:bg-luxury-black p-3 rounded-lg">
-                                    <div class="flex justify-between items-start">
-                                        <div class="flex items-start">
-                                            <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center mr-2"><span class="text-gray-600 dark:text-gray-400">${review.userName.charAt(
-                                              0
-                                            )}</span></div>
-                                            <div><div class="font-medium">${
-                                              review.userName
-                                            }</div><div class="stars mt-1">${Array.from(
-                                  { length: 5 },
-                                  (_, i) =>
-                                    `<i class="fas fa-star${
-                                      i < review.rating ? "" : " text-gray-300"
-                                    }"></i>`
-                                ).join("")}</div></div>
-                                        </div>
-                                        <div class="text-xs text-gray-500">${
-                                          review.date
-                                        }</div>
-                                    </div>
-                                    <p class="text-sm mt-2">${
-                                      review.content
-                                    }</p>
-                                    <div class="flex justify-end mt-2"><button class="like-review text-sm text-gray-500 hover:text-luxury-gold"><i class="far fa-thumbs-up mr-1"></i> ${
-                                      review.likes
-                                    }</button></div>
-                                </div>`
-                              )
-                              .join("")}
-                        </div>`
-                        : `
-                        <div class="text-center py-6">
-                            <i class="fas fa-comments text-gray-300 text-4xl mb-2"></i><p class="text-gray-500 mb-3">No reviews available yet</p>
-                            <button id="firstReviewBtn" class="px-4 py-2 border border-luxury-gold text-luxury-gold rounded-md hover:bg-luxury-gold hover:text-white transition"><i class="fas fa-star mr-1"></i> Be the First to Review</button>
-                        </div>`
-                    }
-                </div>
-                <div class="flex justify-between border-t border-gray-200 dark:border-gray-700 pt-4">
-                    <button id="editBusinessBtn" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-luxury-gold transition"><i class="fas fa-edit mr-1"></i> Edit Business</button>
-                    <div>
-                        <button class="share-business px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-luxury-gold transition"><i class="fas fa-share-alt mr-1"></i> Share</button>
-                        <button class="favorite-btn-detail px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-luxury-gold transition ${
-                          appData.user.favorites.includes(business.id)
-                            ? "text-luxury-gold"
-                            : ""
-                        }" data-business-id="${business.id}">
-                            <i class="${
-                              appData.user.favorites.includes(business.id)
-                                ? "fas"
-                                : "far"
-                            } fa-heart mr-1"></i> Save
-                        </button>
+                
+                <div class="mt-3 p-3 rounded-lg" style="background-color: var(--tg-theme-secondary-bg-color);">
+                    <h4 class="text-xs font-medium mb-1" style="color: var(--tg-theme-hint-color);">Share to Telegram Channel:</h4>
+                    <input type="text" id="channelUsernameInput" class="mt-1 block w-full text-xs mb-2" placeholder="channel_username (no @)">
+                    <button id="prepareForChannelButton" class="w-full primary-action py-2 text-sm font-medium">Prepare & Get Channel Link</button>
+                    <div id="channelShareHelper" class="text-xs mt-2 hidden" style="color: var(--tg-theme-hint-color);">
+                        <p>1. Meme image is ready for download (if not already saved).</p>
+                        <p>2. Click below to open the channel, then paste/upload your saved meme.</p>
+                        <button id="openChannelLinkButton" class="w-full secondary-action py-1.5 text-xs mt-1">Open Channel</button>
                     </div>
                 </div>
-            </div>`;
-        detailModal.classList.remove("hidden");
-        setupDetailModalEvents(business, menuItems);
-      }
+            </section>
 
-      // Setup detail modal events
-      function setupDetailModalEvents(business, menuItems) {
-        document
-          .getElementById("showMenuBtn")
-          ?.addEventListener("click", () =>
-            showToast("Menu view toggled", "success")
-          );
-        document
-          .getElementById("showReviewsBtn")
-          ?.addEventListener("click", () =>
-            showToast("Showing all reviews", "success")
-          );
-        document
-          .getElementById("writeReviewBtn")
-          ?.addEventListener("click", () => openReviewModal(business.id));
-        document
-          .getElementById("firstReviewBtn")
-          ?.addEventListener("click", () => openReviewModal(business.id));
-        document
-          .getElementById("editBusinessBtn")
-          ?.addEventListener("click", () => openBusinessEditModal(business));
-        document
-          .getElementById("addMenuItemBtn")
-          ?.addEventListener("click", () =>
-            openMenuEditModal(null, business.id)
-          );
-        document.querySelectorAll(".edit-menu-item").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            const itemId = btn.dataset.itemId;
-            const menuItem = menuItems.find((item) => item.id === itemId);
-            if (menuItem) openMenuEditModal(menuItem);
-          });
-        });
-        const favBtnDetail = document.querySelector(".favorite-btn-detail");
-        if (favBtnDetail) {
-          favBtnDetail.addEventListener("click", (e) => {
-            toggleFavorite(business.id, e.currentTarget.querySelector("i"));
-          });
-        }
-        document
-          .querySelector(".share-business")
-          ?.addEventListener("click", () =>
-            showToast("Sharing functionality would open here", "success")
-          );
-      }
+            <section id="collection-tab" class="tab-content p-2 md:p-4 hidden space-y-3">
+                <div class="flex items-center gap-2">
+                    <label for="categoryFilter" class="block text-xs font-medium whitespace-nowrap" style="color: var(--tg-theme-hint-color);">Filter:</label>
+                    <select id="categoryFilter" class="block w-full text-xs p-2 border shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </select>
+                </div>
+                <div id="memeCollectionContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    </div>
+            </section>
 
-      // Open business edit modal
-      function openBusinessEditModal(business) {
-        document.getElementById("businessId").value = business.id;
-        document.getElementById("businessName").value = business.name;
-        document.getElementById("businessDescription").value =
-          business.description;
-        document.getElementById("businessAddress").value = business.address;
-        document.getElementById("businessCategory").value = business.category;
-        document.getElementById("businessPrice").value = business.price;
-        businessEditModal.classList.remove("hidden");
-      }
+            <section id="leaderboard-tab" class="tab-content p-2 md:p-4 hidden space-y-3">
+                <div>
+                    <p class="text-xs font-medium mb-1" style="color: var(--tg-theme-hint-color);">Category:</p>
+                    <div id="leaderboardCategoryTabs" class="flex flex-wrap gap-1">
+                        </div>
+                </div>
+                <div>
+                    <p class="text-xs font-medium mb-1" style="color: var(--tg-theme-hint-color);">Timeframe:</p>
+                    <div id="leaderboardTimeframeTabs" class="flex flex-wrap gap-1" data-current-category="all" data-current-timeframe="all_time">
+                        <button data-timeframe="all_time" class="sub-tab-button text-xs px-3 py-1.5 rounded-md active">All Time</button>
+                        <button data-timeframe="weekly" class="sub-tab-button text-xs px-3 py-1.5 rounded-md">Weekly</button>
+                        <button data-timeframe="daily" class="sub-tab-button text-xs px-3 py-1.5 rounded-md">Daily</button>
+                    </div>
+                </div>
+                <div id="leaderboardContainer" class="space-y-2">
+                    </div>
+            </section>
+        </main>
 
-      // Open menu edit modal
-      function openMenuEditModal(menuItem, businessId = null) {
-        if (menuItem) {
-          document.getElementById("menuItemId").value = menuItem.id;
-          document.getElementById("menuBusinessId").value = menuItem.businessId;
-          document.getElementById("menuItemName").value = menuItem.name;
-          document.getElementById("menuItemDescription").value =
-            menuItem.description;
-          document.getElementById("menuItemPrice").value = menuItem.price;
-          document.getElementById("menuItemCategory").value = menuItem.category;
-          document.getElementById("menuItemSpecialOffer").checked =
-            menuItem.special;
-        } else {
-          document.getElementById("menuItemId").value =
-            "m" +
-            (appData.menuItems.length + 1 + Date.now()).toString().slice(-5); // More unique ID
-          document.getElementById("menuBusinessId").value = businessId;
-          document.getElementById("menuEditForm").reset(); // Reset form for new item
-          document.getElementById("menuItemCategory").value = "main"; // Default
-        }
-        menuEditModal.classList.remove("hidden");
-      }
+        <nav class="fixed bottom-0 left-0 right-0 max-w-3xl mx-auto border-t p-1 flex justify-around text-xs" style="background-color: var(--tg-theme-secondary-bg-color, #f9f9f9); border-color: var(--tg-theme-hint-color, #d1d1d6);">
+            <button data-tab="home-tab" class="nav-button active flex-1 p-2 flex flex-col items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                <span>Home</span>
+            </button>
+            <button data-tab="generator-tab" class="nav-button flex-1 p-2 flex flex-col items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                <span>Generator</span>
+            </button>
+            <button data-tab="collection-tab" class="nav-button flex-1 p-2 flex flex-col items-center justify-center">
+                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
+                <span>Collection</span>
+            </button>
+            <button data-tab="leaderboard-tab" class="nav-button flex-1 p-2 flex flex-col items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>
+                <span>Leaderboard</span>
+            </button>
+        </nav>
+    </div>
 
-      // Open review modal
-      function openReviewModal(businessId) {
-        document.getElementById("reviewBusinessId").value = businessId;
-        document.getElementById("reviewForm").reset();
-        const stars = document.querySelectorAll("#ratingStars i");
-        stars.forEach((star) => {
-          star.classList.add("text-gray-300");
-          star.classList.remove("text-luxury-gold");
-        });
-        selectedRating = 0;
-        reviewModal.classList.remove("hidden");
-      }
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand(); 
 
-      // Close modal
-      function closeModal() {
-        detailModal.classList.add("hidden");
-        modalContent.innerHTML = ""; // Clear content to prevent issues
-      }
+        document.body.style.backgroundColor = tg.themeParams.bg_color || '#ffffff';
+        document.body.style.color = tg.themeParams.text_color || '#000000';
 
-      // Update business
-      function updateBusiness() {
-        const businessId = document.getElementById("businessId").value;
-        const name = document.getElementById("businessName").value;
-        const description = document.getElementById(
-          "businessDescription"
-        ).value;
-        const address = document.getElementById("businessAddress").value;
-        const category = document.getElementById("businessCategory").value;
-        const price = document.getElementById("businessPrice").value;
-        const businessIndex = appData.businesses.findIndex(
-          (b) => b.id === businessId
-        );
+        const navButtons = document.querySelectorAll('.nav-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const goToGeneratorBtn = document.getElementById('goToGeneratorBtn');
 
-        if (businessIndex !== -1) {
-          appData.businesses[businessIndex] = {
-            ...appData.businesses[businessIndex],
-            name,
-            description,
-            address,
-            category,
-            price,
-          };
-          businessEditModal.classList.add("hidden");
-          loadRestaurants();
-          if (map) addBusinessMarkers();
-          openBusinessDetail(businessId);
-          showToast("Business updated successfully", "success");
-        }
-      }
+        const switchTab = (targetTabId) => {
+            navButtons.forEach(btn => {
+                btn.classList.remove('active');
+                btn.style.color = tg.themeParams.hint_color || '#999999';
+                btn.querySelector('svg')?.setAttribute('stroke', tg.themeParams.hint_color || '#999999');
+            });
+            tabContents.forEach(tab => tab.classList.add('hidden'));
 
-      // Update menu item
-      function updateMenuItem() {
-        const itemId = document.getElementById("menuItemId").value;
-        const businessId = document.getElementById("menuBusinessId").value;
-        const name = document.getElementById("menuItemName").value;
-        const description = document.getElementById(
-          "menuItemDescription"
-        ).value;
-        const price = parseFloat(
-          document.getElementById("menuItemPrice").value
-        );
-        const category = document.getElementById("menuItemCategory").value;
-        const special = document.getElementById("menuItemSpecialOffer").checked;
-        const itemIndex = appData.menuItems.findIndex(
-          (item) => item.id === itemId
-        );
-
-        if (itemIndex !== -1) {
-          appData.menuItems[itemIndex] = {
-            ...appData.menuItems[itemIndex],
-            name,
-            description,
-            price,
-            category,
-            special,
-          };
-          showToast("Menu item updated successfully", "success");
-        } else {
-          appData.menuItems.push({
-            id: itemId,
-            businessId,
-            name,
-            description,
-            price,
-            category,
-            special,
-          });
-          showToast("Menu item added successfully", "success");
-        }
-        menuEditModal.classList.add("hidden");
-        if (currentBusinessDetail && currentBusinessDetail.id === businessId) {
-          openBusinessDetail(businessId);
-        }
-      }
-
-      // Submit review
-      function submitReview() {
-        const businessId = document.getElementById("reviewBusinessId").value;
-        const content = document.getElementById("reviewContent").value;
-
-        if (selectedRating === 0) {
-          showToast("Please select a rating", "error");
-          return;
-        }
-        if (!content.trim()) {
-          showToast("Please enter a review", "error");
-          return;
-        }
-
-        const newReview = {
-          id:
-            "r" +
-            (appData.reviews.length + 1 + Date.now()).toString().slice(-5), // More unique ID
-          businessId,
-          userId: appData.user.id,
-          userName: appData.user.name,
-          rating: selectedRating,
-          content,
-          date: new Date().toISOString().split("T")[0],
-          likes: 0,
-        };
-        appData.reviews.push(newReview);
-
-        const businessReviews = appData.reviews.filter(
-          (r) => r.businessId === businessId
-        );
-        const totalRating = businessReviews.reduce(
-          (sum, r) => sum + r.rating,
-          0
-        );
-        const averageRating = totalRating / businessReviews.length;
-        const businessIndex = appData.businesses.findIndex(
-          (b) => b.id === businessId
-        );
-
-        if (businessIndex !== -1) {
-          appData.businesses[businessIndex].rating = parseFloat(
-            averageRating.toFixed(1)
-          );
-          appData.businesses[businessIndex].reviews = businessReviews.length;
-        }
-        reviewModal.classList.add("hidden");
-        loadRestaurants(); // Refresh list view to show updated rating/review count
-        if (currentBusinessDetail && currentBusinessDetail.id === businessId) {
-          openBusinessDetail(businessId); // Refresh detail modal
-        }
-        showToast("Review submitted successfully", "success");
-      }
-
-      // Toggle favorite
-      function toggleFavorite(businessId, iconElement = null) {
-        const index = appData.user.favorites.indexOf(businessId);
-        if (index === -1) {
-          appData.user.favorites.push(businessId);
-          showToast("Added to favorites", "success");
-        } else {
-          appData.user.favorites.splice(index, 1);
-          showToast("Removed from favorites", "success");
-        }
-
-        // Update all relevant favorite buttons (list, detail modal)
-        document
-          .querySelectorAll(
-            `.favorite-btn[data-business-id="${businessId}"], .favorite-btn-detail[data-business-id="${businessId}"]`
-          )
-          .forEach((btn) => {
-            const icon = btn.querySelector("i");
-            if (icon) {
-              const isFavorited = appData.user.favorites.includes(businessId);
-              icon.classList.toggle("fas", isFavorited);
-              icon.classList.toggle("far", !isFavorited);
-              icon.classList.toggle("text-luxury-gold", isFavorited);
+            const activeButton = document.querySelector(`.nav-button[data-tab="${targetTabId}"]`);
+            if (activeButton) {
+                activeButton.classList.add('active');
+                activeButton.style.color = tg.themeParams.button_color || '#007aff';
+                activeButton.querySelector('svg')?.setAttribute('stroke', tg.themeParams.button_color || '#007aff');
             }
-          });
-      }
+            const activeTab = document.getElementById(targetTabId);
+            if (activeTab) activeTab.classList.remove('hidden');
 
-      // Show toast
-      function showToast(message, type) {
-        toast.textContent = message;
-        toast.className = `toast ${type} show`;
-        setTimeout(() => toast.classList.remove("show"), 3000);
-      }
-
-      // Debounce function
-      function debounce(func, delay) {
-        let timeout;
-        return function (...args) {
-          clearTimeout(timeout);
-          timeout = setTimeout(() => func.apply(this, args), delay);
+            if (targetTabId === 'collection-tab') UI.renderMemeCollection();
+            if (targetTabId === 'leaderboard-tab') Leaderboard.renderLeaderboard();
+            if (targetTabId === 'generator-tab') MemeGenerator.handleTemplateChange(); // Resize canvas on tab switch
         };
-      }
 
-      // Initialize app when page loads
-      document.addEventListener("DOMContentLoaded", initApp);
+        navButtons.forEach(button => {
+            button.addEventListener('click', () => switchTab(button.dataset.tab));
+        });
 
-      // Make globally available for map popups and inline onclicks
-      window.openBusinessDetail = openBusinessDetail;
-      window.closeModal = closeModal;
+        if (goToGeneratorBtn) {
+            goToGeneratorBtn.addEventListener('click', () => switchTab('generator-tab'));
+        }
+        
+        // --- MemeStorage (largely unchanged) ---
+        const MemeStorage = (() => {
+            const MEMES_KEY = 'userMemes_v3'; 
+            const getTelegramUser = () => {
+                return tg.initDataUnsafe?.user || { id: 'guest', username: 'Guest', first_name: 'Guest', photo_url: null };
+            };
+            const getMemes = () => JSON.parse(localStorage.getItem(MEMES_KEY)) || [];
+            const saveMemes = (memes) => localStorage.setItem(MEMES_KEY, JSON.stringify(memes));
+
+            const saveMeme = (memeData) => {
+                const memes = getMemes();
+                const user = getTelegramUser();
+                const newMeme = {
+                    id: `meme_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+                    title: memeData.title || 'Untitled Meme', // Title is now optional for collection
+                    category: memeData.category || 'General', // Category optional for collection
+                    memeImage: memeData.memeImage, 
+                    reactions: {},
+                    createdAt: new Date().toISOString(),
+                    userId: user.id,
+                    username: user.username || `${user.first_name || 'User'}`,
+                    userPhotoUrl: user.photo_url || `https://placehold.co/40x40/${(tg.themeParams.button_color || '007AFF').substring(1)}/FFFFFF?text=${(user.username || user.first_name || 'U').charAt(0).toUpperCase()}`
+                };
+                memes.unshift(newMeme);
+                saveMemes(memes);
+                UI.populateFilters(); 
+                return newMeme;
+            };
+            const updateMemeReaction = (memeId, reactionType) => {
+                const memes = getMemes();
+                const memeIndex = memes.findIndex(m => m.id === memeId);
+                if (memeIndex !== -1) {
+                    if (!memes[memeIndex].reactions[reactionType]) memes[memeIndex].reactions[reactionType] = 0;
+                    memes[memeIndex].reactions[reactionType]++;
+                    saveMemes(memes);
+                    return memes[memeIndex];
+                }
+                return null;
+            };
+            const getMemesByCategory = (category) => {
+                const memes = getMemes();
+                if (!category || category.toLowerCase() === 'all') return memes;
+                return memes.filter(m => m.category.toLowerCase() === category.toLowerCase());
+            };
+            return { getMemes, saveMeme, updateMemeReaction, getMemesByCategory };
+        })();
+
+        // --- MemeGenerator (Heavily Refactored) ---
+        const MemeGenerator = (() => {
+            const canvas = document.getElementById('memeCanvas');
+            const ctx = canvas.getContext('2d');
+            let image = null;
+            let topText = '';
+            let bottomText = '';
+            let currentTemplate = 'classic';
+            let fontSizeMultiplier = 1;
+
+            const TEMPLATE_CONFIG = {
+                classic: { type: 'auto', textBandRatio: 0.15, baseFontSizeRatio: 0.07 }, // 15% of image height for each band
+                facebook: { type: 'fixed', aspectRatio: 1200 / 630, contentAreaRatio: 0.9, textBandRatio: 0.12, baseFontSizeRatio: 0.045 }, // 90% for image, 12% of content height for text
+                tiktok: { type: 'fixed', aspectRatio: 9 / 16, contentAreaRatio: 0.7, textBandRatio: 0.15, baseFontSizeRatio: 0.04 } // 70% for image (center), 15% of content height for text
+            };
+            const MAX_CANVAS_WIDTH = Math.min(window.innerWidth, 600) - 20; // Max width for canvas on screen
+
+            const init = () => {
+                document.getElementById('imageUpload').addEventListener('change', handleImageUpload);
+                document.getElementById('templateSelector').addEventListener('change', handleTemplateChange);
+                document.getElementById('topTextInput').addEventListener('input', (e) => { topText = e.target.value; renderPreview(); });
+                document.getElementById('bottomTextInput').addEventListener('input', (e) => { bottomText = e.target.value; renderPreview(); });
+                document.getElementById('fontSizeMultiplier').addEventListener('input', (e) => { fontSizeMultiplier = parseFloat(e.target.value); renderPreview(); });
+                
+                document.getElementById('saveMemeButton').addEventListener('click', downloadMeme);
+                document.getElementById('saveToCollectionButton').addEventListener('click', saveToCollection);
+                document.getElementById('prepareForChannelButton').addEventListener('click', prepareForChannel);
+
+                handleTemplateChange(); // Initial setup
+            };
+
+            const handleImageUpload = (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        image = new Image();
+                        image.onload = () => {
+                            renderPreview();
+                        };
+                        image.onerror = () => {
+                            tg.showAlert("Could not load image."); image = null; renderPreview();
+                        }
+                        image.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            const handleTemplateChange = () => {
+                currentTemplate = document.getElementById('templateSelector').value;
+                document.getElementById('channelShareHelper').classList.add('hidden'); // Hide helper on template change
+                renderPreview();
+            };
+            
+            const drawTextWithStroke = (text, x, y, fontSize, maxWidth) => {
+                ctx.font = `${fontSize}px Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif`;
+                ctx.fillStyle = 'white';
+                ctx.strokeStyle = 'black';
+                ctx.lineWidth = Math.max(1, fontSize / 15); // Stroke width based on font size
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                // Simple auto-fit font size (basic version)
+                let currentFontSize = fontSize;
+                while (ctx.measureText(text).width > maxWidth && currentFontSize > 10) {
+                    currentFontSize -= 2;
+                    ctx.font = `${currentFontSize}px Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif`;
+                }
+                
+                // Paint order for clean stroke
+                ctx.strokeText(text, x, y);
+                ctx.fillText(text, x, y);
+            };
+
+            const renderPreview = () => {
+                const config = TEMPLATE_CONFIG[currentTemplate];
+                let canvasWidth, canvasHeight;
+                let imgDrawX = 0, imgDrawY = 0, imgDrawWidth = 0, imgDrawHeight = 0;
+                let topBandHeight = 0, bottomBandHeight = 0;
+
+                // Determine canvas dimensions and image placement
+                if (config.type === 'auto' && image) { // Classic meme: adapts to image
+                    canvasWidth = Math.min(MAX_CANVAS_WIDTH, image.naturalWidth);
+                    imgDrawWidth = canvasWidth;
+                    imgDrawHeight = (image.naturalHeight / image.naturalWidth) * imgDrawWidth;
+                    topBandHeight = bottomBandHeight = imgDrawHeight * config.textBandRatio;
+                    canvasHeight = imgDrawHeight + topBandHeight + bottomBandHeight;
+                    imgDrawX = 0;
+                    imgDrawY = topBandHeight;
+                } else if (config.type === 'fixed') { // Facebook, TikTok
+                    canvasWidth = MAX_CANVAS_WIDTH;
+                    canvasHeight = canvasWidth / config.aspectRatio;
+                    if (currentTemplate === 'tiktok' && canvasHeight > window.innerHeight * 0.6) { // Cap height for TikTok
+                        canvasHeight = window.innerHeight * 0.6;
+                        canvasWidth = canvasHeight * config.aspectRatio;
+                    }
+
+                    const contentTotalHeight = canvasHeight * config.contentAreaRatio; // e.g. 90% of canvas for image + text
+                    topBandHeight = bottomBandHeight = contentTotalHeight * config.textBandRatio;
+                    imgDrawHeight = contentTotalHeight - topBandHeight - bottomBandHeight;
+                    imgDrawWidth = imgDrawHeight * (image ? image.naturalWidth / image.naturalHeight : 16/9); // Use image aspect or default
+
+                    if (imgDrawWidth > canvasWidth * 0.95) { // If image is wider than canvas
+                        imgDrawWidth = canvasWidth * 0.95;
+                        imgDrawHeight = (image ? image.naturalHeight / image.naturalWidth : 9/16) * imgDrawWidth;
+                    }
+                    
+                    imgDrawX = (canvasWidth - imgDrawWidth) / 2;
+                    imgDrawY = topBandHeight + (canvasHeight - contentTotalHeight) / 2; // Center content area vertically
+
+                } else { // No image, default placeholder
+                    canvasWidth = MAX_CANVAS_WIDTH;
+                    canvasHeight = MAX_CANVAS_WIDTH * (currentTemplate === 'tiktok' ? 16/9 : (currentTemplate === 'facebook' ? 630/1200 : 3/4));
+                    if (currentTemplate === 'tiktok' && canvasHeight > window.innerHeight * 0.6) {
+                         canvasHeight = window.innerHeight * 0.6;
+                         canvasWidth = canvasHeight * (9/16);
+                    }
+                }
+                
+                canvas.width = canvasWidth;
+                canvas.height = canvasHeight;
+                canvas.style.width = `${canvasWidth}px`; // For display scaling
+                canvas.style.height = `${canvasHeight}px`;
+
+                // Clear canvas with a BG color
+                ctx.fillStyle = tg.themeParams.secondary_bg_color || '#DDDDDD';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                if (image) {
+                    ctx.drawImage(image, imgDrawX, imgDrawY, imgDrawWidth, imgDrawHeight);
+                } else {
+                    ctx.fillStyle = tg.themeParams.hint_color || '#888888';
+                    ctx.textAlign = 'center';
+                    ctx.font = `${Math.min(20, canvas.width / 15)}px Arial`;
+                    ctx.fillText("Upload an image", canvas.width / 2, canvas.height / 2 - 10);
+                }
+
+                // Draw Text
+                const baseFontSize = (image ? imgDrawHeight : canvas.height) * config.baseFontSizeRatio * fontSizeMultiplier;
+                const textPadding = 5; // Padding from edge of band or image
+
+                if (topText) {
+                    const yPos = (config.type === 'auto') ? topBandHeight / 2 : imgDrawY - topBandHeight / 2;
+                    drawTextWithStroke(topText, canvas.width / 2, yPos, baseFontSize, canvas.width - 2 * textPadding);
+                }
+                if (bottomText) {
+                    const yPos = (config.type === 'auto') ? imgDrawY + imgDrawHeight + bottomBandHeight / 2 : imgDrawY + imgDrawHeight + topBandHeight / 2; // topBandHeight used as it's same as bottom
+                    drawTextWithStroke(bottomText, canvas.width / 2, yPos, baseFontSize, canvas.width - 2 * textPadding);
+                }
+            };
+            window.addEventListener('resize', renderPreview);
+
+
+            const generateMemeDataURL = () => {
+                if (!image && !topText && !bottomText) {
+                    tg.showAlert("Please create something first!");
+                    return null;
+                }
+                return canvas.toDataURL('image/png');
+            };
+
+            const downloadMeme = () => {
+                const dataURL = generateMemeDataURL();
+                if (!dataURL) return;
+
+                const link = document.createElement('a');
+                link.download = `meme_${Date.now()}.png`;
+                link.href = dataURL;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                tg.HapticFeedback.notificationOccurred('success');
+            };
+
+            const saveToCollection = () => {
+                const dataURL = generateMemeDataURL();
+                if (!dataURL) return;
+                
+                // For collection, we might not need title/category from user explicitly for this flow
+                MemeStorage.saveMeme({ 
+                    title: `${topText.substring(0,20)}...` || 'Meme', // Auto-title
+                    category: currentTemplate, // Use template as category
+                    memeImage: dataURL 
+                });
+                tg.showAlert(`Meme saved to your collection!`);
+                tg.HapticFeedback.notificationOccurred('success');
+            };
+
+            const prepareForChannel = () => {
+                const channelUsername = document.getElementById('channelUsernameInput').value.trim();
+                if (!channelUsername) {
+                    tg.showAlert("Please enter a channel username.");
+                    return;
+                }
+                const dataURL = generateMemeDataURL(); // Ensure meme is drawn
+                if (!dataURL) return;
+
+                tg.showConfirm("Your meme is ready. Please save it to your device first, then you can open the channel to post it. Save now?", (confirmed) => {
+                    if (confirmed) {
+                        downloadMeme(); // Trigger download
+                        const helper = document.getElementById('channelShareHelper');
+                        const openChannelBtn = document.getElementById('openChannelLinkButton');
+                        openChannelBtn.onclick = () => tg.openTelegramLink(`https://t.me/${channelUsername}`);
+                        helper.classList.remove('hidden');
+                        tg.HapticFeedback.notificationOccurred('success');
+                    }
+                });
+            };
+            
+            return { init, handleTemplateChange, renderPreview }; // Expose renderPreview if needed by resize
+        })();
+
+        // --- UI (largely unchanged, ensure populateFilters is called) ---
+        const UI = (() => {
+            const init = () => {
+                document.getElementById('categoryFilter').addEventListener('change', (e) => renderMemeCollection(e.target.value));
+                populateFilters();
+            };
+            const populateFilters = () => {
+                const categoryFilter = document.getElementById('categoryFilter');
+                const memes = MemeStorage.getMemes();
+                const categories = ['All', ...new Set(memes.map(m => m.category).filter(Boolean).sort())];
+                
+                const currentFilterValue = categoryFilter.value;
+                categoryFilter.innerHTML = '';
+                categories.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat.toLowerCase();
+                    option.textContent = cat.charAt(0).toUpperCase() + cat.slice(1); // Capitalize
+                    categoryFilter.appendChild(option);
+                });
+
+                if (categories.map(c=>c.toLowerCase()).includes(currentFilterValue)) {
+                    categoryFilter.value = currentFilterValue;
+                } else if (categories.length > 0) {
+                    categoryFilter.value = categories[0].toLowerCase();
+                }
+            };
+            const renderMemeCollection = (category = document.getElementById('categoryFilter')?.value || 'all') => {
+                const container = document.getElementById('memeCollectionContainer');
+                container.innerHTML = '';
+                const memes = MemeStorage.getMemesByCategory(category);
+
+                if (memes.length === 0) {
+                    container.innerHTML = `<p class="text-center py-10" style="color: var(--tg-theme-hint-color);">No memes found in this category.</p>`;
+                    return;
+                }
+                memes.forEach(meme => {
+                    const card = document.createElement('div');
+                    card.className = 'meme-card p-3 rounded-lg shadow-md space-y-2';
+                    let reactionsHTML = '<div class="flex flex-wrap gap-1 text-xs items-center">';
+                    if (Object.keys(meme.reactions).length > 0) {
+                        for (const [reaction, count] of Object.entries(meme.reactions)) {
+                            reactionsHTML += `<span class="px-2 py-0.5 rounded-full" style="background-color: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); border: 1px solid var(--tg-theme-hint-color);">${reaction} ${count}</span>`;
+                        }
+                    } else { reactionsHTML += `<span style="color: var(--tg-theme-hint-color);">No reactions yet.</span>`; }
+                    reactionsHTML += '</div>';
+                    const reactionButtons = `<div class="mt-1 pt-1 border-t flex gap-1" style="border-color: var(--tg-theme-hint-color);">${['👍', '❤️', '😂', '🔥', '🤔'].map(r => `<button class="text-sm p-1.5 rounded-md hover:opacity-75 reaction-btn flex-1" style="background-color: var(--tg-theme-bg-color); color: var(--tg-theme-text-color);" data-meme-id="${meme.id}" data-reaction="${r}">${r}</button>`).join('')}</div>`;
+                    
+                    card.innerHTML = `
+                        <h3 class="text-base font-semibold truncate" style="color: var(--tg-theme-text-color);">${meme.title || 'Meme'}</h3>
+                        <p class="text-xs" style="color: var(--tg-theme-hint-color);">Category: ${meme.category} by @${meme.username || 'Unknown'}</p>
+                        <img src="${meme.memeImage}" alt="${meme.title || 'Meme'}" class="w-full h-auto rounded-md object-contain max-h-72" loading="lazy">
+                        ${reactionsHTML}
+                        ${reactionButtons}
+                    `;
+                    container.appendChild(card);
+                });
+                document.querySelectorAll('.reaction-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const memeId = e.currentTarget.dataset.memeId;
+                        const reaction = e.currentTarget.dataset.reaction;
+                        MemeStorage.updateMemeReaction(memeId, reaction);
+                        renderMemeCollection(document.getElementById('categoryFilter').value); 
+                        tg.HapticFeedback.impactOccurred('light');
+                    });
+                });
+            };
+            return { init, renderMemeCollection, populateFilters };
+        })();
+
+        // --- Leaderboard (largely unchanged) ---
+        const Leaderboard = (() => {
+            let currentCategory = 'all';
+            let currentTimeframe = 'all_time';
+            const init = () => {
+                document.getElementById('leaderboardCategoryTabs').addEventListener('click', handleCategoryTabClick);
+                document.getElementById('leaderboardTimeframeTabs').addEventListener('click', handleTimeframeTabClick);
+                populateLeaderboardCategoryTabs();
+                renderLeaderboard();
+            };
+            const handleCategoryTabClick = (event) => {
+                const button = event.target.closest('button');
+                if (button && button.dataset.category) {
+                    currentCategory = button.dataset.category;
+                    updateActiveButtonStyles(document.getElementById('leaderboardCategoryTabs'), button);
+                    renderLeaderboard();
+                }
+            };
+            const handleTimeframeTabClick = (event) => {
+                const button = event.target.closest('button');
+                if (button && button.dataset.timeframe) {
+                    currentTimeframe = button.dataset.timeframe;
+                     updateActiveButtonStyles(document.getElementById('leaderboardTimeframeTabs'), button);
+                    renderLeaderboard();
+                }
+            };
+            const updateActiveButtonStyles = (container, activeButton) => {
+                container.querySelectorAll('button').forEach(btn => {
+                    btn.classList.remove('active');
+                    btn.style.backgroundColor = tg.themeParams.secondary_bg_color || '#e5e5ea';
+                    btn.style.color = tg.themeParams.text_color || '#000000';
+                });
+                activeButton.classList.add('active');
+                activeButton.style.backgroundColor = tg.themeParams.button_color || '#007aff';
+                activeButton.style.color = tg.themeParams.button_text_color || '#ffffff';
+            };
+            const calculatePoints = (meme) => {
+                let points = 5; 
+                for (const count of Object.values(meme.reactions)) { points += count; }
+                return points;
+            };
+            const getLeaderboardData = () => {
+                let memes = MemeStorage.getMemes();
+                if (currentCategory !== 'all') {
+                    memes = memes.filter(m => m.category.toLowerCase() === currentCategory.toLowerCase());
+                }
+                const now = new Date();
+                if (currentTimeframe === 'daily') {
+                    memes = memes.filter(m => new Date(m.createdAt).toDateString() === now.toDateString());
+                } else if (currentTimeframe === 'weekly') {
+                    const oneWeekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+                    memes = memes.filter(m => new Date(m.createdAt) >= oneWeekAgo);
+                }
+                const userScores = {};
+                memes.forEach(meme => {
+                    const userId = meme.userId || 'guest';
+                    if (!userScores[userId]) {
+                        userScores[userId] = { username: meme.username || 'Guest', profileImage: meme.userPhotoUrl || `https://placehold.co/40x40/777/FFF?text=${(meme.username || 'G').charAt(0)}`, points: 0, memesCreated: 0 };
+                    }
+                    userScores[userId].points += calculatePoints(meme);
+                    userScores[userId].memesCreated++;
+                });
+                return Object.values(userScores).sort((a, b) => b.points - a.points || b.memesCreated - a.memesCreated);
+            };
+            const renderLeaderboard = () => {
+                const container = document.getElementById('leaderboardContainer');
+                container.innerHTML = '';
+                const topUsers = getLeaderboardData().slice(0, 50); 
+                if (topUsers.length === 0) {
+                    container.innerHTML = `<p class="text-center py-10" style="color: var(--tg-theme-hint-color);">No data for this leaderboard yet.</p>`;
+                    return;
+                }
+                topUsers.forEach((user, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'leaderboard-item flex items-center justify-between p-2.5 rounded-lg shadow';
+                    item.innerHTML = `
+                        <div class="flex items-center space-x-2.5">
+                            <span class="font-semibold w-6 text-center" style="color: var(--tg-theme-hint-color);">${index + 1}.</span>
+                            <img src="${user.profileImage}" alt="${user.username}" class="w-8 h-8 rounded-full object-cover">
+                            <span class="font-medium truncate" style="color: var(--tg-theme-text-color); max-width: 150px;">${user.username}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="font-semibold block" style="color: var(--tg-theme-link-color);">${user.points} pts</span>
+                            <span class="text-xs block" style="color: var(--tg-theme-hint-color);">${user.memesCreated} meme${user.memesCreated === 1 ? '' : 's'}</span>
+                        </div>`;
+                    container.appendChild(item);
+                });
+            };
+            const populateLeaderboardCategoryTabs = () => {
+                const tabsContainer = document.getElementById('leaderboardCategoryTabs');
+                const memes = MemeStorage.getMemes();
+                const categories = ['All', ...new Set(memes.map(m => m.category).filter(Boolean).sort())];
+                
+                tabsContainer.innerHTML = '';
+                categories.forEach(cat => {
+                    const button = document.createElement('button');
+                    button.className = 'sub-tab-button text-xs px-3 py-1.5 rounded-md';
+                    button.dataset.category = cat.toLowerCase();
+                    button.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+                    if (cat.toLowerCase() === currentCategory) {
+                         button.classList.add('active');
+                         button.style.backgroundColor = tg.themeParams.button_color || '#007aff';
+                         button.style.color = tg.themeParams.button_text_color || '#ffffff';
+                    }
+                    tabsContainer.appendChild(button);
+                });
+            };
+            return { init, renderLeaderboard, populateLeaderboardCategoryTabs };
+        })();
+
+        MemeGenerator.init();
+        UI.init();
+        Leaderboard.init();
+        switchTab('home-tab'); 
+    });
     </script>
-  </body>
+</body>
 </html>
