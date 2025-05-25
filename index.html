@@ -2,680 +2,1087 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>MemeGen Mini App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community Quest</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* Apply Telegram theme variables for better integration */
+        /* Custom styles if needed */
         body {
-            background-color: var(--tg-theme-bg-color, #ffffff);
-            color: var(--tg-theme-text-color, #000000);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            overscroll-behavior-y: none; /* Prevent pull-to-refresh issues */
+            font-family: 'Inter', sans-serif; /* Defaulting to Inter as per guidelines */
+            overscroll-behavior-y: none; /* Prevents pull-to-refresh issues in Mini Apps */
         }
-        .nav-button.active {
-            color: var(--tg-theme-button-color, #007aff);
-            border-bottom: 2px solid var(--tg-theme-button-color, #007aff);
+        .view {
+            display: none; /* Hide views by default */
+            min-height: calc(100vh - 60px); /* Adjust based on header/footer */
         }
-        input, select, textarea, button {
-            border-radius: 8px;
+        .view.active {
+            display: block;
         }
-        input[type="text"], input[type="number"], select, textarea {
-            background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
-            border: 1px solid var(--tg-theme-hint-color, #c7c7cc);
-            color: var(--tg-theme-text-color, #000000);
-            padding: 10px 12px;
+        /* Custom scrollbar for better aesthetics if desired */
+        ::-webkit-scrollbar {
+            width: 6px;
         }
-        input[type="color"] {
-             min-height: 44px; /* Ensure color input is tappable */
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
         }
-        button.primary-action {
-            background-color: var(--tg-theme-button-color, #007aff);
-            color: var(--tg-theme-button-text-color, #ffffff);
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
         }
-        button.secondary-action {
-            background-color: var(--tg-theme-secondary-bg-color, #e5e5ea);
-            color: var(--tg-theme-button-color, #007aff); /* Or text color if more appropriate */
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
         }
-        .tab-content {
-            padding-bottom: 70px; /* Space for bottom nav */
+        /* Basic modal styling */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
         }
-        .meme-card {
-            background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
-            border: 1px solid var(--tg-theme-hint-color, #e0e0e0);
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
         }
-        .leaderboard-item {
-             background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
-        }
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-thumb { background: var(--tg-theme-hint-color, #c7c7cc); border-radius: 10px; }
-        .sub-tab-button.active {
-            background-color: var(--tg-theme-button-color, #007aff) !important;
-            color: var(--tg-theme-button-text-color, #ffffff) !important;
-        }
-        .sub-tab-button {
-            background-color: var(--tg-theme-secondary-bg-color, #e5e5ea);
-            color: var(--tg-theme-text-color, #000000);
-        }
-        #memeCanvas {
-            max-width: 100%;
-            height: auto;
-            display: block; 
-            background-color: var(--tg-theme-secondary-bg-color, #e0e0e0); /* BG for canvas area */
-        }
-        .text-band {
-            font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+        .modal-close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
             font-weight: bold;
-            text-transform: uppercase;
-            text-align: center;
-            color: white;
-            -webkit-text-stroke: 1px black; /* Safari/Chrome */
-            text-stroke: 1px black; /* Standard */
-            paint-order: stroke fill; /* Ensures stroke is behind fill */
+        }
+        .modal-close-button:hover,
+        .modal-close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
         }
     </style>
 </head>
-<body class="text-sm md:text-base">
-    <div id="app" class="h-screen flex flex-col max-w-3xl mx-auto">
-        <main class="flex-grow overflow-y-auto">
-            <section id="home-tab" class="tab-content p-4">
-                <div class="text-center space-y-4">
-                    <img src="https://placehold.co/120x120/007AFF/FFFFFF?text=MemeGen" alt="App Logo" class="mx-auto rounded-full shadow-lg">
-                    <h1 class="text-2xl font-bold" style="color: var(--tg-theme-text-color);">Welcome to MemeGen!</h1>
-                    <p style="color: var(--tg-theme-hint-color);">Create classic memes, choose templates, and share. Navigate using the tabs below.</p>
-                    <button id="goToGeneratorBtn" class="primary-action px-6 py-3 text-lg font-semibold rounded-lg shadow hover:opacity-90 transition-opacity">
-                        Create a Meme!
-                    </button>
-                </div>
-            </section>
+<body class="bg-gray-100 text-gray-800">
 
-            <section id="generator-tab" class="tab-content p-2 md:p-4 hidden space-y-3">
-                <div>
-                    <label for="imageUpload" class="block text-xs font-medium mb-1" style="color: var(--tg-theme-hint-color);">1. Upload Image:</label>
-                    <input type="file" id="imageUpload" accept="image/*" class="mt-1 block w-full text-xs p-2 border shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                </div>
+    <div id="app" class="max-w-lg mx-auto bg-white shadow-lg">
 
+        <header id="app-header" class="bg-blue-600 text-white p-4 text-center sticky top-0 z-50">
+            <h1 id="header-title" class="text-xl font-bold">Community Quest</h1>
+        </header>
+
+        <main class="p-4 pb-20">
+            <div id="home-view" class="view active space-y-4">
+                <h2 class="text-2xl font-semibold mb-4">Welcome, <span id="user-name">Player</span>!</h2>
+                <button onclick="showView('create-hunt-view')" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg shadow transition duration-150 ease-in-out">
+                    Create New Hunt
+                </button>
+                <button onclick="showView('join-hunt-view')" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow transition duration-150 ease-in-out">
+                    Join Existing Hunt
+                </button>
+                <button onclick="showView('my-hunts-view')" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg shadow transition duration-150 ease-in-out">
+                    My Hunts & Progress
+                </button>
+                <button onclick="showView('leaderboard-view')" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-lg shadow transition duration-150 ease-in-out">
+                    View Leaderboards
+                </button>
+                <button onclick="showView('teams-view')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-4 rounded-lg shadow transition duration-150 ease-in-out">
+                    Manage Teams
+                </button>
+                <button onclick="showView('business-portal-view')" class="w-full bg-gray-700 hover:bg-gray-800 text-white font-bold py-3 px-4 rounded-lg shadow transition duration-150 ease-in-out">
+                    Business Sponsor Portal
+                </button>
+            </div>
+
+            <div id="create-hunt-view" class="view space-y-4">
+                <h2 class="text-2xl font-semibold mb-4">Create a New Hunt</h2>
                 <div>
-                    <label for="templateSelector" class="block text-xs font-medium mb-1" style="color: var(--tg-theme-hint-color);">2. Choose Template:</label>
-                    <select id="templateSelector" class="mt-1 block w-full text-xs p-2 border shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                        <option value="classic">Classic Meme (Auto-adjusts)</option>
-                        <option value="facebook">Facebook Post (1.91:1)</option>
-                        <option value="tiktok">TikTok Story (9:16)</option>
+                    <label for="hunt-name" class="block text-sm font-medium text-gray-700">Hunt Name</label>
+                    <input type="text" id="hunt-name" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
+                <div>
+                    <label for="hunt-description" class="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea id="hunt-description" rows="3" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 mt-4">Add Clues:</h3>
+                <div id="clues-container" class="space-y-3">
+                    </div>
+                <div class="flex space-x-2">
+                    <button onclick="addClueField('text')" class="bg-blue-500 hover:bg-blue-600 text-white text-sm py-2 px-3 rounded-md">Add Text Clue</button>
+                    <button onclick="addClueField('image')" class="bg-green-500 hover:bg-green-600 text-white text-sm py-2 px-3 rounded-md">Add Image Clue</button>
+                    <button onclick="addClueField('qr')" class="bg-yellow-500 hover:bg-yellow-600 text-white text-sm py-2 px-3 rounded-md">Add QR Clue</button>
+                    <button onclick="addClueField('gps')" class="bg-red-500 hover:bg-red-600 text-white text-sm py-2 px-3 rounded-md">Add GPS Clue</button>
+                </div>
+                <button onclick="saveHunt()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg shadow mt-4">Save Hunt</button>
+            </div>
+
+            <div id="join-hunt-view" class="view space-y-4">
+                <h2 class="text-2xl font-semibold mb-4">Join a Hunt</h2>
+                <input type="text" id="join-hunt-id" placeholder="Enter Hunt ID" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <button onclick="findAndJoinHunt()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow">Find & Join Hunt</button>
+                <h3 class="text-lg font-medium mt-4">Available Public Hunts:</h3>
+                <div id="available-hunts-list" class="space-y-2">
+                    </div>
+            </div>
+
+            <div id="play-hunt-view" class="view space-y-4">
+                <h2 id="play-hunt-name" class="text-2xl font-semibold mb-2">Playing: Hunt Name</h2>
+                <p id="play-hunt-description" class="text-sm text-gray-600 mb-4"></p>
+                <div id="current-clue-container" class="p-4 bg-gray-50 rounded-lg shadow">
+                    </div>
+                <div id="answer-submission-container" class="mt-4">
+                     </div>
+                <p id="hunt-progress" class="text-sm text-center text-gray-500 mt-2"></p>
+            </div>
+
+            <div id="my-hunts-view" class="view space-y-4">
+                <h2 class="text-2xl font-semibold mb-4">My Hunts & Progress</h2>
+                <h3 class="text-lg font-medium">Hunts I Created:</h3>
+                <div id="my-created-hunts-list" class="space-y-2"></div>
+                <h3 class="text-lg font-medium mt-4">Hunts I'm Playing:</h3>
+                <div id="my-active-hunts-list" class="space-y-2"></div>
+            </div>
+
+            <div id="leaderboard-view" class="view space-y-4">
+                <h2 class="text-2xl font-semibold mb-4">Leaderboards</h2>
+                <select id="leaderboard-hunt-select" class="w-full p-2 border rounded-md mb-4">
+                    <option value="">Select a Hunt</option>
+                </select>
+                <div id="leaderboard-content" class="bg-white p-4 rounded-lg shadow">
+                    <p class="text-gray-500">Select a hunt to view its leaderboard.</p>
+                </div>
+            </div>
+
+            <div id="teams-view" class="view space-y-4">
+                <h2 class="text-2xl font-semibold mb-4">Teams</h2>
+                <button onclick="showTeamCreationForm()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg mb-2">Create New Team</button>
+                <div id="create-team-form" class="hidden space-y-2 p-3 bg-gray-50 rounded-lg shadow">
+                    <input type="text" id="team-name-input" placeholder="Team Name" class="w-full p-2 border rounded-md">
+                    <select id="team-hunt-select" class="w-full p-2 border rounded-md">
+                        <option value="">Select Hunt for Team</option>
                     </select>
+                    <button onclick="createTeam()" class="bg-blue-500 text-white py-2 px-3 rounded-md">Save Team</button>
                 </div>
+                <input type="text" id="join-team-id" placeholder="Enter Team ID to Join" class="w-full p-2 border rounded-md">
+                <button onclick="joinTeam()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg mt-2">Join Team</button>
+                <h3 class="text-lg font-medium mt-4">My Teams:</h3>
+                <div id="my-teams-list" class="space-y-2">
+                    </div>
+            </div>
+
+            <div id="business-portal-view" class="view space-y-4">
+                <h2 class="text-2xl font-semibold mb-4">Business Sponsor Portal</h2>
+                <p class="text-gray-700">Welcome, Business Owner! Here you can sponsor clues, locations, or prizes for community scavenger hunts.</p>
                 
-                <canvas id="memeCanvas" class="w-full border-2 rounded-lg shadow-lg" style="border-color: var(--tg-theme-hint-color);"></canvas>
+                <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md" role="alert">
+                    <p class="font-bold">Feature Coming Soon!</p>
+                    <p>Detailed sponsorship options and analytics are under development. For now, you can register your interest.</p>
+                </div>
 
                 <div>
-                    <label for="topTextInput" class="block text-xs font-medium mb-1" style="color: var(--tg-theme-hint-color);">3. Top Text:</label>
-                    <textarea id="topTextInput" rows="2" class="mt-1 block w-full text-xs" placeholder="Enter top text"></textarea>
+                    <label for="business-name" class="block text-sm font-medium text-gray-700">Business Name</label>
+                    <input type="text" id="business-name" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                 </div>
                 <div>
-                    <label for="bottomTextInput" class="block text-xs font-medium mb-1" style="color: var(--tg-theme-hint-color);">4. Bottom Text:</label>
-                    <textarea id="bottomTextInput" rows="2" class="mt-1 block w-full text-xs" placeholder="Enter bottom text"></textarea>
-                </div>
-                 <div> <label for="fontSizeMultiplier" class="block text-xs font-medium mb-1" style="color: var(--tg-theme-hint-color);">Font Size Adjust:</label>
-                    <input type="range" id="fontSizeMultiplier" min="0.5" max="1.5" value="1" step="0.1" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
-                </div>
-
-
-                <hr class="my-3" style="border-color: var(--tg-theme-hint-color);">
-                <h3 class="text-sm font-semibold" style="color: var(--tg-theme-text-color);">5. Actions:</h3>
-
-                <div class="grid grid-cols-2 gap-2 mt-1">
-                    <button id="saveMemeButton" class="secondary-action py-2 text-sm font-medium">Save to Device</button>
-                    <button id="saveToCollectionButton" class="primary-action py-2 text-sm font-medium">Save to My Collection</button>
-                </div>
-                
-                <div class="mt-3 p-3 rounded-lg" style="background-color: var(--tg-theme-secondary-bg-color);">
-                    <h4 class="text-xs font-medium mb-1" style="color: var(--tg-theme-hint-color);">Share to Telegram Channel:</h4>
-                    <input type="text" id="channelUsernameInput" class="mt-1 block w-full text-xs mb-2" placeholder="channel_username (no @)">
-                    <button id="prepareForChannelButton" class="w-full primary-action py-2 text-sm font-medium">Prepare & Get Channel Link</button>
-                    <div id="channelShareHelper" class="text-xs mt-2 hidden" style="color: var(--tg-theme-hint-color);">
-                        <p>1. Meme image is ready for download (if not already saved).</p>
-                        <p>2. Click below to open the channel, then paste/upload your saved meme.</p>
-                        <button id="openChannelLinkButton" class="w-full secondary-action py-1.5 text-xs mt-1">Open Channel</button>
-                    </div>
-                </div>
-            </section>
-
-            <section id="collection-tab" class="tab-content p-2 md:p-4 hidden space-y-3">
-                <div class="flex items-center gap-2">
-                    <label for="categoryFilter" class="block text-xs font-medium whitespace-nowrap" style="color: var(--tg-theme-hint-color);">Filter:</label>
-                    <select id="categoryFilter" class="block w-full text-xs p-2 border shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                        </select>
-                </div>
-                <div id="memeCollectionContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    </div>
-            </section>
-
-            <section id="leaderboard-tab" class="tab-content p-2 md:p-4 hidden space-y-3">
-                <div>
-                    <p class="text-xs font-medium mb-1" style="color: var(--tg-theme-hint-color);">Category:</p>
-                    <div id="leaderboardCategoryTabs" class="flex flex-wrap gap-1">
-                        </div>
+                    <label for="business-email" class="block text-sm font-medium text-gray-700">Contact Email</label>
+                    <input type="email" id="business-email" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                 </div>
                 <div>
-                    <p class="text-xs font-medium mb-1" style="color: var(--tg-theme-hint-color);">Timeframe:</p>
-                    <div id="leaderboardTimeframeTabs" class="flex flex-wrap gap-1" data-current-category="all" data-current-timeframe="all_time">
-                        <button data-timeframe="all_time" class="sub-tab-button text-xs px-3 py-1.5 rounded-md active">All Time</button>
-                        <button data-timeframe="weekly" class="sub-tab-button text-xs px-3 py-1.5 rounded-md">Weekly</button>
-                        <button data-timeframe="daily" class="sub-tab-button text-xs px-3 py-1.5 rounded-md">Daily</button>
-                    </div>
+                    <label for="sponsorship-interest" class="block text-sm font-medium text-gray-700">Sponsorship Interest (e.g., Clue, Location, Prize)</label>
+                    <textarea id="sponsorship-interest" rows="3" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
                 </div>
-                <div id="leaderboardContainer" class="space-y-2">
+                <button onclick="registerSponsorshipInterest()" class="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-4 rounded-lg shadow">Register Interest</button>
+                <h3 class="text-lg font-medium mt-4">My Registered Interests:</h3>
+                <div id="sponsorship-interest-list" class="space-y-2">
                     </div>
-            </section>
+            </div>
         </main>
 
-        <nav class="fixed bottom-0 left-0 right-0 max-w-3xl mx-auto border-t p-1 flex justify-around text-xs" style="background-color: var(--tg-theme-secondary-bg-color, #f9f9f9); border-color: var(--tg-theme-hint-color, #d1d1d6);">
-            <button data-tab="home-tab" class="nav-button active flex-1 p-2 flex flex-col items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                <span>Home</span>
-            </button>
-            <button data-tab="generator-tab" class="nav-button flex-1 p-2 flex flex-col items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
-                <span>Generator</span>
-            </button>
-            <button data-tab="collection-tab" class="nav-button flex-1 p-2 flex flex-col items-center justify-center">
-                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
-                <span>Collection</span>
-            </button>
-            <button data-tab="leaderboard-tab" class="nav-button flex-1 p-2 flex flex-col items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>
-                <span>Leaderboard</span>
-            </button>
-        </nav>
-    </div>
+        <div id="messageModal" class="modal">
+            <div class="modal-content">
+                <span class="modal-close-button" onclick="closeModal('messageModal')">&times;</span>
+                <p id="modalMessageText"></p>
+                <button onclick="closeModal('messageModal')" class="mt-4 bg-blue-500 text-white py-2 px-4 rounded-md">OK</button>
+            </div>
+        </div>
 
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    </div> <script>
+        // --- Telegram WebApp SDK Initialization ---
         const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand(); 
+        tg.ready(); // Inform Telegram the app is ready
+        tg.expand(); // Expand the Mini App to full height
 
-        document.body.style.backgroundColor = tg.themeParams.bg_color || '#ffffff';
-        document.body.style.color = tg.themeParams.text_color || '#000000';
+        // --- Global State & Constants ---
+        let currentUser = null;
+        let currentView = 'home-view';
+        let activeHuntSession = null; // Stores data for the hunt currently being played
+        const DB_PREFIX = 'communityQuest_';
 
-        const navButtons = document.querySelectorAll('.nav-button');
-        const tabContents = document.querySelectorAll('.tab-content');
-        const goToGeneratorBtn = document.getElementById('goToGeneratorBtn');
+        // --- Utility Functions ---
+        function generateId() {
+            return Math.random().toString(36).substr(2, 9);
+        }
 
-        const switchTab = (targetTabId) => {
-            navButtons.forEach(btn => {
-                btn.classList.remove('active');
-                btn.style.color = tg.themeParams.hint_color || '#999999';
-                btn.querySelector('svg')?.setAttribute('stroke', tg.themeParams.hint_color || '#999999');
-            });
-            tabContents.forEach(tab => tab.classList.add('hidden'));
+        function showModal(message) {
+            document.getElementById('modalMessageText').textContent = message;
+            document.getElementById('messageModal').style.display = 'flex';
+            tg.HapticFeedback.notificationOccurred('success'); // Or 'error'/'warning' based on context
+        }
 
-            const activeButton = document.querySelector(`.nav-button[data-tab="${targetTabId}"]`);
-            if (activeButton) {
-                activeButton.classList.add('active');
-                activeButton.style.color = tg.themeParams.button_color || '#007aff';
-                activeButton.querySelector('svg')?.setAttribute('stroke', tg.themeParams.button_color || '#007aff');
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // --- LocalStorage CRUD Operations ---
+        // Hunts
+        function saveHuntData(hunt) {
+            const hunts = JSON.parse(localStorage.getItem(DB_PREFIX + 'hunts') || '[]');
+            const existingIndex = hunts.findIndex(h => h.id === hunt.id);
+            if (existingIndex > -1) {
+                hunts[existingIndex] = hunt;
+            } else {
+                hunts.push(hunt);
             }
-            const activeTab = document.getElementById(targetTabId);
-            if (activeTab) activeTab.classList.remove('hidden');
+            localStorage.setItem(DB_PREFIX + 'hunts', JSON.stringify(hunts));
+        }
 
-            if (targetTabId === 'collection-tab') UI.renderMemeCollection();
-            if (targetTabId === 'leaderboard-tab') Leaderboard.renderLeaderboard();
-            if (targetTabId === 'generator-tab') MemeGenerator.handleTemplateChange(); // Resize canvas on tab switch
-        };
+        function getAllHunts() {
+            return JSON.parse(localStorage.getItem(DB_PREFIX + 'hunts') || '[]');
+        }
 
-        navButtons.forEach(button => {
-            button.addEventListener('click', () => switchTab(button.dataset.tab));
-        });
-
-        if (goToGeneratorBtn) {
-            goToGeneratorBtn.addEventListener('click', () => switchTab('generator-tab'));
+        function getHuntById(huntId) {
+            const hunts = getAllHunts();
+            return hunts.find(h => h.id === huntId);
         }
         
-        // --- MemeStorage (largely unchanged) ---
-        const MemeStorage = (() => {
-            const MEMES_KEY = 'userMemes_v3'; 
-            const getTelegramUser = () => {
-                return tg.initDataUnsafe?.user || { id: 'guest', username: 'Guest', first_name: 'Guest', photo_url: null };
-            };
-            const getMemes = () => JSON.parse(localStorage.getItem(MEMES_KEY)) || [];
-            const saveMemes = (memes) => localStorage.setItem(MEMES_KEY, JSON.stringify(memes));
+        function deleteHuntFromStorage(huntId) {
+            let hunts = getAllHunts();
+            hunts = hunts.filter(h => h.id !== huntId);
+            localStorage.setItem(DB_PREFIX + 'hunts', JSON.stringify(hunts));
+            // Also delete related progress, teams etc. (simplified for now)
+            showModal('Hunt deleted successfully.');
+            loadMyHunts(); // Refresh relevant views
+            loadAvailableHunts();
+        }
 
-            const saveMeme = (memeData) => {
-                const memes = getMemes();
-                const user = getTelegramUser();
-                const newMeme = {
-                    id: `meme_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-                    title: memeData.title || 'Untitled Meme', // Title is now optional for collection
-                    category: memeData.category || 'General', // Category optional for collection
-                    memeImage: memeData.memeImage, 
-                    reactions: {},
-                    createdAt: new Date().toISOString(),
-                    userId: user.id,
-                    username: user.username || `${user.first_name || 'User'}`,
-                    userPhotoUrl: user.photo_url || `https://placehold.co/40x40/${(tg.themeParams.button_color || '007AFF').substring(1)}/FFFFFF?text=${(user.username || user.first_name || 'U').charAt(0).toUpperCase()}`
+        // Player Progress
+        function savePlayerProgress(progress) {
+            const progresses = JSON.parse(localStorage.getItem(DB_PREFIX + 'progress') || '[]');
+            const existingIndex = progresses.findIndex(p => p.userId === progress.userId && p.huntId === progress.huntId);
+            if (existingIndex > -1) {
+                progresses[existingIndex] = progress;
+            } else {
+                progresses.push(progress);
+            }
+            localStorage.setItem(DB_PREFIX + 'progress', JSON.stringify(progresses));
+        }
+
+        function getPlayerProgress(userId, huntId) {
+            const progresses = JSON.parse(localStorage.getItem(DB_PREFIX + 'progress') || '[]');
+            return progresses.find(p => p.userId === userId && p.huntId === huntId);
+        }
+
+        // Teams
+        function saveTeamData(team) {
+            const teams = JSON.parse(localStorage.getItem(DB_PREFIX + 'teams') || '[]');
+            const existingIndex = teams.findIndex(t => t.id === team.id);
+            if (existingIndex > -1) {
+                teams[existingIndex] = team;
+            } else {
+                teams.push(team);
+            }
+            localStorage.setItem(DB_PREFIX + 'teams', JSON.stringify(teams));
+        }
+
+        function getAllTeams() {
+            return JSON.parse(localStorage.getItem(DB_PREFIX + 'teams') || '[]');
+        }
+
+        function getTeamById(teamId) {
+            return getAllTeams().find(t => t.id === teamId);
+        }
+        
+        // Sponsorship Interest
+        function saveSponsorshipInterest(interest) {
+            const interests = JSON.parse(localStorage.getItem(DB_PREFIX + 'sponsorshipInterests') || '[]');
+            interests.push(interest);
+            localStorage.setItem(DB_PREFIX + 'sponsorshipInterests', JSON.stringify(interests));
+        }
+
+        function getSponsorshipInterests() {
+            return JSON.parse(localStorage.getItem(DB_PREFIX + 'sponsorshipInterests') || '[]');
+        }
+
+        // --- View Management ---
+        function showView(viewId, params = {}) {
+            document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            currentView = viewId;
+            tg.BackButton.isVisible = (viewId !== 'home-view');
+            
+            // Update header title based on view
+            const viewTitles = {
+                'home-view': 'Community Quest',
+                'create-hunt-view': 'Create New Hunt',
+                'join-hunt-view': 'Join a Hunt',
+                'play-hunt-view': 'Playing Hunt',
+                'my-hunts-view': 'My Hunts & Progress',
+                'leaderboard-view': 'Leaderboards',
+                'teams-view': 'Manage Teams',
+                'business-portal-view': 'Business Sponsor Portal'
+            };
+            document.getElementById('header-title').textContent = viewTitles[viewId] || 'Community Quest';
+
+            // Specific view loading logic
+            if (viewId === 'create-hunt-view') {
+                document.getElementById('clues-container').innerHTML = ''; // Clear previous clues
+                addClueField('text'); // Add one text clue field by default
+            } else if (viewId === 'join-hunt-view') {
+                loadAvailableHunts();
+            } else if (viewId === 'my-hunts-view') {
+                loadMyHunts();
+            } else if (viewId === 'leaderboard-view') {
+                populateLeaderboardHuntSelect();
+                document.getElementById('leaderboard-content').innerHTML = '<p class="text-gray-500">Select a hunt to view its leaderboard.</p>';
+            } else if (viewId === 'teams-view') {
+                populateTeamHuntSelect();
+                loadMyTeams();
+            } else if (viewId === 'business-portal-view') {
+                loadSponsorshipInterests();
+            } else if (viewId === 'play-hunt-view' && params.huntId) {
+                startHunt(params.huntId);
+            }
+            window.scrollTo(0,0); // Scroll to top on view change
+        }
+
+        // --- Hunt Creation Logic ---
+        let clueCounter = 0;
+        function addClueField(type) {
+            clueCounter++;
+            const container = document.getElementById('clues-container');
+            const clueDiv = document.createElement('div');
+            clueDiv.className = 'p-3 border border-gray-200 rounded-md bg-gray-50 space-y-2';
+            clueDiv.innerHTML = `<h4 class="font-medium text-gray-700">Clue ${clueCounter} (${type})</h4>
+                                 <input type="hidden" name="clue-type-${clueCounter}" value="${type}">`;
+            
+            switch(type) {
+                case 'text':
+                    clueDiv.innerHTML += `
+                        <textarea name="clue-question-${clueCounter}" rows="2" placeholder="Clue Question/Text" class="w-full p-2 border rounded-md"></textarea>
+                        <input type="text" name="clue-answer-${clueCounter}" placeholder="Correct Answer" class="w-full p-2 border rounded-md">`;
+                    break;
+                case 'image':
+                    clueDiv.innerHTML += `
+                        <input type="text" name="clue-image-url-${clueCounter}" placeholder="Image URL (e.g., https://...)" class="w-full p-2 border rounded-md">
+                        <textarea name="clue-question-${clueCounter}" rows="2" placeholder="Question related to image" class="w-full p-2 border rounded-md"></textarea>
+                        <input type="text" name="clue-answer-${clueCounter}" placeholder="Correct Answer" class="w-full p-2 border rounded-md">`;
+                    break;
+                case 'qr':
+                    clueDiv.innerHTML += `
+                        <textarea name="clue-qr-info-${clueCounter}" rows="2" placeholder="Information to encode in QR / Expected QR scan result" class="w-full p-2 border rounded-md"></textarea>
+                        <p class="text-xs text-gray-500">Participants will scan a QR code. The text they get from the scan is the 'answer'.</p>`;
+                    // QR answer is the qr-info itself
+                    break;
+                case 'gps':
+                    clueDiv.innerHTML += `
+                        <textarea name="clue-gps-task-${clueCounter}" rows="2" placeholder="Task/Question at location" class="w-full p-2 border rounded-md"></textarea>
+                        <input type="text" name="clue-gps-lat-${clueCounter}" placeholder="Latitude (e.g., 34.0522)" class="w-full p-2 border rounded-md">
+                        <input type="text" name="clue-gps-lon-${clueCounter}" placeholder="Longitude (e.g., -118.2437)" class="w-full p-2 border rounded-md">
+                        <input type="text" name="clue-gps-answer-${clueCounter}" placeholder="Answer to task (if any, or 'reached' if just location)" class="w-full p-2 border rounded-md">
+                        <p class="text-xs text-gray-500">Participants must be near this location. The answer is for the task at the location.</p>`;
+                    break;
+            }
+            clueDiv.innerHTML += `<input type="number" name="clue-points-${clueCounter}" placeholder="Points for this clue" value="10" class="w-full p-2 border rounded-md mt-1">
+                                  <button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700 text-sm">Remove Clue</button>`;
+            container.appendChild(clueDiv);
+        }
+
+        function saveHunt() {
+            const huntName = document.getElementById('hunt-name').value.trim();
+            const huntDescription = document.getElementById('hunt-description').value.trim();
+            if (!huntName || !huntDescription) {
+                showModal('Please fill in hunt name and description.');
+                return;
+            }
+
+            const clues = [];
+            const clueElements = document.getElementById('clues-container').children;
+            for (let i = 0; i < clueElements.length; i++) {
+                const clueDiv = clueElements[i];
+                const clueIndex = i + 1; // To match the naming convention if needed, or use a data-attribute
+                // A more robust way would be to use data-attributes on inputs or querySelectorAll with specific names
+                // For simplicity, assuming order and using a generic approach.
+                const typeInput = clueDiv.querySelector(`input[name^="clue-type"]`);
+                if (!typeInput) continue; // Skip if somehow a malformed clue div exists
+                const type = typeInput.value;
+                
+                const points = parseInt(clueDiv.querySelector(`input[name^="clue-points"]`).value) || 10;
+                let clueData = { type, points, id: generateId() };
+
+                switch(type) {
+                    case 'text':
+                        clueData.question = clueDiv.querySelector(`textarea[name^="clue-question"]`).value;
+                        clueData.answer = clueDiv.querySelector(`input[name^="clue-answer"]`).value.toLowerCase();
+                        break;
+                    case 'image':
+                        clueData.imageUrl = clueDiv.querySelector(`input[name^="clue-image-url"]`).value;
+                        clueData.question = clueDiv.querySelector(`textarea[name^="clue-question"]`).value;
+                        clueData.answer = clueDiv.querySelector(`input[name^="clue-answer"]`).value.toLowerCase();
+                        break;
+                    case 'qr':
+                        clueData.qrInfo = clueDiv.querySelector(`textarea[name^="clue-qr-info"]`).value;
+                        clueData.answer = clueData.qrInfo.toLowerCase(); // Answer is the QR content
+                        break;
+                    case 'gps':
+                        clueData.task = clueDiv.querySelector(`textarea[name^="clue-gps-task"]`).value;
+                        clueData.latitude = parseFloat(clueDiv.querySelector(`input[name^="clue-gps-lat"]`).value);
+                        clueData.longitude = parseFloat(clueDiv.querySelector(`input[name^="clue-gps-lon"]`).value);
+                        clueData.answer = clueDiv.querySelector(`input[name^="clue-gps-answer"]`).value.toLowerCase();
+                        if (isNaN(clueData.latitude) || isNaN(clueData.longitude)) {
+                            showModal(`Invalid GPS coordinates for clue ${clues.length + 1}.`);
+                            return;
+                        }
+                        break;
+                }
+                if ((type === 'text' || type === 'image' || type === 'gps') && (!clueData.answer)) {
+                     showModal(`Answer missing for clue ${clues.length + 1}.`); return;
+                }
+                 if (type === 'qr' && !clueData.qrInfo) {
+                    showModal(`QR Information missing for clue ${clues.length + 1}.`); return;
+                }
+
+                clues.push(clueData);
+            }
+
+            if (clues.length === 0) {
+                showModal('Please add at least one clue to the hunt.');
+                return;
+            }
+
+            const newHunt = {
+                id: generateId(),
+                name: huntName,
+                description: huntDescription,
+                clues: clues,
+                createdBy: currentUser.id,
+                createdAt: new Date().toISOString()
+            };
+
+            saveHuntData(newHunt);
+            showModal('Hunt created successfully! Hunt ID: ' + newHunt.id);
+            document.getElementById('hunt-name').value = '';
+            document.getElementById('hunt-description').value = '';
+            document.getElementById('clues-container').innerHTML = '';
+            clueCounter = 0;
+            showView('home-view');
+        }
+
+        // --- Join Hunt & Play Logic ---
+        function loadAvailableHunts() {
+            const hunts = getAllHunts();
+            const listContainer = document.getElementById('available-hunts-list');
+            listContainer.innerHTML = ''; // Clear previous list
+            if (hunts.length === 0) {
+                listContainer.innerHTML = '<p class="text-gray-500">No public hunts available yet. Create one!</p>';
+                return;
+            }
+            hunts.forEach(hunt => {
+                const huntCard = document.createElement('div');
+                huntCard.className = 'p-3 bg-white border border-gray-200 rounded-md shadow-sm hover:shadow-md transition-shadow';
+                huntCard.innerHTML = `
+                    <h4 class="font-semibold text-blue-600">${hunt.name}</h4>
+                    <p class="text-sm text-gray-600">${hunt.description.substring(0,100)}...</p>
+                    <p class="text-xs text-gray-400">Clues: ${hunt.clues.length} | ID: ${hunt.id}</p>
+                    <button onclick="confirmJoinHunt('${hunt.id}')" class="mt-2 bg-green-500 text-white text-sm py-1 px-3 rounded-md hover:bg-green-600">Join This Hunt</button>
+                `;
+                listContainer.appendChild(huntCard);
+            });
+        }
+
+        function findAndJoinHunt() {
+            const huntId = document.getElementById('join-hunt-id').value.trim();
+            if (!huntId) {
+                showModal('Please enter a Hunt ID.');
+                return;
+            }
+            confirmJoinHunt(huntId);
+        }
+
+        function confirmJoinHunt(huntId) {
+            const hunt = getHuntById(huntId);
+            if (!hunt) {
+                showModal('Hunt with ID ' + huntId + ' not found.');
+                return;
+            }
+            // Check if already playing this hunt
+            let progress = getPlayerProgress(currentUser.id, huntId);
+            if (!progress) {
+                progress = {
+                    userId: currentUser.id,
+                    huntId: huntId,
+                    currentClueIndex: 0,
+                    score: 0,
+                    completedClues: new Array(hunt.clues.length).fill(false),
+                    startTime: new Date().toISOString(),
+                    completedTime: null
                 };
-                memes.unshift(newMeme);
-                saveMemes(memes);
-                UI.populateFilters(); 
-                return newMeme;
-            };
-            const updateMemeReaction = (memeId, reactionType) => {
-                const memes = getMemes();
-                const memeIndex = memes.findIndex(m => m.id === memeId);
-                if (memeIndex !== -1) {
-                    if (!memes[memeIndex].reactions[reactionType]) memes[memeIndex].reactions[reactionType] = 0;
-                    memes[memeIndex].reactions[reactionType]++;
-                    saveMemes(memes);
-                    return memes[memeIndex];
-                }
-                return null;
-            };
-            const getMemesByCategory = (category) => {
-                const memes = getMemes();
-                if (!category || category.toLowerCase() === 'all') return memes;
-                return memes.filter(m => m.category.toLowerCase() === category.toLowerCase());
-            };
-            return { getMemes, saveMeme, updateMemeReaction, getMemesByCategory };
-        })();
+                savePlayerProgress(progress);
+            }
+            showModal(`Joined hunt: ${hunt.name}! Starting now.`);
+            showView('play-hunt-view', { huntId: hunt.id });
+        }
 
-        // --- MemeGenerator (Heavily Refactored) ---
-        const MemeGenerator = (() => {
-            const canvas = document.getElementById('memeCanvas');
-            const ctx = canvas.getContext('2d');
-            let image = null;
-            let topText = '';
-            let bottomText = '';
-            let currentTemplate = 'classic';
-            let fontSizeMultiplier = 1;
+        function startHunt(huntId) {
+            const hunt = getHuntById(huntId);
+            if (!hunt) {
+                showModal('Error: Could not load hunt.');
+                showView('home-view');
+                return;
+            }
+            let progress = getPlayerProgress(currentUser.id, huntId);
+            if (!progress) { // Should not happen if confirmJoinHunt was called
+                progress = { userId: currentUser.id, huntId, currentClueIndex: 0, score: 0, completedClues: new Array(hunt.clues.length).fill(false), startTime: new Date().toISOString(), completedTime: null };
+                savePlayerProgress(progress);
+            }
 
-            const TEMPLATE_CONFIG = {
-                classic: { type: 'auto', textBandRatio: 0.15, baseFontSizeRatio: 0.07 }, // 15% of image height for each band
-                facebook: { type: 'fixed', aspectRatio: 1200 / 630, contentAreaRatio: 0.9, textBandRatio: 0.12, baseFontSizeRatio: 0.045 }, // 90% for image, 12% of content height for text
-                tiktok: { type: 'fixed', aspectRatio: 9 / 16, contentAreaRatio: 0.7, textBandRatio: 0.15, baseFontSizeRatio: 0.04 } // 70% for image (center), 15% of content height for text
-            };
-            const MAX_CANVAS_WIDTH = Math.min(window.innerWidth, 600) - 20; // Max width for canvas on screen
-
-            const init = () => {
-                document.getElementById('imageUpload').addEventListener('change', handleImageUpload);
-                document.getElementById('templateSelector').addEventListener('change', handleTemplateChange);
-                document.getElementById('topTextInput').addEventListener('input', (e) => { topText = e.target.value; renderPreview(); });
-                document.getElementById('bottomTextInput').addEventListener('input', (e) => { bottomText = e.target.value; renderPreview(); });
-                document.getElementById('fontSizeMultiplier').addEventListener('input', (e) => { fontSizeMultiplier = parseFloat(e.target.value); renderPreview(); });
-                
-                document.getElementById('saveMemeButton').addEventListener('click', downloadMeme);
-                document.getElementById('saveToCollectionButton').addEventListener('click', saveToCollection);
-                document.getElementById('prepareForChannelButton').addEventListener('click', prepareForChannel);
-
-                handleTemplateChange(); // Initial setup
+            activeHuntSession = {
+                hunt: hunt,
+                progress: progress
             };
 
-            const handleImageUpload = (event) => {
-                const file = event.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        image = new Image();
-                        image.onload = () => {
-                            renderPreview();
-                        };
-                        image.onerror = () => {
-                            tg.showAlert("Could not load image."); image = null; renderPreview();
-                        }
-                        image.src = e.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                }
-            };
+            document.getElementById('play-hunt-name').textContent = `Playing: ${hunt.name}`;
+            document.getElementById('play-hunt-description').textContent = hunt.description;
+            displayCurrentClue();
+        }
 
-            const handleTemplateChange = () => {
-                currentTemplate = document.getElementById('templateSelector').value;
-                document.getElementById('channelShareHelper').classList.add('hidden'); // Hide helper on template change
-                renderPreview();
-            };
+        function displayCurrentClue() {
+            if (!activeHuntSession) return;
+
+            const { hunt, progress } = activeHuntSession;
+            const clueContainer = document.getElementById('current-clue-container');
+            const answerContainer = document.getElementById('answer-submission-container');
+            clueContainer.innerHTML = '';
+            answerContainer.innerHTML = '';
             
-            const drawTextWithStroke = (text, x, y, fontSize, maxWidth) => {
-                ctx.font = `${fontSize}px Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif`;
-                ctx.fillStyle = 'white';
-                ctx.strokeStyle = 'black';
-                ctx.lineWidth = Math.max(1, fontSize / 15); // Stroke width based on font size
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                
-                // Simple auto-fit font size (basic version)
-                let currentFontSize = fontSize;
-                while (ctx.measureText(text).width > maxWidth && currentFontSize > 10) {
-                    currentFontSize -= 2;
-                    ctx.font = `${currentFontSize}px Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif`;
+            document.getElementById('hunt-progress').textContent = `Clue ${progress.currentClueIndex + 1} of ${hunt.clues.length} | Score: ${progress.score}`;
+
+
+            if (progress.currentClueIndex >= hunt.clues.length) {
+                clueContainer.innerHTML = `<h3 class="text-xl font-semibold text-green-600">Congratulations!</h3>
+                                           <p>You've completed the hunt "${hunt.name}"!</p>
+                                           <p>Your final score: ${progress.score}</p>`;
+                if (!progress.completedTime) {
+                    progress.completedTime = new Date().toISOString();
+                    savePlayerProgress(progress);
                 }
-                
-                // Paint order for clean stroke
-                ctx.strokeText(text, x, y);
-                ctx.fillText(text, x, y);
-            };
-
-            const renderPreview = () => {
-                const config = TEMPLATE_CONFIG[currentTemplate];
-                let canvasWidth, canvasHeight;
-                let imgDrawX = 0, imgDrawY = 0, imgDrawWidth = 0, imgDrawHeight = 0;
-                let topBandHeight = 0, bottomBandHeight = 0;
-
-                // Determine canvas dimensions and image placement
-                if (config.type === 'auto' && image) { // Classic meme: adapts to image
-                    canvasWidth = Math.min(MAX_CANVAS_WIDTH, image.naturalWidth);
-                    imgDrawWidth = canvasWidth;
-                    imgDrawHeight = (image.naturalHeight / image.naturalWidth) * imgDrawWidth;
-                    topBandHeight = bottomBandHeight = imgDrawHeight * config.textBandRatio;
-                    canvasHeight = imgDrawHeight + topBandHeight + bottomBandHeight;
-                    imgDrawX = 0;
-                    imgDrawY = topBandHeight;
-                } else if (config.type === 'fixed') { // Facebook, TikTok
-                    canvasWidth = MAX_CANVAS_WIDTH;
-                    canvasHeight = canvasWidth / config.aspectRatio;
-                    if (currentTemplate === 'tiktok' && canvasHeight > window.innerHeight * 0.6) { // Cap height for TikTok
-                        canvasHeight = window.innerHeight * 0.6;
-                        canvasWidth = canvasHeight * config.aspectRatio;
-                    }
-
-                    const contentTotalHeight = canvasHeight * config.contentAreaRatio; // e.g. 90% of canvas for image + text
-                    topBandHeight = bottomBandHeight = contentTotalHeight * config.textBandRatio;
-                    imgDrawHeight = contentTotalHeight - topBandHeight - bottomBandHeight;
-                    imgDrawWidth = imgDrawHeight * (image ? image.naturalWidth / image.naturalHeight : 16/9); // Use image aspect or default
-
-                    if (imgDrawWidth > canvasWidth * 0.95) { // If image is wider than canvas
-                        imgDrawWidth = canvasWidth * 0.95;
-                        imgDrawHeight = (image ? image.naturalHeight / image.naturalWidth : 9/16) * imgDrawWidth;
-                    }
-                    
-                    imgDrawX = (canvasWidth - imgDrawWidth) / 2;
-                    imgDrawY = topBandHeight + (canvasHeight - contentTotalHeight) / 2; // Center content area vertically
-
-                } else { // No image, default placeholder
-                    canvasWidth = MAX_CANVAS_WIDTH;
-                    canvasHeight = MAX_CANVAS_WIDTH * (currentTemplate === 'tiktok' ? 16/9 : (currentTemplate === 'facebook' ? 630/1200 : 3/4));
-                    if (currentTemplate === 'tiktok' && canvasHeight > window.innerHeight * 0.6) {
-                         canvasHeight = window.innerHeight * 0.6;
-                         canvasWidth = canvasHeight * (9/16);
-                    }
-                }
-                
-                canvas.width = canvasWidth;
-                canvas.height = canvasHeight;
-                canvas.style.width = `${canvasWidth}px`; // For display scaling
-                canvas.style.height = `${canvasHeight}px`;
-
-                // Clear canvas with a BG color
-                ctx.fillStyle = tg.themeParams.secondary_bg_color || '#DDDDDD';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                if (image) {
-                    ctx.drawImage(image, imgDrawX, imgDrawY, imgDrawWidth, imgDrawHeight);
-                } else {
-                    ctx.fillStyle = tg.themeParams.hint_color || '#888888';
-                    ctx.textAlign = 'center';
-                    ctx.font = `${Math.min(20, canvas.width / 15)}px Arial`;
-                    ctx.fillText("Upload an image", canvas.width / 2, canvas.height / 2 - 10);
-                }
-
-                // Draw Text
-                const baseFontSize = (image ? imgDrawHeight : canvas.height) * config.baseFontSizeRatio * fontSizeMultiplier;
-                const textPadding = 5; // Padding from edge of band or image
-
-                if (topText) {
-                    const yPos = (config.type === 'auto') ? topBandHeight / 2 : imgDrawY - topBandHeight / 2;
-                    drawTextWithStroke(topText, canvas.width / 2, yPos, baseFontSize, canvas.width - 2 * textPadding);
-                }
-                if (bottomText) {
-                    const yPos = (config.type === 'auto') ? imgDrawY + imgDrawHeight + bottomBandHeight / 2 : imgDrawY + imgDrawHeight + topBandHeight / 2; // topBandHeight used as it's same as bottom
-                    drawTextWithStroke(bottomText, canvas.width / 2, yPos, baseFontSize, canvas.width - 2 * textPadding);
-                }
-            };
-            window.addEventListener('resize', renderPreview);
-
-
-            const generateMemeDataURL = () => {
-                if (!image && !topText && !bottomText) {
-                    tg.showAlert("Please create something first!");
-                    return null;
-                }
-                return canvas.toDataURL('image/png');
-            };
-
-            const downloadMeme = () => {
-                const dataURL = generateMemeDataURL();
-                if (!dataURL) return;
-
-                const link = document.createElement('a');
-                link.download = `meme_${Date.now()}.png`;
-                link.href = dataURL;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                tg.HapticFeedback.notificationOccurred('success');
-            };
-
-            const saveToCollection = () => {
-                const dataURL = generateMemeDataURL();
-                if (!dataURL) return;
-                
-                // For collection, we might not need title/category from user explicitly for this flow
-                MemeStorage.saveMeme({ 
-                    title: `${topText.substring(0,20)}...` || 'Meme', // Auto-title
-                    category: currentTemplate, // Use template as category
-                    memeImage: dataURL 
+                tg.MainButton.setText("Back to Home").show().onClick(() => {
+                    tg.MainButton.hide();
+                    showView('home-view');
                 });
-                tg.showAlert(`Meme saved to your collection!`);
-                tg.HapticFeedback.notificationOccurred('success');
-            };
+                return;
+            }
 
-            const prepareForChannel = () => {
-                const channelUsername = document.getElementById('channelUsernameInput').value.trim();
-                if (!channelUsername) {
-                    tg.showAlert("Please enter a channel username.");
-                    return;
-                }
-                const dataURL = generateMemeDataURL(); // Ensure meme is drawn
-                if (!dataURL) return;
+            const clue = hunt.clues[progress.currentClueIndex];
+            let clueHtml = `<h3 class="text-lg font-medium mb-2">Clue ${progress.currentClueIndex + 1}: ${clue.type.toUpperCase()} (${clue.points} pts)</h3>`;
+            let answerInputHtml = '';
 
-                tg.showConfirm("Your meme is ready. Please save it to your device first, then you can open the channel to post it. Save now?", (confirmed) => {
-                    if (confirmed) {
-                        downloadMeme(); // Trigger download
-                        const helper = document.getElementById('channelShareHelper');
-                        const openChannelBtn = document.getElementById('openChannelLinkButton');
-                        openChannelBtn.onclick = () => tg.openTelegramLink(`https://t.me/${channelUsername}`);
-                        helper.classList.remove('hidden');
-                        tg.HapticFeedback.notificationOccurred('success');
-                    }
-                });
-            };
-            
-            return { init, handleTemplateChange, renderPreview }; // Expose renderPreview if needed by resize
-        })();
-
-        // --- UI (largely unchanged, ensure populateFilters is called) ---
-        const UI = (() => {
-            const init = () => {
-                document.getElementById('categoryFilter').addEventListener('change', (e) => renderMemeCollection(e.target.value));
-                populateFilters();
-            };
-            const populateFilters = () => {
-                const categoryFilter = document.getElementById('categoryFilter');
-                const memes = MemeStorage.getMemes();
-                const categories = ['All', ...new Set(memes.map(m => m.category).filter(Boolean).sort())];
-                
-                const currentFilterValue = categoryFilter.value;
-                categoryFilter.innerHTML = '';
-                categories.forEach(cat => {
-                    const option = document.createElement('option');
-                    option.value = cat.toLowerCase();
-                    option.textContent = cat.charAt(0).toUpperCase() + cat.slice(1); // Capitalize
-                    categoryFilter.appendChild(option);
-                });
-
-                if (categories.map(c=>c.toLowerCase()).includes(currentFilterValue)) {
-                    categoryFilter.value = currentFilterValue;
-                } else if (categories.length > 0) {
-                    categoryFilter.value = categories[0].toLowerCase();
-                }
-            };
-            const renderMemeCollection = (category = document.getElementById('categoryFilter')?.value || 'all') => {
-                const container = document.getElementById('memeCollectionContainer');
-                container.innerHTML = '';
-                const memes = MemeStorage.getMemesByCategory(category);
-
-                if (memes.length === 0) {
-                    container.innerHTML = `<p class="text-center py-10" style="color: var(--tg-theme-hint-color);">No memes found in this category.</p>`;
-                    return;
-                }
-                memes.forEach(meme => {
-                    const card = document.createElement('div');
-                    card.className = 'meme-card p-3 rounded-lg shadow-md space-y-2';
-                    let reactionsHTML = '<div class="flex flex-wrap gap-1 text-xs items-center">';
-                    if (Object.keys(meme.reactions).length > 0) {
-                        for (const [reaction, count] of Object.entries(meme.reactions)) {
-                            reactionsHTML += `<span class="px-2 py-0.5 rounded-full" style="background-color: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); border: 1px solid var(--tg-theme-hint-color);">${reaction} ${count}</span>`;
-                        }
-                    } else { reactionsHTML += `<span style="color: var(--tg-theme-hint-color);">No reactions yet.</span>`; }
-                    reactionsHTML += '</div>';
-                    const reactionButtons = `<div class="mt-1 pt-1 border-t flex gap-1" style="border-color: var(--tg-theme-hint-color);">${['👍', '❤️', '😂', '🔥', '🤔'].map(r => `<button class="text-sm p-1.5 rounded-md hover:opacity-75 reaction-btn flex-1" style="background-color: var(--tg-theme-bg-color); color: var(--tg-theme-text-color);" data-meme-id="${meme.id}" data-reaction="${r}">${r}</button>`).join('')}</div>`;
-                    
-                    card.innerHTML = `
-                        <h3 class="text-base font-semibold truncate" style="color: var(--tg-theme-text-color);">${meme.title || 'Meme'}</h3>
-                        <p class="text-xs" style="color: var(--tg-theme-hint-color);">Category: ${meme.category} by @${meme.username || 'Unknown'}</p>
-                        <img src="${meme.memeImage}" alt="${meme.title || 'Meme'}" class="w-full h-auto rounded-md object-contain max-h-72" loading="lazy">
-                        ${reactionsHTML}
-                        ${reactionButtons}
-                    `;
-                    container.appendChild(card);
-                });
-                document.querySelectorAll('.reaction-btn').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const memeId = e.currentTarget.dataset.memeId;
-                        const reaction = e.currentTarget.dataset.reaction;
-                        MemeStorage.updateMemeReaction(memeId, reaction);
-                        renderMemeCollection(document.getElementById('categoryFilter').value); 
-                        tg.HapticFeedback.impactOccurred('light');
+            switch(clue.type) {
+                case 'text':
+                    clueHtml += `<p class="text-gray-700">${clue.question}</p>`;
+                    answerInputHtml = `<input type="text" id="text-answer" placeholder="Your answer" class="w-full p-2 border rounded-md">`;
+                    break;
+                case 'image':
+                    clueHtml += `<img src="${clue.imageUrl}" alt="Clue Image" class="max-w-full h-auto rounded-md my-2 shadow" onerror="this.onerror=null;this.src='https://placehold.co/400x300/cccccc/ffffff?text=Image+Not+Found';">
+                                 <p class="text-gray-700 mt-2">${clue.question}</p>`;
+                    answerInputHtml = `<input type="text" id="image-answer" placeholder="Your answer" class="w-full p-2 border rounded-md">`;
+                    break;
+                case 'qr':
+                    clueHtml += `<p class="text-gray-700">Scan the QR code related to this clue. Enter the text you get from the scan below.</p>
+                                 <p class="text-sm text-gray-500">Hint: The QR might be physically placed or provided by the hunt organizer.</p>`;
+                    answerInputHtml = `<input type="text" id="qr-answer" placeholder="Text from QR Scan" class="w-full p-2 border rounded-md">`;
+                    tg.MainButton.setText("Use QR Scanner (External)").show().onClick(() => {
+                        tg.showScanQrPopup({text: "Scan QR for clue"}, (text) => {
+                           if(text) {
+                               document.getElementById('qr-answer').value = text;
+                               tg.closeScanQrPopup();
+                               submitAnswer(); // auto-submit after scan
+                           }
+                           return true; // return true to close scanner
+                        });
                     });
-                });
-            };
-            return { init, renderMemeCollection, populateFilters };
-        })();
+                    break;
+                case 'gps':
+                    clueHtml += `<p class="text-gray-700">Go to the specified GPS location. Once there, answer the task: ${clue.task}</p>
+                                 <p class="text-sm text-gray-500">Target: Lat ${clue.latitude.toFixed(4)}, Lon ${clue.longitude.toFixed(4)}</p>
+                                 <button onclick="checkGPSLocation()" class="my-2 bg-blue-500 text-white py-1 px-3 rounded-md text-sm">Check My Location</button>
+                                 <p id="gps-status" class="text-xs"></p>`;
+                    answerInputHtml = `<input type="text" id="gps-answer" placeholder="Answer to task at location" class="w-full p-2 border rounded-md">`;
+                    break;
+            }
+            clueContainer.innerHTML = clueHtml;
+            answerContainer.innerHTML = answerInputHtml;
+            
+            if (clue.type !== 'qr') { // QR uses its own main button logic
+                 tg.MainButton.setText("Submit Answer").show().onClick(submitAnswer);
+            } else if (!tg.isVersionAtLeast('6.4')) { // Fallback for older Telegram versions for QR
+                clueContainer.innerHTML += `<p class="text-red-500 text-sm">Your Telegram version doesn't support in-app QR scanning. Please use an external scanner.</p>`;
+                tg.MainButton.setText("Submit QR Text").show().onClick(submitAnswer);
+            }
+        }
+        
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radius of the earth in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c * 1000; // Distance in meters
+        }
 
-        // --- Leaderboard (largely unchanged) ---
-        const Leaderboard = (() => {
-            let currentCategory = 'all';
-            let currentTimeframe = 'all_time';
-            const init = () => {
-                document.getElementById('leaderboardCategoryTabs').addEventListener('click', handleCategoryTabClick);
-                document.getElementById('leaderboardTimeframeTabs').addEventListener('click', handleTimeframeTabClick);
-                populateLeaderboardCategoryTabs();
-                renderLeaderboard();
-            };
-            const handleCategoryTabClick = (event) => {
-                const button = event.target.closest('button');
-                if (button && button.dataset.category) {
-                    currentCategory = button.dataset.category;
-                    updateActiveButtonStyles(document.getElementById('leaderboardCategoryTabs'), button);
-                    renderLeaderboard();
-                }
-            };
-            const handleTimeframeTabClick = (event) => {
-                const button = event.target.closest('button');
-                if (button && button.dataset.timeframe) {
-                    currentTimeframe = button.dataset.timeframe;
-                     updateActiveButtonStyles(document.getElementById('leaderboardTimeframeTabs'), button);
-                    renderLeaderboard();
-                }
-            };
-            const updateActiveButtonStyles = (container, activeButton) => {
-                container.querySelectorAll('button').forEach(btn => {
-                    btn.classList.remove('active');
-                    btn.style.backgroundColor = tg.themeParams.secondary_bg_color || '#e5e5ea';
-                    btn.style.color = tg.themeParams.text_color || '#000000';
-                });
-                activeButton.classList.add('active');
-                activeButton.style.backgroundColor = tg.themeParams.button_color || '#007aff';
-                activeButton.style.color = tg.themeParams.button_text_color || '#ffffff';
-            };
-            const calculatePoints = (meme) => {
-                let points = 5; 
-                for (const count of Object.values(meme.reactions)) { points += count; }
-                return points;
-            };
-            const getLeaderboardData = () => {
-                let memes = MemeStorage.getMemes();
-                if (currentCategory !== 'all') {
-                    memes = memes.filter(m => m.category.toLowerCase() === currentCategory.toLowerCase());
-                }
-                const now = new Date();
-                if (currentTimeframe === 'daily') {
-                    memes = memes.filter(m => new Date(m.createdAt).toDateString() === now.toDateString());
-                } else if (currentTimeframe === 'weekly') {
-                    const oneWeekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
-                    memes = memes.filter(m => new Date(m.createdAt) >= oneWeekAgo);
-                }
-                const userScores = {};
-                memes.forEach(meme => {
-                    const userId = meme.userId || 'guest';
-                    if (!userScores[userId]) {
-                        userScores[userId] = { username: meme.username || 'Guest', profileImage: meme.userPhotoUrl || `https://placehold.co/40x40/777/FFF?text=${(meme.username || 'G').charAt(0)}`, points: 0, memesCreated: 0 };
+        function checkGPSLocation() {
+            const { hunt, progress } = activeHuntSession;
+            const clue = hunt.clues[progress.currentClueIndex];
+            if (clue.type !== 'gps') return;
+
+            const gpsStatusEl = document.getElementById('gps-status');
+            gpsStatusEl.textContent = 'Checking location...';
+
+            if (!navigator.geolocation) {
+                gpsStatusEl.textContent = 'Geolocation is not supported by your browser.';
+                tg.HapticFeedback.notificationOccurred('error');
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const userLat = position.coords.latitude;
+                    const userLon = position.coords.longitude;
+                    const distance = getDistance(userLat, userLon, clue.latitude, clue.longitude);
+                    
+                    gpsStatusEl.textContent = `Your location: Lat ${userLat.toFixed(4)}, Lon ${userLon.toFixed(4)}. Distance to target: ${distance.toFixed(0)}m.`;
+                    if (distance < 50) { // 50 meters tolerance
+                        gpsStatusEl.innerHTML += '<br><span class="text-green-600 font-semibold">You are at the location!</span>';
+                        tg.HapticFeedback.notificationOccurred('success');
+                        // Optionally auto-submit if answer is just 'reached' or enable submit button
+                    } else {
+                        gpsStatusEl.innerHTML += '<br><span class="text-red-600">Not close enough to the target location.</span>';
+                        tg.HapticFeedback.notificationOccurred('warning');
                     }
-                    userScores[userId].points += calculatePoints(meme);
-                    userScores[userId].memesCreated++;
-                });
-                return Object.values(userScores).sort((a, b) => b.points - a.points || b.memesCreated - a.memesCreated);
-            };
-            const renderLeaderboard = () => {
-                const container = document.getElementById('leaderboardContainer');
-                container.innerHTML = '';
-                const topUsers = getLeaderboardData().slice(0, 50); 
-                if (topUsers.length === 0) {
-                    container.innerHTML = `<p class="text-center py-10" style="color: var(--tg-theme-hint-color);">No data for this leaderboard yet.</p>`;
-                    return;
+                },
+                (error) => {
+                    gpsStatusEl.textContent = `Error getting location: ${error.message}`;
+                    tg.HapticFeedback.notificationOccurred('error');
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+
+
+        function submitAnswer() {
+            if (!activeHuntSession) return;
+            const { hunt, progress } = activeHuntSession;
+            const clue = hunt.clues[progress.currentClueIndex];
+            let userAnswer = '';
+
+            switch(clue.type) {
+                case 'text': userAnswer = document.getElementById('text-answer').value.trim().toLowerCase(); break;
+                case 'image': userAnswer = document.getElementById('image-answer').value.trim().toLowerCase(); break;
+                case 'qr': userAnswer = document.getElementById('qr-answer').value.trim().toLowerCase(); break;
+                case 'gps': userAnswer = document.getElementById('gps-answer').value.trim().toLowerCase(); break;
+            }
+
+            if (!userAnswer) {
+                showModal('Please provide an answer.');
+                return;
+            }
+            
+            let isCorrect = false;
+            if (clue.type === 'gps') {
+                // For GPS, first check location then answer. For simplicity, we'll assume location check was done.
+                // A more robust solution would gate answer submission until location is verified.
+                // Here, we just check the answer to the task.
+                isCorrect = (userAnswer === clue.answer);
+                if (isCorrect) {
+                    // Re-verify location or trust previous check. For now, trust.
+                     if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                                const distance = getDistance(position.coords.latitude, position.coords.longitude, clue.latitude, clue.longitude);
+                                if (distance > 100) { // Stricter check on submit
+                                    showModal(`You submitted the correct answer for the GPS task, but you are too far (${distance.toFixed(0)}m) from the location. Get closer!`);
+                                    tg.HapticFeedback.notificationOccurred('error');
+                                    return; // Don't proceed if not at location
+                                }
+                                // If here, location is fine and answer is correct
+                                processAnswerResult(true, clue);
+                            },
+                            () => {
+                                showModal('Could not verify your current location for GPS clue. Please ensure location services are enabled and try again.');
+                                tg.HapticFeedback.notificationOccurred('error');
+                            }, { enableHighAccuracy: true }
+                        );
+                        return; // Async, so return and wait for callback
+                    } else {
+                         showModal('Location services needed for GPS clue.'); return;
+                    }
+                } else {
+                     processAnswerResult(false, clue); // Answer to task is wrong
                 }
-                topUsers.forEach((user, index) => {
+
+            } else {
+                 isCorrect = (userAnswer === clue.answer);
+                 processAnswerResult(isCorrect, clue);
+            }
+        }
+
+        function processAnswerResult(isCorrect, clue) {
+            const { progress } = activeHuntSession;
+            if (isCorrect) {
+                showModal(`Correct! You earned ${clue.points} points.`);
+                tg.HapticFeedback.notificationOccurred('success');
+                progress.score += clue.points;
+                progress.completedClues[progress.currentClueIndex] = true;
+                progress.currentClueIndex++;
+                savePlayerProgress(progress);
+                displayCurrentClue();
+            } else {
+                showModal('Incorrect answer. Try again!');
+                tg.HapticFeedback.notificationOccurred('error');
+            }
+        }
+
+        // --- My Hunts & Progress View Logic ---
+        function loadMyHunts() {
+            const createdList = document.getElementById('my-created-hunts-list');
+            const activeList = document.getElementById('my-active-hunts-list');
+            createdList.innerHTML = '';
+            activeList.innerHTML = '';
+
+            const allHunts = getAllHunts();
+            const myCreatedHunts = allHunts.filter(h => h.createdBy === currentUser.id);
+            
+            if (myCreatedHunts.length === 0) {
+                createdList.innerHTML = '<p class="text-gray-500">You haven\'t created any hunts yet.</p>';
+            } else {
+                myCreatedHunts.forEach(hunt => {
                     const item = document.createElement('div');
-                    item.className = 'leaderboard-item flex items-center justify-between p-2.5 rounded-lg shadow';
-                    item.innerHTML = `
-                        <div class="flex items-center space-x-2.5">
-                            <span class="font-semibold w-6 text-center" style="color: var(--tg-theme-hint-color);">${index + 1}.</span>
-                            <img src="${user.profileImage}" alt="${user.username}" class="w-8 h-8 rounded-full object-cover">
-                            <span class="font-medium truncate" style="color: var(--tg-theme-text-color); max-width: 150px;">${user.username}</span>
-                        </div>
-                        <div class="text-right">
-                            <span class="font-semibold block" style="color: var(--tg-theme-link-color);">${user.points} pts</span>
-                            <span class="text-xs block" style="color: var(--tg-theme-hint-color);">${user.memesCreated} meme${user.memesCreated === 1 ? '' : 's'}</span>
-                        </div>`;
-                    container.appendChild(item);
+                    item.className = 'p-3 bg-gray-50 rounded-md shadow-sm';
+                    item.innerHTML = `<h4 class="font-semibold">${hunt.name} (ID: ${hunt.id})</h4>
+                                      <p class="text-xs text-gray-500">Clues: ${hunt.clues.length}</p>
+                                      <button onclick="showView('play-hunt-view', { huntId: '${hunt.id}' })" class="text-blue-500 text-sm mr-2">Play/View</button>
+                                      <button onclick="deleteHuntFromStorage('${hunt.id}')" class="text-red-500 text-sm">Delete</button>`;
+                    createdList.appendChild(item);
                 });
-            };
-            const populateLeaderboardCategoryTabs = () => {
-                const tabsContainer = document.getElementById('leaderboardCategoryTabs');
-                const memes = MemeStorage.getMemes();
-                const categories = ['All', ...new Set(memes.map(m => m.category).filter(Boolean).sort())];
-                
-                tabsContainer.innerHTML = '';
-                categories.forEach(cat => {
-                    const button = document.createElement('button');
-                    button.className = 'sub-tab-button text-xs px-3 py-1.5 rounded-md';
-                    button.dataset.category = cat.toLowerCase();
-                    button.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
-                    if (cat.toLowerCase() === currentCategory) {
-                         button.classList.add('active');
-                         button.style.backgroundColor = tg.themeParams.button_color || '#007aff';
-                         button.style.color = tg.themeParams.button_text_color || '#ffffff';
-                    }
-                    tabsContainer.appendChild(button);
-                });
-            };
-            return { init, renderLeaderboard, populateLeaderboardCategoryTabs };
-        })();
+            }
 
-        MemeGenerator.init();
-        UI.init();
-        Leaderboard.init();
-        switchTab('home-tab'); 
-    });
+            const allProgress = JSON.parse(localStorage.getItem(DB_PREFIX + 'progress') || '[]');
+            const myActiveProgress = allProgress.filter(p => p.userId === currentUser.id && !p.completedTime);
+
+            if (myActiveProgress.length === 0) {
+                activeList.innerHTML = '<p class="text-gray-500">You are not currently playing any hunts.</p>';
+            } else {
+                myActiveProgress.forEach(prog => {
+                    const hunt = getHuntById(prog.huntId);
+                    if (hunt) {
+                        const item = document.createElement('div');
+                        item.className = 'p-3 bg-gray-50 rounded-md shadow-sm';
+                        item.innerHTML = `<h4 class="font-semibold">${hunt.name}</h4>
+                                          <p class="text-xs text-gray-500">Progress: Clue ${prog.currentClueIndex + 1}/${hunt.clues.length} | Score: ${prog.score}</p>
+                                          <button onclick="showView('play-hunt-view', { huntId: '${hunt.id}' })" class="text-green-500 text-sm">Continue Hunt</button>`;
+                        activeList.appendChild(item);
+                    }
+                });
+            }
+        }
+
+        // --- Leaderboard Logic ---
+        function populateLeaderboardHuntSelect() {
+            const hunts = getAllHunts();
+            const select = document.getElementById('leaderboard-hunt-select');
+            select.innerHTML = '<option value="">Select a Hunt</option>'; // Reset
+            hunts.forEach(hunt => {
+                const option = document.createElement('option');
+                option.value = hunt.id;
+                option.textContent = hunt.name;
+                select.appendChild(option);
+            });
+            select.onchange = displayLeaderboard;
+        }
+
+        function displayLeaderboard() {
+            const huntId = document.getElementById('leaderboard-hunt-select').value;
+            const container = document.getElementById('leaderboard-content');
+            container.innerHTML = '';
+
+            if (!huntId) {
+                container.innerHTML = '<p class="text-gray-500">Select a hunt to view its leaderboard.</p>';
+                return;
+            }
+
+            const hunt = getHuntById(huntId);
+            if (!hunt) {
+                 container.innerHTML = '<p class="text-red-500">Error: Hunt not found.</p>';
+                 return;
+            }
+
+            const allProgress = JSON.parse(localStorage.getItem(DB_PREFIX + 'progress') || '[]');
+            const huntProgress = allProgress.filter(p => p.huntId === huntId && p.completedTime); // Only show completed
+            
+            // Also consider players currently playing for a live leaderboard
+            const activePlayersProgress = allProgress.filter(p => p.huntId === huntId && !p.completedTime);
+            const combinedProgress = [...huntProgress, ...activePlayersProgress];
+
+
+            if (combinedProgress.length === 0) {
+                container.innerHTML = '<p class="text-gray-500">No one has completed or is playing this hunt yet.</p>';
+                return;
+            }
+
+            // Sort by score (desc), then by completion time (asc for completed, or start time for active)
+            combinedProgress.sort((a, b) => {
+                if (b.score !== a.score) {
+                    return b.score - a.score;
+                }
+                // If scores are equal, completed hunts come before active ones
+                if (a.completedTime && !b.completedTime) return -1;
+                if (!a.completedTime && b.completedTime) return 1;
+                // If both completed, sort by time taken
+                if (a.completedTime && b.completedTime) {
+                    const timeA = new Date(a.completedTime).getTime() - new Date(a.startTime).getTime();
+                    const timeB = new Date(b.completedTime).getTime() - new Date(b.startTime).getTime();
+                    return timeA - timeB;
+                }
+                // If both active, sort by who has progressed further (more clues completed)
+                // This is implicitly handled by score, but could be explicit if clues have same points
+                // Or sort by start time for active players if score is same
+                return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+            });
+
+            const table = document.createElement('table');
+            table.className = 'w-full text-sm text-left text-gray-500';
+            table.innerHTML = `
+                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3">Rank</th>
+                        <th scope="col" class="px-6 py-3">Player (ID)</th>
+                        <th scope="col" class="px-6 py-3">Score</th>
+                        <th scope="col" class="px-6 py-3">Status</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>`;
+            
+            const tbody = table.querySelector('tbody');
+            combinedProgress.forEach((p, index) => {
+                const row = tbody.insertRow();
+                row.className = 'bg-white border-b hover:bg-gray-50';
+                const playerInfo = p.userId.substring(0, 8); // Show partial ID for privacy/brevity
+                const status = p.completedTime ? `Completed (${formatDuration(p.startTime, p.completedTime)})` : `Playing (Clue ${p.currentClueIndex + 1})`;
+                row.innerHTML = `
+                    <td class="px-6 py-4 font-medium text-gray-900">${index + 1}</td>
+                    <td class="px-6 py-4">${playerInfo}</td>
+                    <td class="px-6 py-4">${p.score}</td>
+                    <td class="px-6 py-4">${status}</td>
+                `;
+            });
+            container.appendChild(table);
+        }
+        
+        function formatDuration(startTimeStr, endTimeStr) {
+            const start = new Date(startTimeStr).getTime();
+            const end = new Date(endTimeStr).getTime();
+            let seconds = Math.floor((end - start) / 1000);
+            let minutes = Math.floor(seconds / 60);
+            let hours = Math.floor(minutes / 60);
+            seconds = seconds % 60;
+            minutes = minutes % 60;
+            return `${hours > 0 ? hours + 'h ' : ''}${minutes > 0 ? minutes + 'm ' : ''}${seconds}s`;
+        }
+
+        // --- Teams Logic ---
+        function populateTeamHuntSelect() {
+            const hunts = getAllHunts().filter(h => h.createdBy === currentUser.id || getPlayerProgress(currentUser.id, h.id)); // Hunts user created or is playing
+            const select = document.getElementById('team-hunt-select');
+            select.innerHTML = '<option value="">Select Hunt for Team</option>';
+            hunts.forEach(hunt => {
+                const option = document.createElement('option');
+                option.value = hunt.id;
+                option.textContent = hunt.name;
+                select.appendChild(option);
+            });
+        }
+        
+        function showTeamCreationForm() {
+            document.getElementById('create-team-form').classList.toggle('hidden');
+        }
+
+        function createTeam() {
+            const teamName = document.getElementById('team-name-input').value.trim();
+            const huntId = document.getElementById('team-hunt-select').value;
+            if (!teamName || !huntId) {
+                showModal('Please enter team name and select a hunt.');
+                return;
+            }
+            const newTeam = {
+                id: 'team-' + generateId(),
+                name: teamName,
+                huntId: huntId,
+                members: [currentUser.id], // Creator is the first member
+                score: 0 // Team score can be sum of members or specific team progress
+            };
+            saveTeamData(newTeam);
+            showModal(`Team "${teamName}" created! Team ID: ${newTeam.id}. Share this ID with others to join.`);
+            document.getElementById('team-name-input').value = '';
+            document.getElementById('create-team-form').classList.add('hidden');
+            loadMyTeams();
+        }
+
+        function joinTeam() {
+            const teamId = document.getElementById('join-team-id').value.trim();
+            if (!teamId) {
+                showModal('Please enter a Team ID.');
+                return;
+            }
+            const team = getTeamById(teamId);
+            if (!team) {
+                showModal('Team not found.');
+                return;
+            }
+            if (team.members.includes(currentUser.id)) {
+                showModal('You are already a member of this team.');
+                return;
+            }
+            // Check if user is part of another team for the same hunt (optional rule)
+            // const myTeams = getAllTeams().filter(t => t.members.includes(currentUser.id) && t.huntId === team.huntId);
+            // if (myTeams.length > 0) {
+            //     showModal(`You are already in a team for hunt "${getHuntById(team.huntId).name}".`);
+            //     return;
+            // }
+
+            team.members.push(currentUser.id);
+            saveTeamData(team);
+            showModal(`Successfully joined team "${team.name}"!`);
+            document.getElementById('join-team-id').value = '';
+            loadMyTeams();
+            // Update player progress to link to team
+            let progress = getPlayerProgress(currentUser.id, team.huntId);
+            if (progress) {
+                progress.teamId = team.id;
+                savePlayerProgress(progress);
+            }
+        }
+
+        function loadMyTeams() {
+            const container = document.getElementById('my-teams-list');
+            container.innerHTML = '';
+            const myTeams = getAllTeams().filter(t => t.members.includes(currentUser.id));
+            if (myTeams.length === 0) {
+                container.innerHTML = '<p class="text-gray-500">You are not part of any teams yet.</p>';
+                return;
+            }
+            myTeams.forEach(team => {
+                const hunt = getHuntById(team.huntId);
+                const item = document.createElement('div');
+                item.className = 'p-3 bg-gray-50 rounded-md shadow-sm';
+                item.innerHTML = `
+                    <h4 class="font-semibold">${team.name} (ID: ${team.id})</h4>
+                    <p class="text-sm text-gray-600">For Hunt: ${hunt ? hunt.name : 'Unknown Hunt'}</p>
+                    <p class="text-xs text-gray-500">Members: ${team.members.length}</p>
+                    `;
+                container.appendChild(item);
+            });
+        }
+        
+        // --- Business Portal Logic ---
+        function registerSponsorshipInterest() {
+            const businessName = document.getElementById('business-name').value.trim();
+            const email = document.getElementById('business-email').value.trim();
+            const interest = document.getElementById('sponsorship-interest').value.trim();
+
+            if (!businessName || !email || !interest) {
+                showModal('Please fill in all fields for sponsorship interest.');
+                return;
+            }
+            const newInterest = {
+                id: 'biz-' + generateId(),
+                businessName,
+                email,
+                interest,
+                registeredAt: new Date().toISOString()
+            };
+            saveSponsorshipInterest(newInterest);
+            showModal('Thank you for your interest! We will contact you soon.');
+            document.getElementById('business-name').value = '';
+            document.getElementById('business-email').value = '';
+            document.getElementById('sponsorship-interest').value = '';
+            loadSponsorshipInterests();
+        }
+
+        function loadSponsorshipInterests() {
+            const container = document.getElementById('sponsorship-interest-list');
+            container.innerHTML = '';
+            const interests = getSponsorshipInterests().filter(i => i.email === (document.getElementById('business-email').value || currentUser.id)); // crude filter for demo
+            
+            if (interests.length === 0) {
+                container.innerHTML = '<p class="text-gray-500">No registered interests found for this email.</p>';
+            } else {
+                interests.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'p-2 bg-gray-100 border rounded-md text-sm';
+                    div.innerHTML = `<strong>${item.businessName}</strong>: ${item.interest} (Registered: ${new Date(item.registeredAt).toLocaleDateString()})`;
+                    container.appendChild(div);
+                });
+            }
+        }
+
+
+        // --- Initialization ---
+        function initializeApp() {
+            // User data from Telegram
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                currentUser = tg.initDataUnsafe.user;
+                document.getElementById('user-name').textContent = currentUser.first_name || 'Player';
+            } else {
+                // Fallback for testing outside Telegram or if user data is not available
+                currentUser = { id: 'testUser' + generateId(), first_name: 'Test User' };
+                document.getElementById('user-name').textContent = currentUser.first_name;
+                console.warn("Telegram user data not found. Using test user.");
+            }
+            
+            // Setup Back Button
+            tg.BackButton.onClick(() => {
+                if (currentView === 'play-hunt-view') {
+                    // Ask for confirmation before leaving a hunt?
+                    showModal("Exiting hunt. Progress is saved.");
+                    tg.MainButton.hide(); // Hide play-specific main button
+                    showView('home-view');
+                } else if (currentView !== 'home-view') {
+                    showView('home-view');
+                }
+            });
+            
+            // Set initial view
+            showView('home-view');
+            
+            // Set theme params (optional)
+            // tg.setHeaderColor('#1E88E5'); // Example: Blue header
+            // tg.setBackgroundColor('#F5F5F5'); // Example: Light gray background
+        }
+
+        // --- DOMContentLoaded ---
+        document.addEventListener('DOMContentLoaded', initializeApp);
+
     </script>
 </body>
 </html>
