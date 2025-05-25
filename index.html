@@ -3,1086 +3,1005 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Community Quest</title>
+    <title>LoveQuest</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Custom styles if needed */
         body {
-            font-family: 'Inter', sans-serif; /* Defaulting to Inter as per guidelines */
-            overscroll-behavior-y: none; /* Prevents pull-to-refresh issues in Mini Apps */
+            font-family: 'Inter', sans-serif;
+            overscroll-behavior-y: none; 
         }
-        .view {
-            display: none; /* Hide views by default */
-            min-height: calc(100vh - 60px); /* Adjust based on header/footer */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        .telegram-bg { background-color: var(--tg-theme-bg-color, #ffffff); }
+        .telegram-text { color: var(--tg-theme-text-color, #000000); }
+        .telegram-hint { color: var(--tg-theme-hint-color, #999999); }
+        .telegram-link { color: var(--tg-theme-link-color, #2481cc); }
+        .telegram-button-bg { background-color: var(--tg-theme-button-color, #2481cc); }
+        .telegram-button-text { color: var(--tg-theme-button-text-color, #ffffff); }
+        .telegram-secondary-bg { background-color: var(--tg-theme-secondary-bg-color, #f0f0f0); }
+
+        .quest-card, .profile-card, .match-card, .post-card, .journal-entry-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
         }
-        .view.active {
-            display: block;
+        .quest-card:hover, .profile-card:hover, .match-card:hover, .post-card:hover, .journal-entry-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
         }
-        /* Custom scrollbar for better aesthetics if desired */
-        ::-webkit-scrollbar {
-            width: 6px;
+        .nav-item.active {
+            color: var(--tg-theme-button-color, #2481cc);
+            border-bottom: 2px solid var(--tg-theme-button-color, #2481cc);
+            font-weight: 600;
         }
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
+        #main-content {
+            padding-top: 4rem; 
+            padding-bottom: 4rem; 
         }
-        ::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #555;
-        }
-        /* Basic modal styling */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 100;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.5);
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            max-width: 500px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
-        }
-        .modal-close-button {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-        }
-        .modal-close-button:hover,
-        .modal-close-button:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
+        .modal-content-max-height {
+             max-height: calc(80vh - 4rem); 
         }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="telegram-bg telegram-text">
 
-    <div id="app" class="max-w-lg mx-auto bg-white shadow-lg">
-
-        <header id="app-header" class="bg-blue-600 text-white p-4 text-center sticky top-0 z-50">
-            <h1 id="header-title" class="text-xl font-bold">Community Quest</h1>
+    <div id="app-container" class="h-screen flex flex-col">
+        <header id="app-header" class="telegram-bg shadow-md fixed top-0 left-0 right-0 z-50 border-b" style="border-color: var(--tg-theme-secondary-bg-color, #e0e0e0);">
+            <div class="container mx-auto px-4 py-3 flex items-center justify-between h-16">
+                <h1 id="header-title" class="text-xl font-bold telegram-text">LoveQuest</h1>
+            </div>
         </header>
 
-        <main class="p-4 pb-20">
-            <div id="home-view" class="view active space-y-4">
-                <h2 class="text-2xl font-semibold mb-4">Welcome, <span id="user-name">Player</span>!</h2>
-                <button onclick="showView('create-hunt-view')" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg shadow transition duration-150 ease-in-out">
-                    Create New Hunt
-                </button>
-                <button onclick="showView('join-hunt-view')" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow transition duration-150 ease-in-out">
-                    Join Existing Hunt
-                </button>
-                <button onclick="showView('my-hunts-view')" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg shadow transition duration-150 ease-in-out">
-                    My Hunts & Progress
-                </button>
-                <button onclick="showView('leaderboard-view')" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-lg shadow transition duration-150 ease-in-out">
-                    View Leaderboards
-                </button>
-                <button onclick="showView('teams-view')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-4 rounded-lg shadow transition duration-150 ease-in-out">
-                    Manage Teams
-                </button>
-                <button onclick="showView('business-portal-view')" class="w-full bg-gray-700 hover:bg-gray-800 text-white font-bold py-3 px-4 rounded-lg shadow transition duration-150 ease-in-out">
-                    Business Sponsor Portal
-                </button>
+        <main id="main-content" class="flex-grow overflow-y-auto">
+            
+            <div id="loading-view" class="p-6 text-center">
+                <svg class="animate-spin h-10 w-10 telegram-text mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="telegram-hint">Initializing your adventure...</p>
             </div>
 
-            <div id="create-hunt-view" class="view space-y-4">
-                <h2 class="text-2xl font-semibold mb-4">Create a New Hunt</h2>
-                <div>
-                    <label for="hunt-name" class="block text-sm font-medium text-gray-700">Hunt Name</label>
-                    <input type="text" id="hunt-name" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                </div>
-                <div>
-                    <label for="hunt-description" class="block text-sm font-medium text-gray-700">Description</label>
-                    <textarea id="hunt-description" rows="3" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
-                </div>
-                <h3 class="text-lg font-medium text-gray-900 mt-4">Add Clues:</h3>
-                <div id="clues-container" class="space-y-3">
+            <div id="profile-view" class="p-4 md:p-6 hidden space-y-6">
+                <div class="telegram-secondary-bg p-6 rounded-xl shadow-lg">
+                    <div class="flex items-center space-x-4 mb-6">
+                        <img id="profile-avatar" src="https://placehold.co/80x80/E2E8F0/A0AEC0?text=Me" alt="User Avatar" class="w-20 h-20 rounded-full border-2 object-cover" style="border-color: var(--tg-theme-button-color, #2481cc);">
+                        <div>
+                            <h2 id="profile-name-display" class="text-2xl font-semibold telegram-text">Your Name</h2>
+                            <p id="profile-age-gender-display" class="telegram-hint">Age, Gender</p>
+                            <p id="profile-tg-username-display" class="telegram-hint text-sm"></p>
+                        </div>
                     </div>
-                <div class="flex space-x-2">
-                    <button onclick="addClueField('text')" class="bg-blue-500 hover:bg-blue-600 text-white text-sm py-2 px-3 rounded-md">Add Text Clue</button>
-                    <button onclick="addClueField('image')" class="bg-green-500 hover:bg-green-600 text-white text-sm py-2 px-3 rounded-md">Add Image Clue</button>
-                    <button onclick="addClueField('qr')" class="bg-yellow-500 hover:bg-yellow-600 text-white text-sm py-2 px-3 rounded-md">Add QR Clue</button>
-                    <button onclick="addClueField('gps')" class="bg-red-500 hover:bg-red-600 text-white text-sm py-2 px-3 rounded-md">Add GPS Clue</button>
-                </div>
-                <button onclick="saveHunt()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg shadow mt-4">Save Hunt</button>
-            </div>
-
-            <div id="join-hunt-view" class="view space-y-4">
-                <h2 class="text-2xl font-semibold mb-4">Join a Hunt</h2>
-                <input type="text" id="join-hunt-id" placeholder="Enter Hunt ID" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                <button onclick="findAndJoinHunt()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow">Find & Join Hunt</button>
-                <h3 class="text-lg font-medium mt-4">Available Public Hunts:</h3>
-                <div id="available-hunts-list" class="space-y-2">
+                    <div class="mb-4">
+                        <h3 class="text-lg font-medium telegram-text mb-1">Bio</h3>
+                        <p id="profile-bio-display" class="telegram-hint text-sm leading-relaxed">Your captivating bio goes here...</p>
                     </div>
-            </div>
-
-            <div id="play-hunt-view" class="view space-y-4">
-                <h2 id="play-hunt-name" class="text-2xl font-semibold mb-2">Playing: Hunt Name</h2>
-                <p id="play-hunt-description" class="text-sm text-gray-600 mb-4"></p>
-                <div id="current-clue-container" class="p-4 bg-gray-50 rounded-lg shadow">
+                    <div class="mb-4">
+                        <h3 class="text-lg font-medium telegram-text mb-2">Interests</h3>
+                        <div id="profile-interests-display" class="flex flex-wrap gap-2"></div>
                     </div>
-                <div id="answer-submission-container" class="mt-4">
-                     </div>
-                <p id="hunt-progress" class="text-sm text-center text-gray-500 mt-2"></p>
-            </div>
-
-            <div id="my-hunts-view" class="view space-y-4">
-                <h2 class="text-2xl font-semibold mb-4">My Hunts & Progress</h2>
-                <h3 class="text-lg font-medium">Hunts I Created:</h3>
-                <div id="my-created-hunts-list" class="space-y-2"></div>
-                <h3 class="text-lg font-medium mt-4">Hunts I'm Playing:</h3>
-                <div id="my-active-hunts-list" class="space-y-2"></div>
-            </div>
-
-            <div id="leaderboard-view" class="view space-y-4">
-                <h2 class="text-2xl font-semibold mb-4">Leaderboards</h2>
-                <select id="leaderboard-hunt-select" class="w-full p-2 border rounded-md mb-4">
-                    <option value="">Select a Hunt</option>
-                </select>
-                <div id="leaderboard-content" class="bg-white p-4 rounded-lg shadow">
-                    <p class="text-gray-500">Select a hunt to view its leaderboard.</p>
-                </div>
-            </div>
-
-            <div id="teams-view" class="view space-y-4">
-                <h2 class="text-2xl font-semibold mb-4">Teams</h2>
-                <button onclick="showTeamCreationForm()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg mb-2">Create New Team</button>
-                <div id="create-team-form" class="hidden space-y-2 p-3 bg-gray-50 rounded-lg shadow">
-                    <input type="text" id="team-name-input" placeholder="Team Name" class="w-full p-2 border rounded-md">
-                    <select id="team-hunt-select" class="w-full p-2 border rounded-md">
-                        <option value="">Select Hunt for Team</option>
-                    </select>
-                    <button onclick="createTeam()" class="bg-blue-500 text-white py-2 px-3 rounded-md">Save Team</button>
-                </div>
-                <input type="text" id="join-team-id" placeholder="Enter Team ID to Join" class="w-full p-2 border rounded-md">
-                <button onclick="joinTeam()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg mt-2">Join Team</button>
-                <h3 class="text-lg font-medium mt-4">My Teams:</h3>
-                <div id="my-teams-list" class="space-y-2">
+                     <div class="mb-4">
+                        <h3 class="text-lg font-medium telegram-text mb-2">My Telegram User ID</h3>
+                        <p id="profile-user-id-display" class="telegram-hint text-sm break-all"></p>
                     </div>
+                </div>
+                <form id="profile-edit-form" class="hidden space-y-4 telegram-secondary-bg p-6 rounded-xl shadow-lg">
+                    <div>
+                        <label for="profile-name" class="block text-sm font-medium telegram-text">Name (as you want it displayed)</label>
+                        <input type="text" id="profile-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 telegram-bg telegram-text" placeholder="Your Display Name">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="profile-age" class="block text-sm font-medium telegram-text">Age</label>
+                            <input type="number" id="profile-age" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 telegram-bg telegram-text" placeholder="25">
+                        </div>
+                        <div>
+                            <label for="profile-gender" class="block text-sm font-medium telegram-text">Gender</label>
+                            <select id="profile-gender" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 telegram-bg telegram-text">
+                                <option>Prefer not to say</option><option>Male</option><option>Female</option><option>Non-binary</option><option>Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="profile-bio" class="block text-sm font-medium telegram-text">Bio</label>
+                        <textarea id="profile-bio" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 telegram-bg telegram-text" placeholder="Tell us about yourself..."></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium telegram-text">Interests (select up to 5)</label>
+                        <div id="profile-interests-edit" class="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+                    </div>
+                    <button type="submit" class="w-full telegram-button-bg telegram-button-text font-semibold py-2 px-4 rounded-lg shadow hover:opacity-90 transition duration-150">Save Profile</button>
+                </form>
             </div>
 
-            <div id="business-portal-view" class="view space-y-4">
-                <h2 class="text-2xl font-semibold mb-4">Business Sponsor Portal</h2>
-                <p class="text-gray-700">Welcome, Business Owner! Here you can sponsor clues, locations, or prizes for community scavenger hunts.</p>
-                
-                <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md" role="alert">
-                    <p class="font-bold">Feature Coming Soon!</p>
-                    <p>Detailed sponsorship options and analytics are under development. For now, you can register your interest.</p>
+            <div id="adventure-hub-view" class="p-4 md:p-6 hidden space-y-6">
+                <h2 class="text-2xl font-semibold telegram-text">Available Adventures</h2>
+                <div id="quests-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <p id="no-quests-message" class="telegram-hint col-span-full text-center hidden">No adventures available right now. Check back soon!</p>
                 </div>
+            </div>
 
-                <div>
-                    <label for="business-name" class="block text-sm font-medium text-gray-700">Business Name</label>
-                    <input type="text" id="business-name" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            <div id="quest-detail-view" class="p-4 md:p-6 hidden space-y-6">
+                <h2 id="quest-title" class="text-2xl font-bold telegram-text">Quest Title</h2>
+                <p id="quest-description" class="telegram-hint">Quest description.</p>
+                <div id="quest-steps-container" class="space-y-4"></div>
+            </div>
+
+            <div id="achievements-view" class="p-4 md:p-6 hidden space-y-6">
+                <h2 class="text-2xl font-semibold telegram-text">My Quest Achievements</h2>
+                <div id="achievements-list" class="space-y-4">
+                    <p id="no-achievements-message" class="telegram-hint text-center">Complete quests to see your achievements here!</p>
                 </div>
-                <div>
-                    <label for="business-email" class="block text-sm font-medium text-gray-700">Contact Email</label>
-                    <input type="email" id="business-email" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                 <button id="invite-friend-button" class="w-full telegram-button-bg telegram-button-text font-semibold py-2 px-4 rounded-lg shadow hover:opacity-90 mt-6">Invite a Friend to LoveQuest</button>
+            </div>
+
+            <div id="chat-view" class="p-4 md:p-6 hidden flex flex-col h-full">
+                <div id="chat-with-name" class="text-xl font-semibold telegram-text mb-4">Chat Placeholder</div>
+                <div id="chat-messages-container" class="flex-grow border telegram-secondary-bg rounded-lg p-4 overflow-y-auto mb-4">
+                    <p class="telegram-hint">This is a placeholder for chat. Please use Telegram's native chat to connect with people you meet through LoveQuest adventures!</p>
                 </div>
-                <div>
-                    <label for="sponsorship-interest" class="block text-sm font-medium text-gray-700">Sponsorship Interest (e.g., Clue, Location, Prize)</label>
-                    <textarea id="sponsorship-interest" rows="3" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+                <div class="flex">
+                    <input type="text" id="chat-message-input" placeholder="Type your message (mock)..." class="flex-grow rounded-l-lg border-gray-300 shadow-sm p-2 telegram-bg telegram-text">
+                    <button id="send-chat-message-button" class="telegram-button-bg telegram-button-text font-semibold px-4 rounded-r-lg shadow hover:opacity-90">Send (Mock)</button>
                 </div>
-                <button onclick="registerSponsorshipInterest()" class="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-4 rounded-lg shadow">Register Interest</button>
-                <h3 class="text-lg font-medium mt-4">My Registered Interests:</h3>
-                <div id="sponsorship-interest-list" class="space-y-2">
+            </div>
+
+            <div id="journal-view" class="p-4 md:p-6 hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-semibold telegram-text">My LoveQuest Journal</h2>
+                    <button id="create-journal-entry-button" class="telegram-button-bg telegram-button-text font-semibold py-2 px-4 rounded-lg shadow hover:opacity-90">New Entry</button>
+                </div>
+                <div id="journal-entries-list" class="space-y-4">
+                    <p id="no-journal-entries-message" class="telegram-hint text-center">No journal entries yet. Start reflecting on your journey!</p>
+                </div>
+                <form id="create-journal-entry-form" class="hidden space-y-4 telegram-secondary-bg p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-semibold telegram-text">New Journal Entry</h3>
+                    <div>
+                        <label for="journal-entry-title-input" class="block text-sm font-medium telegram-text">Title</label>
+                        <input type="text" id="journal-entry-title-input" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 telegram-bg telegram-text" placeholder="Entry Title">
                     </div>
+                    <div>
+                        <label for="journal-entry-content-input" class="block text-sm font-medium telegram-text">Reflection</label>
+                        <textarea id="journal-entry-content-input" rows="5" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 telegram-bg telegram-text" placeholder="Your thoughts and feelings..."></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-2">
+                         <button type="button" id="cancel-journal-entry-button" class="bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg shadow hover:bg-gray-300">Cancel</button>
+                        <button type="submit" class="telegram-button-bg telegram-button-text font-semibold py-2 px-4 rounded-lg shadow hover:opacity-90">Save Entry</button>
+                    </div>
+                </form>
             </div>
         </main>
 
-        <div id="messageModal" class="modal">
-            <div class="modal-content">
-                <span class="modal-close-button" onclick="closeModal('messageModal')">&times;</span>
-                <p id="modalMessageText"></p>
-                <button onclick="closeModal('messageModal')" class="mt-4 bg-blue-500 text-white py-2 px-4 rounded-md">OK</button>
+        <div id="modal-container" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[100] p-4">
+            <div id="modal-content" class="telegram-bg p-6 rounded-xl shadow-xl w-full max-w-lg modal-content-max-height overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 id="modal-title" class="text-xl font-semibold telegram-text">Modal Title</h3>
+                    <button id="modal-close-button" class="telegram-hint hover:telegram-text text-2xl leading-none">&times;</button>
+                </div>
+                <div id="modal-body"></div>
             </div>
         </div>
 
-    </div> <script>
-        // --- Telegram WebApp SDK Initialization ---
-        const tg = window.Telegram.WebApp;
-        tg.ready(); // Inform Telegram the app is ready
-        tg.expand(); // Expand the Mini App to full height
+        <nav id="bottom-nav" class="telegram-bg border-t fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center h-16 shadow-top" style="border-color: var(--tg-theme-secondary-bg-color, #e0e0e0);">
+            <button data-view="profile-view" class="nav-item flex-1 flex flex-col items-center justify-center p-2 telegram-hint hover:telegram-text transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"><path d="M12 2.5a5.5 5.5 0 0 1 3.096 10.047 9.005 9.005 0 0 1 5.9 8.181.75.75 0 1 1-1.499.044 7.5 7.5 0 0 0-14.993 0 .75.75 0 1 1-1.5-.045 9.005 9.005 0 0 1 5.9-8.18A5.5 5.5 0 0 1 12 2.5ZM8 8a4 4 0 1 0 8 0 4 4 0 0 0-8 0Z" /></svg>
+                <span class="text-xs mt-1">Profile</span>
+            </button>
+            <button data-view="adventure-hub-view" class="nav-item flex-1 flex flex-col items-center justify-center p-2 telegram-hint hover:telegram-text transition-colors">
+                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"><path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 0 0 .723 0l.028-.015.071-.041a16.975 16.975 0 0 0 1.144-.742 19.58 19.58 0 0 0 2.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 0 0-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 0 0 2.682 2.282 16.975 16.975 0 0 0 1.145.742ZM12 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clip-rule="evenodd" /></svg>
+                <span class="text-xs mt-1">Adventures</span>
+            </button>
+            <button data-view="achievements-view" class="nav-item flex-1 flex flex-col items-center justify-center p-2 telegram-hint hover:telegram-text transition-colors"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"><path fill-rule="evenodd" d="M10.788 3.212a.75.75 0 0 0-1.06 0l-7.5 7.5a.75.75 0 0 0 1.06 1.06L4.5 11.06l2.72 2.72a.75.75 0 0 0 1.06-1.06L5.56 10l5.228-5.228a.75.75 0 0 0 0-1.06Z" clip-rule="evenodd" /><path fill-rule="evenodd" d="M13.212 3.212a.75.75 0 0 1 1.06 0l7.5 7.5a.75.75 0 0 1-1.06 1.06L18.5 11.06l-2.72 2.72a.75.75 0 0 1-1.06-1.06L17.44 10l-5.228-5.228a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /> <path fill-rule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25c0 2.008.994 4.042 2.758 5.875a.75.75 0 0 0 1.144-.028L12 11.036l1.348 1.563a.75.75 0 0 0 1.144.028c1.764-1.833 2.758-3.867 2.758-5.875A5.25 5.25 0 0 0 12 1.5Zm-3.75 5.25a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0Z" clip-rule="evenodd" /> </svg>
+                <span class="text-xs mt-1">Achievements</span>
+            </button>
+            <button data-view="journal-view" class="nav-item flex-1 flex flex-col items-center justify-center p-2 telegram-hint hover:telegram-text transition-colors"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"><path d="M11.25 4.533A9.707 9.707 0 0 0 6 3a9.735 9.735 0 0 0-3.25.555.75.75 0 0 0-.5.707v14.522c0 .314.21.598.5.707A9.733 9.733 0 0 0 6 21a9.707 9.707 0 0 0 5.25-1.533.75.75 0 0 0 .5-.707V5.24a.75.75 0 0 0-.5-.707Z" /><path d="M12.75 4.533A9.707 9.707 0 0 1 18 3a9.735 9.735 0 0 1 3.25.555.75.75 0 0 1 .5.707v14.522c0 .314-.21.598-.5.707A9.733 9.733 0 0 1 18 21a9.707 9.707 0 0 1-5.25-1.533.75.75 0 0 1-.5-.707V5.24a.75.75 0 0 1 .5-.707Z" /></svg>
+                <span class="text-xs mt-1">Journal</span>
+            </button>
+        </nav>
+    </div>
 
-        // --- Global State & Constants ---
-        let currentUser = null;
-        let currentView = 'home-view';
-        let activeHuntSession = null; // Stores data for the hunt currently being played
-        const DB_PREFIX = 'communityQuest_';
-
-        // --- Utility Functions ---
-        function generateId() {
-            return Math.random().toString(36).substr(2, 9);
-        }
-
-        function showModal(message) {
-            document.getElementById('modalMessageText').textContent = message;
-            document.getElementById('messageModal').style.display = 'flex';
-            tg.HapticFeedback.notificationOccurred('success'); // Or 'error'/'warning' based on context
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
-
-        // --- LocalStorage CRUD Operations ---
-        // Hunts
-        function saveHuntData(hunt) {
-            const hunts = JSON.parse(localStorage.getItem(DB_PREFIX + 'hunts') || '[]');
-            const existingIndex = hunts.findIndex(h => h.id === hunt.id);
-            if (existingIndex > -1) {
-                hunts[existingIndex] = hunt;
-            } else {
-                hunts.push(hunt);
-            }
-            localStorage.setItem(DB_PREFIX + 'hunts', JSON.stringify(hunts));
-        }
-
-        function getAllHunts() {
-            return JSON.parse(localStorage.getItem(DB_PREFIX + 'hunts') || '[]');
-        }
-
-        function getHuntById(huntId) {
-            const hunts = getAllHunts();
-            return hunts.find(h => h.id === huntId);
-        }
-        
-        function deleteHuntFromStorage(huntId) {
-            let hunts = getAllHunts();
-            hunts = hunts.filter(h => h.id !== huntId);
-            localStorage.setItem(DB_PREFIX + 'hunts', JSON.stringify(hunts));
-            // Also delete related progress, teams etc. (simplified for now)
-            showModal('Hunt deleted successfully.');
-            loadMyHunts(); // Refresh relevant views
-            loadAvailableHunts();
-        }
-
-        // Player Progress
-        function savePlayerProgress(progress) {
-            const progresses = JSON.parse(localStorage.getItem(DB_PREFIX + 'progress') || '[]');
-            const existingIndex = progresses.findIndex(p => p.userId === progress.userId && p.huntId === progress.huntId);
-            if (existingIndex > -1) {
-                progresses[existingIndex] = progress;
-            } else {
-                progresses.push(progress);
-            }
-            localStorage.setItem(DB_PREFIX + 'progress', JSON.stringify(progresses));
-        }
-
-        function getPlayerProgress(userId, huntId) {
-            const progresses = JSON.parse(localStorage.getItem(DB_PREFIX + 'progress') || '[]');
-            return progresses.find(p => p.userId === userId && p.huntId === huntId);
-        }
-
-        // Teams
-        function saveTeamData(team) {
-            const teams = JSON.parse(localStorage.getItem(DB_PREFIX + 'teams') || '[]');
-            const existingIndex = teams.findIndex(t => t.id === team.id);
-            if (existingIndex > -1) {
-                teams[existingIndex] = team;
-            } else {
-                teams.push(team);
-            }
-            localStorage.setItem(DB_PREFIX + 'teams', JSON.stringify(teams));
-        }
-
-        function getAllTeams() {
-            return JSON.parse(localStorage.getItem(DB_PREFIX + 'teams') || '[]');
-        }
-
-        function getTeamById(teamId) {
-            return getAllTeams().find(t => t.id === teamId);
-        }
-        
-        // Sponsorship Interest
-        function saveSponsorshipInterest(interest) {
-            const interests = JSON.parse(localStorage.getItem(DB_PREFIX + 'sponsorshipInterests') || '[]');
-            interests.push(interest);
-            localStorage.setItem(DB_PREFIX + 'sponsorshipInterests', JSON.stringify(interests));
-        }
-
-        function getSponsorshipInterests() {
-            return JSON.parse(localStorage.getItem(DB_PREFIX + 'sponsorshipInterests') || '[]');
-        }
-
-        // --- View Management ---
-        function showView(viewId, params = {}) {
-            document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
-            document.getElementById(viewId).classList.add('active');
-            currentView = viewId;
-            tg.BackButton.isVisible = (viewId !== 'home-view');
+    <script type="module">
+        // --- App State and Configuration ---
+        const app = {
+            userId: null, 
+            tgUser: null, 
+            currentView: 'loading-view',
+            tgWebApp: window.Telegram.WebApp,
+            currentUserProfile: null, // Will be loaded from CloudStorage
+            userQuestProgress: {}, // { questId: { completedSteps: [0, 1], answers: {...} } } - CloudStorage
+            userJournalEntries: [], // [{id: 'uuid', title: '', content: '', date: ''}] - CloudStorage
             
-            // Update header title based on view
-            const viewTitles = {
-                'home-view': 'Community Quest',
-                'create-hunt-view': 'Create New Hunt',
-                'join-hunt-view': 'Join a Hunt',
-                'play-hunt-view': 'Playing Hunt',
-                'my-hunts-view': 'My Hunts & Progress',
-                'leaderboard-view': 'Leaderboards',
-                'teams-view': 'Manage Teams',
-                'business-portal-view': 'Business Sponsor Portal'
-            };
-            document.getElementById('header-title').textContent = viewTitles[viewId] || 'Community Quest';
-
-            // Specific view loading logic
-            if (viewId === 'create-hunt-view') {
-                document.getElementById('clues-container').innerHTML = ''; // Clear previous clues
-                addClueField('text'); // Add one text clue field by default
-            } else if (viewId === 'join-hunt-view') {
-                loadAvailableHunts();
-            } else if (viewId === 'my-hunts-view') {
-                loadMyHunts();
-            } else if (viewId === 'leaderboard-view') {
-                populateLeaderboardHuntSelect();
-                document.getElementById('leaderboard-content').innerHTML = '<p class="text-gray-500">Select a hunt to view its leaderboard.</p>';
-            } else if (viewId === 'teams-view') {
-                populateTeamHuntSelect();
-                loadMyTeams();
-            } else if (viewId === 'business-portal-view') {
-                loadSponsorshipInterests();
-            } else if (viewId === 'play-hunt-view' && params.huntId) {
-                startHunt(params.huntId);
-            }
-            window.scrollTo(0,0); // Scroll to top on view change
-        }
-
-        // --- Hunt Creation Logic ---
-        let clueCounter = 0;
-        function addClueField(type) {
-            clueCounter++;
-            const container = document.getElementById('clues-container');
-            const clueDiv = document.createElement('div');
-            clueDiv.className = 'p-3 border border-gray-200 rounded-md bg-gray-50 space-y-2';
-            clueDiv.innerHTML = `<h4 class="font-medium text-gray-700">Clue ${clueCounter} (${type})</h4>
-                                 <input type="hidden" name="clue-type-${clueCounter}" value="${type}">`;
+            availableInterests: ["Reading", "Hiking", "Cooking", "Gaming", "Movies", "Music", "Travel", "Art", "Sports", "Photography", "Coding", "Yoga"],
+            activeQuest: null, // Details of the currently viewed quest (from hardcoded QUEST_DEFINITIONS)
             
-            switch(type) {
-                case 'text':
-                    clueDiv.innerHTML += `
-                        <textarea name="clue-question-${clueCounter}" rows="2" placeholder="Clue Question/Text" class="w-full p-2 border rounded-md"></textarea>
-                        <input type="text" name="clue-answer-${clueCounter}" placeholder="Correct Answer" class="w-full p-2 border rounded-md">`;
-                    break;
-                case 'image':
-                    clueDiv.innerHTML += `
-                        <input type="text" name="clue-image-url-${clueCounter}" placeholder="Image URL (e.g., https://...)" class="w-full p-2 border rounded-md">
-                        <textarea name="clue-question-${clueCounter}" rows="2" placeholder="Question related to image" class="w-full p-2 border rounded-md"></textarea>
-                        <input type="text" name="clue-answer-${clueCounter}" placeholder="Correct Answer" class="w-full p-2 border rounded-md">`;
-                    break;
-                case 'qr':
-                    clueDiv.innerHTML += `
-                        <textarea name="clue-qr-info-${clueCounter}" rows="2" placeholder="Information to encode in QR / Expected QR scan result" class="w-full p-2 border rounded-md"></textarea>
-                        <p class="text-xs text-gray-500">Participants will scan a QR code. The text they get from the scan is the 'answer'.</p>`;
-                    // QR answer is the qr-info itself
-                    break;
-                case 'gps':
-                    clueDiv.innerHTML += `
-                        <textarea name="clue-gps-task-${clueCounter}" rows="2" placeholder="Task/Question at location" class="w-full p-2 border rounded-md"></textarea>
-                        <input type="text" name="clue-gps-lat-${clueCounter}" placeholder="Latitude (e.g., 34.0522)" class="w-full p-2 border rounded-md">
-                        <input type="text" name="clue-gps-lon-${clueCounter}" placeholder="Longitude (e.g., -118.2437)" class="w-full p-2 border rounded-md">
-                        <input type="text" name="clue-gps-answer-${clueCounter}" placeholder="Answer to task (if any, or 'reached' if just location)" class="w-full p-2 border rounded-md">
-                        <p class="text-xs text-gray-500">Participants must be near this location. The answer is for the task at the location.</p>`;
-                    break;
-            }
-            clueDiv.innerHTML += `<input type="number" name="clue-points-${clueCounter}" placeholder="Points for this clue" value="10" class="w-full p-2 border rounded-md mt-1">
-                                  <button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700 text-sm">Remove Clue</button>`;
-            container.appendChild(clueDiv);
-        }
-
-        function saveHunt() {
-            const huntName = document.getElementById('hunt-name').value.trim();
-            const huntDescription = document.getElementById('hunt-description').value.trim();
-            if (!huntName || !huntDescription) {
-                showModal('Please fill in hunt name and description.');
-                return;
-            }
-
-            const clues = [];
-            const clueElements = document.getElementById('clues-container').children;
-            for (let i = 0; i < clueElements.length; i++) {
-                const clueDiv = clueElements[i];
-                const clueIndex = i + 1; // To match the naming convention if needed, or use a data-attribute
-                // A more robust way would be to use data-attributes on inputs or querySelectorAll with specific names
-                // For simplicity, assuming order and using a generic approach.
-                const typeInput = clueDiv.querySelector(`input[name^="clue-type"]`);
-                if (!typeInput) continue; // Skip if somehow a malformed clue div exists
-                const type = typeInput.value;
+            // Hardcoded Quest Definitions
+            QUEST_DEFINITIONS: [
+                { 
+                    id: "quest1",
+                    title: "The Spark of Connection",
+                    description: "Embark on a journey to discover your communication style. This quest involves self-reflection and expressing yourself.",
+                    steps: [
+                        { type: "assessment", title: "Communication Quiz", details: "Answer a few questions about how you connect with others.", questions: [{ q: "When meeting someone new, you usually:", options: ["Listen more than talk", "Talk more than listen", "Balance both"] }, {q: "Your preferred way to resolve conflict is:", options:["Direct discussion", "Avoiding it", "Mediated talk"]}] },
+                        { type: "challenge_virtual", title: "Icebreaker Intro", details: "Craft a fun 3-sentence introduction about yourself. Imagine you're sharing it." },
+                        { type: "clue_reveal", title: "First Insight", clueText: "Authentic communication is key to building strong connections." }
+                    ],
+                    achievement: "Completed 'The Spark of Connection' and reflected on communication style."
+                },
+                { 
+                    id: "quest2",
+                    title: "The Local Explorer",
+                    description: "Explore your surroundings (even virtually) and find hidden gems. This quest is about observation and a sense of adventure.",
+                    steps: [
+                        { type: "challenge_local", title: "Cafe 'The Daily Grind' Code", businessName: "The Daily Grind", details: "Imagine you visited 'The Daily Grind' cafe. The special code word for LoveQuest users is displayed near the counter. What is it? (Or scan QR)", expectedCode: "COFFEELOVE", qrEnabled: true },
+                        { type: "assessment", title: "Adventure Preferences", details: "What kind of adventures excite you most?", questions: [{q: "Ideal weekend activity:", options:["Relaxing at home", "Exploring nature", "Trying a new restaurant/cafe", "Attending a social event"]}] },
+                        { type: "clue_reveal", title: "Partner Insight", clueText: "Shared experiences can bring people closer." }
+                    ],
+                    achievement: "Completed 'The Local Explorer' and embraced a spirit of adventure."
+                }
+            ],
+            
+            dom: { // DOM elements (same as before, but with new views)
+                headerTitle: document.getElementById('header-title'),
+                loadingView: document.getElementById('loading-view'),
+                profileView: document.getElementById('profile-view'),
+                profileForm: document.getElementById('profile-edit-form'),
+                profileAvatar: document.getElementById('profile-avatar'),
+                profileNameDisplay: document.getElementById('profile-name-display'),
+                profileTgUsernameDisplay: document.getElementById('profile-tg-username-display'),
+                profileAgeGenderDisplay: document.getElementById('profile-age-gender-display'),
+                profileBioDisplay: document.getElementById('profile-bio-display'),
+                profileInterestsDisplay: document.getElementById('profile-interests-display'),
+                profileUserIdDisplay: document.getElementById('profile-user-id-display'),
+                profileNameInput: document.getElementById('profile-name'),
+                profileAgeInput: document.getElementById('profile-age'),
+                profileGenderInput: document.getElementById('profile-gender'),
+                profileBioInput: document.getElementById('profile-bio'),
+                profileInterestsEdit: document.getElementById('profile-interests-edit'),
                 
-                const points = parseInt(clueDiv.querySelector(`input[name^="clue-points"]`).value) || 10;
-                let clueData = { type, points, id: generateId() };
+                adventureHubView: document.getElementById('adventure-hub-view'),
+                questsList: document.getElementById('quests-list'),
+                noQuestsMessage: document.getElementById('no-quests-message'),
 
-                switch(type) {
-                    case 'text':
-                        clueData.question = clueDiv.querySelector(`textarea[name^="clue-question"]`).value;
-                        clueData.answer = clueDiv.querySelector(`input[name^="clue-answer"]`).value.toLowerCase();
-                        break;
-                    case 'image':
-                        clueData.imageUrl = clueDiv.querySelector(`input[name^="clue-image-url"]`).value;
-                        clueData.question = clueDiv.querySelector(`textarea[name^="clue-question"]`).value;
-                        clueData.answer = clueDiv.querySelector(`input[name^="clue-answer"]`).value.toLowerCase();
-                        break;
-                    case 'qr':
-                        clueData.qrInfo = clueDiv.querySelector(`textarea[name^="clue-qr-info"]`).value;
-                        clueData.answer = clueData.qrInfo.toLowerCase(); // Answer is the QR content
-                        break;
-                    case 'gps':
-                        clueData.task = clueDiv.querySelector(`textarea[name^="clue-gps-task"]`).value;
-                        clueData.latitude = parseFloat(clueDiv.querySelector(`input[name^="clue-gps-lat"]`).value);
-                        clueData.longitude = parseFloat(clueDiv.querySelector(`input[name^="clue-gps-lon"]`).value);
-                        clueData.answer = clueDiv.querySelector(`input[name^="clue-gps-answer"]`).value.toLowerCase();
-                        if (isNaN(clueData.latitude) || isNaN(clueData.longitude)) {
-                            showModal(`Invalid GPS coordinates for clue ${clues.length + 1}.`);
-                            return;
+                questDetailView: document.getElementById('quest-detail-view'),
+                questTitle: document.getElementById('quest-title'),
+                questDescription: document.getElementById('quest-description'),
+                questStepsContainer: document.getElementById('quest-steps-container'),
+
+                achievementsView: document.getElementById('achievements-view'), // New
+                achievementsList: document.getElementById('achievements-list'), // New
+                noAchievementsMessage: document.getElementById('no-achievements-message'), // New
+                inviteFriendButton: document.getElementById('invite-friend-button'), // New
+
+                chatView: document.getElementById('chat-view'), // Placeholder
+                chatWithName: document.getElementById('chat-with-name'),
+                chatMessagesContainer: document.getElementById('chat-messages-container'),
+                chatMessageInput: document.getElementById('chat-message-input'),
+                sendChatMessageButton: document.getElementById('send-chat-message-button'),
+
+                journalView: document.getElementById('journal-view'), // New
+                journalEntriesList: document.getElementById('journal-entries-list'), // New
+                noJournalEntriesMessage: document.getElementById('no-journal-entries-message'), // New
+                createJournalEntryButton: document.getElementById('create-journal-entry-button'), // New
+                createJournalEntryForm: document.getElementById('create-journal-entry-form'), // New
+                journalEntryTitleInput: document.getElementById('journal-entry-title-input'), // New
+                journalEntryContentInput: document.getElementById('journal-entry-content-input'), // New
+                cancelJournalEntryButton: document.getElementById('cancel-journal-entry-button'), // New
+
+                bottomNav: document.getElementById('bottom-nav'),
+                modalContainer: document.getElementById('modal-container'),
+                modalContent: document.getElementById('modal-content'),
+                modalTitle: document.getElementById('modal-title'),
+                modalBody: document.getElementById('modal-body'),
+                modalCloseButton: document.getElementById('modal-close-button'),
+            },
+
+            async init() {
+                this.tgWebApp.ready();
+                this.tgWebApp.expand();
+                this.applyTelegramTheme();
+
+                if (this.tgWebApp.initDataUnsafe && this.tgWebApp.initDataUnsafe.user) {
+                    this.tgUser = this.tgWebApp.initDataUnsafe.user;
+                    this.userId = this.tgUser.id.toString();
+                    console.log("Telegram User:", this.tgUser);
+                    this.dom.profileUserIdDisplay.textContent = this.userId;
+                    if (this.tgUser.photo_url) this.dom.profileAvatar.src = this.tgUser.photo_url;
+                    if (this.tgUser.username) this.dom.profileTgUsernameDisplay.textContent = `@${this.tgUser.username}`;
+                } else {
+                    console.error("Telegram user data not available!");
+                    this.showError("Could not retrieve your Telegram profile. Please try launching from Telegram.");
+                    this.navigateTo('loading-view'); // Stay on loading or show specific error view
+                    this.dom.loadingView.innerHTML = `<p class="text-red-500 text-center p-6">Critical: Telegram user data missing. Please launch from Telegram.</p>`;
+                    return;
+                }
+                
+                this.setupEventListeners();
+                this.populateInterestCheckboxes();
+                await this.loadDataFromCloudStorage(); // Load profile, progress, journal
+
+                if (!this.currentUserProfile || !this.currentUserProfile.name) {
+                    this.navigateTo('profile-view');
+                    this.showProfileEditForm();
+                    this.tgWebApp.MainButton.setText("Save Profile").show().onClick(this.handleProfileSave);
+                } else {
+                   this.navigateTo('adventure-hub-view');
+                }
+            },
+            
+            // --- CloudStorage Helpers ---
+            saveToCloudStorage(key, value, callback) {
+                this.tgWebApp.CloudStorage.setItem(key, JSON.stringify(value), (error, success) => {
+                    if (error) {
+                        this.showError(`Cloud Save Error (${key}): ${error}`);
+                        if (callback) callback(error, null);
+                        return;
+                    }
+                    if (callback) callback(null, success);
+                });
+            },
+
+            getFromCloudStorage(keys, callback) {
+                this.tgWebApp.CloudStorage.getItems(keys, (error, data) => {
+                    if (error) {
+                        this.showError(`Cloud Load Error: ${error}`);
+                        if (callback) callback(error, null);
+                        return;
+                    }
+                    const parsedData = {};
+                    for (const key in data) {
+                        try {
+                            parsedData[key] = JSON.parse(data[key]);
+                        } catch (e) {
+                            console.warn(`Could not parse JSON for key ${key} from CloudStorage:`, data[key]);
+                            parsedData[key] = null; // Or some default
+                        }
+                    }
+                    if (callback) callback(null, parsedData);
+                });
+            },
+            
+            async loadDataFromCloudStorage() {
+                return new Promise((resolve) => {
+                    this.getFromCloudStorage(['userProfile', 'userQuestProgress', 'userJournalEntries'], (error, data) => {
+                        if (error) {
+                            this.showError("Failed to load your data from the cloud.");
+                            // Initialize with defaults if load fails
+                            this.currentUserProfile = this.currentUserProfile || this.getInitialProfile();
+                            this.userQuestProgress = {};
+                            this.userJournalEntries = [];
+                        } else {
+                            this.currentUserProfile = data.userProfile || this.getInitialProfile();
+                            this.userQuestProgress = data.userQuestProgress || {};
+                            this.userJournalEntries = data.userJournalEntries || [];
+                        }
+                        this.displayUserProfile();
+                        resolve();
+                    });
+                });
+            },
+
+            getInitialProfile() {
+                 return { 
+                    name: `${this.tgUser.first_name || ''} ${this.tgUser.last_name || ''}`.trim() || '',
+                    tgUsername: this.tgUser.username || '',
+                    tgPhotoUrl: this.tgUser.photo_url || '',
+                    age: '', gender: '', bio: '', interests: [] 
+                };
+            },
+
+            applyTelegramTheme() { /* ... same as before ... */ 
+                const themeParams = this.tgWebApp.themeParams;
+                document.documentElement.style.setProperty('--tg-theme-bg-color', themeParams.bg_color || '#ffffff');
+                document.documentElement.style.setProperty('--tg-theme-text-color', themeParams.text_color || '#000000');
+                document.documentElement.style.setProperty('--tg-theme-hint-color', themeParams.hint_color || '#999999');
+                document.documentElement.style.setProperty('--tg-theme-link-color', themeParams.link_color || '#2481cc');
+                document.documentElement.style.setProperty('--tg-theme-button-color', themeParams.button_color || '#2481cc');
+                document.documentElement.style.setProperty('--tg-theme-button-text-color', themeParams.button_text_color || '#ffffff');
+                document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', themeParams.secondary_bg_color || '#f0f0f0');
+                document.body.style.backgroundColor = themeParams.bg_color || '#ffffff';
+                document.body.style.color = themeParams.text_color || '#000000';
+            },
+
+            navigateTo(viewId, params = {}) {
+                console.log(`Navigating to ${viewId}`);
+                ['loading-view', 'profile-view', 'adventure-hub-view', 'quest-detail-view', 'achievements-view', 'chat-view', 'journal-view'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.classList.add('hidden');
+                });
+                const targetView = document.getElementById(viewId);
+                if (targetView) {
+                    targetView.classList.remove('hidden');
+                    this.currentView = viewId;
+                    this.updateHeaderAndMainButton(viewId, params);
+                    this.updateActiveNavItem(viewId);
+                    if(document.getElementById('main-content')) document.getElementById('main-content').scrollTop = 0;
+
+                    if (viewId === 'adventure-hub-view') this.loadQuestsDisplay();
+                    if (viewId === 'quest-detail-view' && params.questId) this.loadQuestDetail(params.questId);
+                    if (viewId === 'achievements-view') this.loadAchievements();
+                    if (viewId === 'journal-view') this.loadJournalEntries();
+                    if (viewId === 'chat-view') this.loadChatPlaceholder(); // Chat is just a placeholder
+                } else {
+                    console.error(`View ${viewId} not found!`);
+                }
+            },
+            
+            updateActiveNavItem(viewId) { /* ... same as before ... */ 
+                 this.dom.bottomNav.querySelectorAll('.nav-item').forEach(item => {
+                    item.classList.remove('active');
+                    if (item.dataset.view === viewId) {
+                        item.classList.add('active');
+                    }
+                });
+            },
+
+            updateHeaderAndMainButton(viewId, params = {}) { /* ... adapted for new views ... */ 
+                this.tgWebApp.BackButton.hide();
+                this.tgWebApp.MainButton.hide();
+                this.dom.headerTitle.textContent = "LoveQuest"; 
+
+                switch (viewId) {
+                    case 'profile-view':
+                        this.dom.headerTitle.textContent = "My Profile";
+                        if (this.dom.profileForm.classList.contains('hidden')) {
+                            this.tgWebApp.MainButton.setText("Edit Profile").show().onClick(this.showProfileEditForm);
+                        } else {
+                            this.tgWebApp.MainButton.setText("Save Profile").show().onClick(this.handleProfileSave);
+                            this.tgWebApp.BackButton.show().onClick(() => this.showProfileDisplay());
                         }
                         break;
+                    case 'adventure-hub-view':
+                        this.dom.headerTitle.textContent = "Adventures";
+                        break;
+                    case 'quest-detail-view':
+                        this.dom.headerTitle.textContent = params.questTitle || "Quest Details"; 
+                        this.tgWebApp.BackButton.show().onClick(() => this.navigateTo('adventure-hub-view'));
+                        // MainButton for quest steps handled in renderQuestSteps
+                        break;
+                    case 'achievements-view':
+                        this.dom.headerTitle.textContent = "My Achievements";
+                        break;
+                    case 'journal-view':
+                        this.dom.headerTitle.textContent = "My Journal";
+                         if (this.dom.createJournalEntryForm.classList.contains('hidden')) {
+                            this.tgWebApp.MainButton.setText("New Entry").show().onClick(() => {
+                                this.dom.createJournalEntryForm.classList.remove('hidden');
+                                this.tgWebApp.MainButton.setText("Save Entry").onClick(this.handleCreateJournalEntry);
+                                this.tgWebApp.BackButton.show().onClick(() => {
+                                    this.dom.createJournalEntryForm.classList.add('hidden');
+                                    this.updateHeaderAndMainButton('journal-view'); 
+                                });
+                            });
+                        } else { // Form is visible
+                             this.tgWebApp.MainButton.setText("Save Entry").show().onClick(this.handleCreateJournalEntry);
+                             this.tgWebApp.BackButton.show().onClick(() => {
+                                this.dom.createJournalEntryForm.classList.add('hidden');
+                                this.updateHeaderAndMainButton('journal-view'); 
+                            });
+                        }
+                        break;
+                    case 'chat-view': // Placeholder
+                        this.dom.headerTitle.textContent = "Chat";
+                        this.tgWebApp.BackButton.show().onClick(() => this.navigateTo('achievements-view')); // Or previous view
+                        break;
                 }
-                if ((type === 'text' || type === 'image' || type === 'gps') && (!clueData.answer)) {
-                     showModal(`Answer missing for clue ${clues.length + 1}.`); return;
+            },
+
+            displayUserProfile() { /* ... same as before, loads from this.currentUserProfile ... */ 
+                if (!this.currentUserProfile) this.currentUserProfile = this.getInitialProfile();
+                const profile = this.currentUserProfile;
+                
+                this.dom.profileNameDisplay.textContent = profile.name || "Your Name";
+                this.dom.profileAgeGenderDisplay.textContent = `${profile.age || 'Age'}, ${profile.gender || 'Gender'}`;
+                this.dom.profileBioDisplay.textContent = profile.bio || "No bio yet. Tell us about yourself!";
+                this.dom.profileTgUsernameDisplay.textContent = profile.tgUsername ? `@${profile.tgUsername}` : (this.tgUser.username ? `@${this.tgUser.username}` : '');
+                
+                const avatarUrl = profile.tgPhotoUrl || (this.tgUser ? this.tgUser.photo_url : null);
+                this.dom.profileAvatar.src = avatarUrl || `https://placehold.co/80x80/E2E8F0/A0AEC0?text=${(profile.name || 'Me').charAt(0)}`;
+
+                this.dom.profileInterestsDisplay.innerHTML = '';
+                if (profile.interests && profile.interests.length > 0) {
+                    profile.interests.forEach(interest => {
+                        const interestEl = document.createElement('span');
+                        interestEl.className = 'telegram-button-bg telegram-button-text px-3 py-1 rounded-full text-sm';
+                        interestEl.textContent = interest;
+                        this.dom.profileInterestsDisplay.appendChild(interestEl);
+                    });
+                } else {
+                    this.dom.profileInterestsDisplay.innerHTML = `<span class="telegram-hint text-sm">Add some interests!</span>`;
                 }
-                 if (type === 'qr' && !clueData.qrInfo) {
-                    showModal(`QR Information missing for clue ${clues.length + 1}.`); return;
-                }
-
-                clues.push(clueData);
-            }
-
-            if (clues.length === 0) {
-                showModal('Please add at least one clue to the hunt.');
-                return;
-            }
-
-            const newHunt = {
-                id: generateId(),
-                name: huntName,
-                description: huntDescription,
-                clues: clues,
-                createdBy: currentUser.id,
-                createdAt: new Date().toISOString()
-            };
-
-            saveHuntData(newHunt);
-            showModal('Hunt created successfully! Hunt ID: ' + newHunt.id);
-            document.getElementById('hunt-name').value = '';
-            document.getElementById('hunt-description').value = '';
-            document.getElementById('clues-container').innerHTML = '';
-            clueCounter = 0;
-            showView('home-view');
-        }
-
-        // --- Join Hunt & Play Logic ---
-        function loadAvailableHunts() {
-            const hunts = getAllHunts();
-            const listContainer = document.getElementById('available-hunts-list');
-            listContainer.innerHTML = ''; // Clear previous list
-            if (hunts.length === 0) {
-                listContainer.innerHTML = '<p class="text-gray-500">No public hunts available yet. Create one!</p>';
-                return;
-            }
-            hunts.forEach(hunt => {
-                const huntCard = document.createElement('div');
-                huntCard.className = 'p-3 bg-white border border-gray-200 rounded-md shadow-sm hover:shadow-md transition-shadow';
-                huntCard.innerHTML = `
-                    <h4 class="font-semibold text-blue-600">${hunt.name}</h4>
-                    <p class="text-sm text-gray-600">${hunt.description.substring(0,100)}...</p>
-                    <p class="text-xs text-gray-400">Clues: ${hunt.clues.length} | ID: ${hunt.id}</p>
-                    <button onclick="confirmJoinHunt('${hunt.id}')" class="mt-2 bg-green-500 text-white text-sm py-1 px-3 rounded-md hover:bg-green-600">Join This Hunt</button>
-                `;
-                listContainer.appendChild(huntCard);
-            });
-        }
-
-        function findAndJoinHunt() {
-            const huntId = document.getElementById('join-hunt-id').value.trim();
-            if (!huntId) {
-                showModal('Please enter a Hunt ID.');
-                return;
-            }
-            confirmJoinHunt(huntId);
-        }
-
-        function confirmJoinHunt(huntId) {
-            const hunt = getHuntById(huntId);
-            if (!hunt) {
-                showModal('Hunt with ID ' + huntId + ' not found.');
-                return;
-            }
-            // Check if already playing this hunt
-            let progress = getPlayerProgress(currentUser.id, huntId);
-            if (!progress) {
-                progress = {
-                    userId: currentUser.id,
-                    huntId: huntId,
-                    currentClueIndex: 0,
-                    score: 0,
-                    completedClues: new Array(hunt.clues.length).fill(false),
-                    startTime: new Date().toISOString(),
-                    completedTime: null
-                };
-                savePlayerProgress(progress);
-            }
-            showModal(`Joined hunt: ${hunt.name}! Starting now.`);
-            showView('play-hunt-view', { huntId: hunt.id });
-        }
-
-        function startHunt(huntId) {
-            const hunt = getHuntById(huntId);
-            if (!hunt) {
-                showModal('Error: Could not load hunt.');
-                showView('home-view');
-                return;
-            }
-            let progress = getPlayerProgress(currentUser.id, huntId);
-            if (!progress) { // Should not happen if confirmJoinHunt was called
-                progress = { userId: currentUser.id, huntId, currentClueIndex: 0, score: 0, completedClues: new Array(hunt.clues.length).fill(false), startTime: new Date().toISOString(), completedTime: null };
-                savePlayerProgress(progress);
-            }
-
-            activeHuntSession = {
-                hunt: hunt,
-                progress: progress
-            };
-
-            document.getElementById('play-hunt-name').textContent = `Playing: ${hunt.name}`;
-            document.getElementById('play-hunt-description').textContent = hunt.description;
-            displayCurrentClue();
-        }
-
-        function displayCurrentClue() {
-            if (!activeHuntSession) return;
-
-            const { hunt, progress } = activeHuntSession;
-            const clueContainer = document.getElementById('current-clue-container');
-            const answerContainer = document.getElementById('answer-submission-container');
-            clueContainer.innerHTML = '';
-            answerContainer.innerHTML = '';
-            
-            document.getElementById('hunt-progress').textContent = `Clue ${progress.currentClueIndex + 1} of ${hunt.clues.length} | Score: ${progress.score}`;
-
-
-            if (progress.currentClueIndex >= hunt.clues.length) {
-                clueContainer.innerHTML = `<h3 class="text-xl font-semibold text-green-600">Congratulations!</h3>
-                                           <p>You've completed the hunt "${hunt.name}"!</p>
-                                           <p>Your final score: ${progress.score}</p>`;
-                if (!progress.completedTime) {
-                    progress.completedTime = new Date().toISOString();
-                    savePlayerProgress(progress);
-                }
-                tg.MainButton.setText("Back to Home").show().onClick(() => {
-                    tg.MainButton.hide();
-                    showView('home-view');
+                
+                this.dom.profileNameInput.value = profile.name || '';
+                this.dom.profileAgeInput.value = profile.age || '';
+                this.dom.profileGenderInput.value = profile.gender || 'Prefer not to say';
+                this.dom.profileBioInput.value = profile.bio || '';
+                
+                this.dom.profileInterestsEdit.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = profile.interests && profile.interests.includes(checkbox.value);
                 });
-                return;
-            }
+            },
 
-            const clue = hunt.clues[progress.currentClueIndex];
-            let clueHtml = `<h3 class="text-lg font-medium mb-2">Clue ${progress.currentClueIndex + 1}: ${clue.type.toUpperCase()} (${clue.points} pts)</h3>`;
-            let answerInputHtml = '';
+            showProfileEditForm() { /* ... same as before ... */ 
+                this.dom.profileView.querySelectorAll('.telegram-secondary-bg:not(#profile-edit-form)').forEach(el => el.classList.add('hidden'));
+                this.dom.profileForm.classList.remove('hidden');
+                if (!this.currentUserProfile.name && this.tgUser) { 
+                    this.dom.profileNameInput.value = `${this.tgUser.first_name || ''} ${this.tgUser.last_name || ''}`.trim();
+                } else {
+                    this.dom.profileNameInput.value = this.currentUserProfile.name || '';
+                }
+                this.dom.profileAgeInput.value = this.currentUserProfile.age || '';
+                this.dom.profileGenderInput.value = this.currentUserProfile.gender || 'Prefer not to say';
+                this.dom.profileBioInput.value = this.currentUserProfile.bio || '';
+                this.dom.profileInterestsEdit.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = this.currentUserProfile.interests && this.currentUserProfile.interests.includes(checkbox.value);
+                });
+                this.updateHeaderAndMainButton('profile-view');
+                this.tgWebApp.HapticFeedback.impactOccurred('light');
+            },
+            showProfileDisplay() { /* ... same as before ... */ 
+                this.dom.profileForm.classList.add('hidden');
+                this.dom.profileView.querySelectorAll('.telegram-secondary-bg:not(#profile-edit-form)').forEach(el => el.classList.remove('hidden'));
+                this.updateHeaderAndMainButton('profile-view');
+            },
 
-            switch(clue.type) {
-                case 'text':
-                    clueHtml += `<p class="text-gray-700">${clue.question}</p>`;
-                    answerInputHtml = `<input type="text" id="text-answer" placeholder="Your answer" class="w-full p-2 border rounded-md">`;
-                    break;
-                case 'image':
-                    clueHtml += `<img src="${clue.imageUrl}" alt="Clue Image" class="max-w-full h-auto rounded-md my-2 shadow" onerror="this.onerror=null;this.src='https://placehold.co/400x300/cccccc/ffffff?text=Image+Not+Found';">
-                                 <p class="text-gray-700 mt-2">${clue.question}</p>`;
-                    answerInputHtml = `<input type="text" id="image-answer" placeholder="Your answer" class="w-full p-2 border rounded-md">`;
-                    break;
-                case 'qr':
-                    clueHtml += `<p class="text-gray-700">Scan the QR code related to this clue. Enter the text you get from the scan below.</p>
-                                 <p class="text-sm text-gray-500">Hint: The QR might be physically placed or provided by the hunt organizer.</p>`;
-                    answerInputHtml = `<input type="text" id="qr-answer" placeholder="Text from QR Scan" class="w-full p-2 border rounded-md">`;
-                    tg.MainButton.setText("Use QR Scanner (External)").show().onClick(() => {
-                        tg.showScanQrPopup({text: "Scan QR for clue"}, (text) => {
-                           if(text) {
-                               document.getElementById('qr-answer').value = text;
-                               tg.closeScanQrPopup();
-                               submitAnswer(); // auto-submit after scan
-                           }
-                           return true; // return true to close scanner
+            handleProfileSave: async () => { /* ... saves to CloudStorage ... */ 
+                app.tgWebApp.MainButton.showProgress();
+                const name = app.dom.profileNameInput.value.trim();
+                const age = app.dom.profileAgeInput.value;
+                const gender = app.dom.profileGenderInput.value;
+                const bio = app.dom.profileBioInput.value.trim();
+                const selectedInterests = Array.from(app.dom.profileInterestsEdit.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+
+                if (!name) { app.showError("Display Name is required."); app.tgWebApp.MainButton.hideProgress(); return; }
+                if (selectedInterests.length > 5) { app.showError("Please select up to 5 interests."); app.tgWebApp.MainButton.hideProgress(); return; }
+
+                const profileData = {
+                    name,
+                    age: parseInt(age) || null,
+                    gender,
+                    bio,
+                    interests: selectedInterests,
+                    tgUsername: app.tgUser.username || '', 
+                    tgPhotoUrl: app.tgUser.photo_url || '', 
+                    updatedAt: new Date().toISOString() // Simple timestamp
+                };
+                
+                app.saveToCloudStorage('userProfile', profileData, (error, success) => {
+                    app.tgWebApp.MainButton.hideProgress();
+                    if (error) return; // showError already called in helper
+                    app.currentUserProfile = profileData; 
+                    app.displayUserProfile();
+                    app.showProfileDisplay();
+                    app.tgWebApp.HapticFeedback.notificationOccurred('success');
+                    app.showSuccess("Profile saved!");
+                });
+            },
+
+            populateInterestCheckboxes() { /* ... same as before ... */ 
+                this.dom.profileInterestsEdit.innerHTML = '';
+                this.availableInterests.forEach(interest => {
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center';
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = `interest-${interest.toLowerCase().replace(' ', '-')}`;
+                    checkbox.value = interest;
+                    checkbox.className = 'h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-2';
+                    const label = document.createElement('label');
+                    label.htmlFor = checkbox.id;
+                    label.textContent = interest;
+                    label.className = 'text-sm telegram-text';
+                    div.appendChild(checkbox);
+                    div.appendChild(label);
+                    this.dom.profileInterestsEdit.appendChild(div);
+                });
+            },
+
+            loadQuestsDisplay() { // Renamed from loadQuests
+                this.dom.questsList.innerHTML = ''; 
+                this.dom.noQuestsMessage.classList.add('hidden');
+                if (this.QUEST_DEFINITIONS.length === 0) {
+                    this.dom.noQuestsMessage.classList.remove('hidden');
+                    return;
+                }
+                this.QUEST_DEFINITIONS.forEach(quest => this.renderQuestCard(quest));
+            },
+
+            renderQuestCard(quest) { /* ... same as before ... */ 
+                const card = document.createElement('div');
+                card.className = 'quest-card telegram-secondary-bg p-4 rounded-lg shadow cursor-pointer';
+                card.innerHTML = `
+                    <h3 class="text-lg font-semibold telegram-text mb-1">${quest.title}</h3>
+                    <p class="telegram-hint text-sm mb-3">${quest.description.substring(0, 100)}${quest.description.length > 100 ? '...' : ''}</p>
+                    <button class="start-quest-button telegram-button-bg telegram-button-text text-sm font-medium py-2 px-3 rounded-md hover:opacity-90 w-full">Start Adventure</button>
+                `;
+                card.querySelector('.start-quest-button').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.tgWebApp.showConfirm(`Start the adventure "${quest.title}"?`, (confirmed) => {
+                        if (confirmed) {
+                            this.navigateTo('quest-detail-view', { questId: quest.id, questTitle: quest.title });
+                        }
+                    });
+                });
+                card.addEventListener('click', () => { 
+                     this.tgWebApp.showConfirm(`Start the adventure "${quest.title}"?`, (confirmed) => {
+                        if (confirmed) {
+                            this.navigateTo('quest-detail-view', { questId: quest.id, questTitle: quest.title });
+                        }
+                    });
+                });
+                this.dom.questsList.appendChild(card);
+            },
+
+            loadQuestDetail(questId) {
+                this.activeQuest = this.QUEST_DEFINITIONS.find(q => q.id === questId);
+                if (this.activeQuest) {
+                    this.dom.questTitle.textContent = this.activeQuest.title;
+                    this.dom.questDescription.textContent = this.activeQuest.description;
+                    this.updateHeaderAndMainButton('quest-detail-view', { questTitle: this.activeQuest.title });
+                    this.renderQuestSteps();
+                } else {
+                    this.showError("Quest not found.");
+                    this.navigateTo('adventure-hub-view');
+                }
+            },
+
+            renderQuestSteps() { /* ... adapted for userQuestProgress ... */
+                this.dom.questStepsContainer.innerHTML = '';
+                if (!this.activeQuest || !this.activeQuest.steps || this.activeQuest.steps.length === 0) {
+                    this.dom.questStepsContainer.innerHTML = `<p class="telegram-hint">No steps defined for this quest.</p>`;
+                    return;
+                }
+
+                const questProgress = this.userQuestProgress[this.activeQuest.id] || { completedSteps: [], answers: {} };
+
+                this.activeQuest.steps.forEach((step, index) => {
+                    const isCompleted = questProgress.completedSteps.includes(index);
+                    const stepEl = document.createElement('div');
+                    stepEl.className = `telegram-secondary-bg p-4 rounded-lg shadow ${isCompleted ? 'opacity-70' : ''}`;
+                    let stepContent = `<h4 class="font-semibold telegram-text mb-1">${index + 1}. ${step.title} ${isCompleted ? '<span class="text-green-500 text-xs ml-2">(Completed)</span>' : ''}</h4>
+                                       <p class="telegram-hint text-sm mb-2">${step.details}</p>`;
+                    
+                    if (!isCompleted) {
+                        switch(step.type) {
+                            case 'assessment':
+                                stepContent += `<button data-step-index="${index}" class="assessment-button telegram-link font-medium text-sm">Take Assessment</button>`;
+                                break;
+                            case 'challenge_virtual':
+                                stepContent += `<textarea data-step-index="${index}" class="virtual-challenge-input mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 telegram-bg telegram-text" rows="3" placeholder="Your response..."></textarea>
+                                                <button data-step-index="${index}" class="submit-challenge-button telegram-button-bg telegram-button-text text-sm font-medium py-1 px-3 rounded-md hover:opacity-90 mt-2">Submit</button>`;
+                                break;
+                            case 'challenge_local':
+                                 stepContent += `<p class="text-sm telegram-hint my-1">Visit: <strong>${step.businessName || 'the designated location'}</strong></p>`;
+                                 if (step.qrEnabled) {
+                                     stepContent += `<button data-step-index="${index}" class="scan-qr-button telegram-button-bg telegram-button-text text-sm font-medium py-1 px-3 rounded-md hover:opacity-90 mt-2">Scan QR Code</button>`;
+                                 }
+                                 stepContent += `<input type="text" data-step-index="${index}" class="local-challenge-code mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 telegram-bg telegram-text" placeholder="Enter code found (if no QR)">
+                                                 <button data-step-index="${index}" class="submit-code-button telegram-button-bg telegram-button-text text-sm font-medium py-1 px-3 rounded-md hover:opacity-90 mt-2">Verify Code</button>`;
+                                break;
+                            case 'clue_reveal': // Clues are revealed upon completing a prior step or immediately if no condition
+                                stepContent += `<p class="italic telegram-text p-2 bg-yellow-100 text-yellow-700 rounded">Clue: ${step.clueText || "A new clue awaits!"}</p>
+                                                <button data-step-index="${index}" class="mark-clue-read-button telegram-link font-medium text-sm mt-1">Mark as Read</button>`;
+                                break;
+                        }
+                    } else if (step.type === 'clue_reveal') { // Show clue if completed
+                         stepContent += `<p class="italic telegram-text p-2 bg-yellow-100 text-yellow-700 rounded">Clue: ${step.clueText || "A new clue awaits!"}</p>`;
+                    }
+                    stepEl.innerHTML = stepContent;
+                    this.dom.questStepsContainer.appendChild(stepEl);
+                });
+                this.attachQuestStepListeners();
+
+                const allStepsCompleted = questProgress.completedSteps.length === this.activeQuest.steps.length;
+                if (allStepsCompleted) {
+                    this.tgWebApp.MainButton.setText("Quest Completed!").setParams({is_active: false}).show();
+                } else {
+                     this.tgWebApp.MainButton.setText("Complete Next Step").show().onClick(() => {
+                        // This is a generic button, specific step actions are better
+                        this.showError("Please interact with the specific step buttons.");
+                    });
+                }
+            },
+
+            markStepAsComplete(questId, stepIndex, answerData = null) {
+                if (!this.userQuestProgress[questId]) {
+                    this.userQuestProgress[questId] = { completedSteps: [], answers: {} };
+                }
+                if (!this.userQuestProgress[questId].completedSteps.includes(stepIndex)) {
+                    this.userQuestProgress[questId].completedSteps.push(stepIndex);
+                }
+                if (answerData) {
+                    this.userQuestProgress[questId].answers[stepIndex] = answerData;
+                }
+                this.saveToCloudStorage('userQuestProgress', this.userQuestProgress, (err) => {
+                    if (!err) {
+                        this.showSuccess("Step completed!");
+                        this.renderQuestSteps(); // Re-render to show completion
+                    }
+                });
+            },
+            
+            attachQuestStepListeners() { /* ... adapted for markStepAsComplete ... */
+                this.dom.questStepsContainer.querySelectorAll('.assessment-button').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const stepIndex = parseInt(e.target.dataset.stepIndex);
+                        const step = this.activeQuest.steps[stepIndex];
+                        this.showAssessmentModal(step, stepIndex);
+                    });
+                });
+                 this.dom.questStepsContainer.querySelectorAll('.submit-challenge-button').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const stepIndex = parseInt(e.target.dataset.stepIndex);
+                        const input = this.dom.questStepsContainer.querySelector(`.virtual-challenge-input[data-step-index="${stepIndex}"]`);
+                        if (input.value.trim()) {
+                            this.markStepAsComplete(this.activeQuest.id, stepIndex, { response: input.value.trim() });
+                            input.disabled = true; button.disabled = true; button.textContent = "Submitted";
+                        } else {
+                            this.showError("Please provide a response.");
+                        }
+                    });
+                });
+                this.dom.questStepsContainer.querySelectorAll('.scan-qr-button').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const stepIndex = parseInt(e.target.dataset.stepIndex);
+                        const step = this.activeQuest.steps[stepIndex];
+                        this.tgWebApp.showScanQrPopup({text: `Scan QR at ${step.businessName || 'location'}`}, (scannedText) => {
+                            if (scannedText && scannedText.trim().toUpperCase() === step.expectedCode.toUpperCase()) {
+                                this.markStepAsComplete(this.activeQuest.id, stepIndex, { qrScanned: scannedText });
+                            } else if (scannedText) {
+                                this.showError("Incorrect QR Code.");
+                            }
+                            return true; 
                         });
                     });
-                    break;
-                case 'gps':
-                    clueHtml += `<p class="text-gray-700">Go to the specified GPS location. Once there, answer the task: ${clue.task}</p>
-                                 <p class="text-sm text-gray-500">Target: Lat ${clue.latitude.toFixed(4)}, Lon ${clue.longitude.toFixed(4)}</p>
-                                 <button onclick="checkGPSLocation()" class="my-2 bg-blue-500 text-white py-1 px-3 rounded-md text-sm">Check My Location</button>
-                                 <p id="gps-status" class="text-xs"></p>`;
-                    answerInputHtml = `<input type="text" id="gps-answer" placeholder="Answer to task at location" class="w-full p-2 border rounded-md">`;
-                    break;
-            }
-            clueContainer.innerHTML = clueHtml;
-            answerContainer.innerHTML = answerInputHtml;
-            
-            if (clue.type !== 'qr') { // QR uses its own main button logic
-                 tg.MainButton.setText("Submit Answer").show().onClick(submitAnswer);
-            } else if (!tg.isVersionAtLeast('6.4')) { // Fallback for older Telegram versions for QR
-                clueContainer.innerHTML += `<p class="text-red-500 text-sm">Your Telegram version doesn't support in-app QR scanning. Please use an external scanner.</p>`;
-                tg.MainButton.setText("Submit QR Text").show().onClick(submitAnswer);
-            }
-        }
-        
-        function getDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // Radius of the earth in km
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a =
-                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c * 1000; // Distance in meters
-        }
-
-        function checkGPSLocation() {
-            const { hunt, progress } = activeHuntSession;
-            const clue = hunt.clues[progress.currentClueIndex];
-            if (clue.type !== 'gps') return;
-
-            const gpsStatusEl = document.getElementById('gps-status');
-            gpsStatusEl.textContent = 'Checking location...';
-
-            if (!navigator.geolocation) {
-                gpsStatusEl.textContent = 'Geolocation is not supported by your browser.';
-                tg.HapticFeedback.notificationOccurred('error');
-                return;
-            }
-
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const userLat = position.coords.latitude;
-                    const userLon = position.coords.longitude;
-                    const distance = getDistance(userLat, userLon, clue.latitude, clue.longitude);
-                    
-                    gpsStatusEl.textContent = `Your location: Lat ${userLat.toFixed(4)}, Lon ${userLon.toFixed(4)}. Distance to target: ${distance.toFixed(0)}m.`;
-                    if (distance < 50) { // 50 meters tolerance
-                        gpsStatusEl.innerHTML += '<br><span class="text-green-600 font-semibold">You are at the location!</span>';
-                        tg.HapticFeedback.notificationOccurred('success');
-                        // Optionally auto-submit if answer is just 'reached' or enable submit button
-                    } else {
-                        gpsStatusEl.innerHTML += '<br><span class="text-red-600">Not close enough to the target location.</span>';
-                        tg.HapticFeedback.notificationOccurred('warning');
-                    }
-                },
-                (error) => {
-                    gpsStatusEl.textContent = `Error getting location: ${error.message}`;
-                    tg.HapticFeedback.notificationOccurred('error');
-                },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-            );
-        }
-
-
-        function submitAnswer() {
-            if (!activeHuntSession) return;
-            const { hunt, progress } = activeHuntSession;
-            const clue = hunt.clues[progress.currentClueIndex];
-            let userAnswer = '';
-
-            switch(clue.type) {
-                case 'text': userAnswer = document.getElementById('text-answer').value.trim().toLowerCase(); break;
-                case 'image': userAnswer = document.getElementById('image-answer').value.trim().toLowerCase(); break;
-                case 'qr': userAnswer = document.getElementById('qr-answer').value.trim().toLowerCase(); break;
-                case 'gps': userAnswer = document.getElementById('gps-answer').value.trim().toLowerCase(); break;
-            }
-
-            if (!userAnswer) {
-                showModal('Please provide an answer.');
-                return;
-            }
-            
-            let isCorrect = false;
-            if (clue.type === 'gps') {
-                // For GPS, first check location then answer. For simplicity, we'll assume location check was done.
-                // A more robust solution would gate answer submission until location is verified.
-                // Here, we just check the answer to the task.
-                isCorrect = (userAnswer === clue.answer);
-                if (isCorrect) {
-                    // Re-verify location or trust previous check. For now, trust.
-                     if (navigator.geolocation) {
-                        navigator.geolocation.getCurrentPosition(
-                            (position) => {
-                                const distance = getDistance(position.coords.latitude, position.coords.longitude, clue.latitude, clue.longitude);
-                                if (distance > 100) { // Stricter check on submit
-                                    showModal(`You submitted the correct answer for the GPS task, but you are too far (${distance.toFixed(0)}m) from the location. Get closer!`);
-                                    tg.HapticFeedback.notificationOccurred('error');
-                                    return; // Don't proceed if not at location
-                                }
-                                // If here, location is fine and answer is correct
-                                processAnswerResult(true, clue);
-                            },
-                            () => {
-                                showModal('Could not verify your current location for GPS clue. Please ensure location services are enabled and try again.');
-                                tg.HapticFeedback.notificationOccurred('error');
-                            }, { enableHighAccuracy: true }
-                        );
-                        return; // Async, so return and wait for callback
-                    } else {
-                         showModal('Location services needed for GPS clue.'); return;
-                    }
-                } else {
-                     processAnswerResult(false, clue); // Answer to task is wrong
-                }
-
-            } else {
-                 isCorrect = (userAnswer === clue.answer);
-                 processAnswerResult(isCorrect, clue);
-            }
-        }
-
-        function processAnswerResult(isCorrect, clue) {
-            const { progress } = activeHuntSession;
-            if (isCorrect) {
-                showModal(`Correct! You earned ${clue.points} points.`);
-                tg.HapticFeedback.notificationOccurred('success');
-                progress.score += clue.points;
-                progress.completedClues[progress.currentClueIndex] = true;
-                progress.currentClueIndex++;
-                savePlayerProgress(progress);
-                displayCurrentClue();
-            } else {
-                showModal('Incorrect answer. Try again!');
-                tg.HapticFeedback.notificationOccurred('error');
-            }
-        }
-
-        // --- My Hunts & Progress View Logic ---
-        function loadMyHunts() {
-            const createdList = document.getElementById('my-created-hunts-list');
-            const activeList = document.getElementById('my-active-hunts-list');
-            createdList.innerHTML = '';
-            activeList.innerHTML = '';
-
-            const allHunts = getAllHunts();
-            const myCreatedHunts = allHunts.filter(h => h.createdBy === currentUser.id);
-            
-            if (myCreatedHunts.length === 0) {
-                createdList.innerHTML = '<p class="text-gray-500">You haven\'t created any hunts yet.</p>';
-            } else {
-                myCreatedHunts.forEach(hunt => {
-                    const item = document.createElement('div');
-                    item.className = 'p-3 bg-gray-50 rounded-md shadow-sm';
-                    item.innerHTML = `<h4 class="font-semibold">${hunt.name} (ID: ${hunt.id})</h4>
-                                      <p class="text-xs text-gray-500">Clues: ${hunt.clues.length}</p>
-                                      <button onclick="showView('play-hunt-view', { huntId: '${hunt.id}' })" class="text-blue-500 text-sm mr-2">Play/View</button>
-                                      <button onclick="deleteHuntFromStorage('${hunt.id}')" class="text-red-500 text-sm">Delete</button>`;
-                    createdList.appendChild(item);
                 });
-            }
+                this.dom.questStepsContainer.querySelectorAll('.submit-code-button').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const stepIndex = parseInt(e.target.dataset.stepIndex);
+                        const input = this.dom.questStepsContainer.querySelector(`.local-challenge-code[data-step-index="${stepIndex}"]`);
+                        const step = this.activeQuest.steps[stepIndex];
+                        if (input.value.trim().toUpperCase() === step.expectedCode.toUpperCase()) {
+                             this.markStepAsComplete(this.activeQuest.id, stepIndex, { codeEntered: input.value.trim() });
+                        } else {
+                            this.showError("Incorrect code.");
+                        }
+                    });
+                });
+                this.dom.questStepsContainer.querySelectorAll('.mark-clue-read-button').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const stepIndex = parseInt(e.target.dataset.stepIndex);
+                        this.markStepAsComplete(this.activeQuest.id, stepIndex);
+                    });
+                });
+            },
 
-            const allProgress = JSON.parse(localStorage.getItem(DB_PREFIX + 'progress') || '[]');
-            const myActiveProgress = allProgress.filter(p => p.userId === currentUser.id && !p.completedTime);
+            showAssessmentModal(step, stepIndex) { /* ... adapted for markStepAsComplete ... */
+                let modalHtml = `<p class="telegram-hint mb-4">${step.details}</p>`;
+                step.questions.forEach((q, qi) => {
+                    modalHtml += `<div class="mb-3">
+                                    <p class="font-medium telegram-text">${qi + 1}. ${q.q}</p>
+                                    <div class="mt-1 space-y-1">`;
+                    q.options.forEach((opt, opti) => {
+                        modalHtml += `<div>
+                                        <input type="radio" name="q${qi}" id="q${qi}o${opti}" value="${opt}" class="mr-2">
+                                        <label for="q${qi}o${opti}" class="telegram-text">${opt}</label>
+                                      </div>`;
+                    });
+                    modalHtml += `</div></div>`;
+                });
+                modalHtml += `<button id="submit-assessment-button" class="w-full telegram-button-bg telegram-button-text font-semibold py-2 px-4 rounded-lg shadow mt-4">Submit Answers</button>`;
+                
+                this.dom.modalTitle.textContent = step.title;
+                this.dom.modalBody.innerHTML = modalHtml;
+                this.dom.modalContainer.classList.remove('hidden');
+                this.dom.modalContainer.classList.add('flex');
 
-            if (myActiveProgress.length === 0) {
-                activeList.innerHTML = '<p class="text-gray-500">You are not currently playing any hunts.</p>';
-            } else {
-                myActiveProgress.forEach(prog => {
-                    const hunt = getHuntById(prog.huntId);
-                    if (hunt) {
-                        const item = document.createElement('div');
-                        item.className = 'p-3 bg-gray-50 rounded-md shadow-sm';
-                        item.innerHTML = `<h4 class="font-semibold">${hunt.name}</h4>
-                                          <p class="text-xs text-gray-500">Progress: Clue ${prog.currentClueIndex + 1}/${hunt.clues.length} | Score: ${prog.score}</p>
-                                          <button onclick="showView('play-hunt-view', { huntId: '${hunt.id}' })" class="text-green-500 text-sm">Continue Hunt</button>`;
-                        activeList.appendChild(item);
+                document.getElementById('submit-assessment-button').onclick = () => {
+                    const answers = {};
+                    let allAnswered = true;
+                    step.questions.forEach((q, qi) => {
+                        const selectedOption = this.dom.modalBody.querySelector(`input[name="q${qi}"]:checked`);
+                        if (selectedOption) {
+                            answers[`q${qi}`] = selectedOption.value;
+                        } else {
+                            allAnswered = false;
+                        }
+                    });
+
+                    if (!allAnswered) {
+                        this.showError("Please answer all questions.");
+                        return;
+                    }
+                    this.markStepAsComplete(this.activeQuest.id, stepIndex, answers);
+                    this.closeModal();
+                };
+            },
+
+            // --- Achievements View (Replaces Matches) ---
+            loadAchievements() {
+                this.dom.achievementsList.innerHTML = '';
+                this.dom.noAchievementsMessage.classList.add('hidden');
+                let achievementsCount = 0;
+
+                this.QUEST_DEFINITIONS.forEach(quest => {
+                    const progress = this.userQuestProgress[quest.id];
+                    if (progress && progress.completedSteps.length === quest.steps.length) {
+                        const achievementEl = document.createElement('div');
+                        achievementEl.className = 'telegram-secondary-bg p-4 rounded-lg shadow';
+                        achievementEl.innerHTML = `
+                            <h3 class="font-semibold telegram-text">${quest.title} Completed!</h3>
+                            <p class="text-sm telegram-hint">${quest.achievement || 'Great job on completing this adventure!'}</p>
+                        `;
+                        this.dom.achievementsList.appendChild(achievementEl);
+                        achievementsCount++;
                     }
                 });
-            }
-        }
 
-        // --- Leaderboard Logic ---
-        function populateLeaderboardHuntSelect() {
-            const hunts = getAllHunts();
-            const select = document.getElementById('leaderboard-hunt-select');
-            select.innerHTML = '<option value="">Select a Hunt</option>'; // Reset
-            hunts.forEach(hunt => {
-                const option = document.createElement('option');
-                option.value = hunt.id;
-                option.textContent = hunt.name;
-                select.appendChild(option);
-            });
-            select.onchange = displayLeaderboard;
-        }
-
-        function displayLeaderboard() {
-            const huntId = document.getElementById('leaderboard-hunt-select').value;
-            const container = document.getElementById('leaderboard-content');
-            container.innerHTML = '';
-
-            if (!huntId) {
-                container.innerHTML = '<p class="text-gray-500">Select a hunt to view its leaderboard.</p>';
-                return;
-            }
-
-            const hunt = getHuntById(huntId);
-            if (!hunt) {
-                 container.innerHTML = '<p class="text-red-500">Error: Hunt not found.</p>';
-                 return;
-            }
-
-            const allProgress = JSON.parse(localStorage.getItem(DB_PREFIX + 'progress') || '[]');
-            const huntProgress = allProgress.filter(p => p.huntId === huntId && p.completedTime); // Only show completed
-            
-            // Also consider players currently playing for a live leaderboard
-            const activePlayersProgress = allProgress.filter(p => p.huntId === huntId && !p.completedTime);
-            const combinedProgress = [...huntProgress, ...activePlayersProgress];
-
-
-            if (combinedProgress.length === 0) {
-                container.innerHTML = '<p class="text-gray-500">No one has completed or is playing this hunt yet.</p>';
-                return;
-            }
-
-            // Sort by score (desc), then by completion time (asc for completed, or start time for active)
-            combinedProgress.sort((a, b) => {
-                if (b.score !== a.score) {
-                    return b.score - a.score;
+                if (achievementsCount === 0) {
+                    this.dom.noAchievementsMessage.classList.remove('hidden');
                 }
-                // If scores are equal, completed hunts come before active ones
-                if (a.completedTime && !b.completedTime) return -1;
-                if (!a.completedTime && b.completedTime) return 1;
-                // If both completed, sort by time taken
-                if (a.completedTime && b.completedTime) {
-                    const timeA = new Date(a.completedTime).getTime() - new Date(a.startTime).getTime();
-                    const timeB = new Date(b.completedTime).getTime() - new Date(b.startTime).getTime();
-                    return timeA - timeB;
-                }
-                // If both active, sort by who has progressed further (more clues completed)
-                // This is implicitly handled by score, but could be explicit if clues have same points
-                // Or sort by start time for active players if score is same
-                return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
-            });
+            },
 
-            const table = document.createElement('table');
-            table.className = 'w-full text-sm text-left text-gray-500';
-            table.innerHTML = `
-                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                    <tr>
-                        <th scope="col" class="px-6 py-3">Rank</th>
-                        <th scope="col" class="px-6 py-3">Player (ID)</th>
-                        <th scope="col" class="px-6 py-3">Score</th>
-                        <th scope="col" class="px-6 py-3">Status</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>`;
-            
-            const tbody = table.querySelector('tbody');
-            combinedProgress.forEach((p, index) => {
-                const row = tbody.insertRow();
-                row.className = 'bg-white border-b hover:bg-gray-50';
-                const playerInfo = p.userId.substring(0, 8); // Show partial ID for privacy/brevity
-                const status = p.completedTime ? `Completed (${formatDuration(p.startTime, p.completedTime)})` : `Playing (Clue ${p.currentClueIndex + 1})`;
-                row.innerHTML = `
-                    <td class="px-6 py-4 font-medium text-gray-900">${index + 1}</td>
-                    <td class="px-6 py-4">${playerInfo}</td>
-                    <td class="px-6 py-4">${p.score}</td>
-                    <td class="px-6 py-4">${status}</td>
+            // --- Chat (Placeholder) ---
+            loadChatPlaceholder() {
+                this.dom.chatWithName.textContent = "Chat (Suggestion)";
+                this.dom.sendChatMessageButton.onclick = () => {
+                    this.showError("Please use Telegram's native chat to message users.");
+                };
+            },
+
+            // --- Journal View ---
+            loadJournalEntries() {
+                this.dom.journalEntriesList.innerHTML = '';
+                this.dom.noJournalEntriesMessage.classList.add('hidden');
+                if (this.userJournalEntries.length === 0) {
+                    this.dom.noJournalEntriesMessage.classList.remove('hidden');
+                    return;
+                }
+                // Sort by date, newest first (optional)
+                const sortedEntries = [...this.userJournalEntries].sort((a,b) => new Date(b.date) - new Date(a.date));
+
+                sortedEntries.forEach(entry => this.renderJournalEntry(entry));
+                this.updateHeaderAndMainButton('journal-view'); // Reset buttons
+            },
+            renderJournalEntry(entry) {
+                const entryEl = document.createElement('div');
+                entryEl.className = 'journal-entry-card telegram-secondary-bg p-4 rounded-lg shadow';
+                entryEl.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-semibold telegram-text">${entry.title}</h3>
+                            <p class="text-xs telegram-hint mb-1">${new Date(entry.date).toLocaleDateString()}</p>
+                        </div>
+                        <button data-entry-id="${entry.id}" class="delete-journal-entry-button telegram-hint hover:text-red-500 text-xl">&times;</button>
+                    </div>
+                    <p class="text-sm telegram-text mt-1 whitespace-pre-wrap">${entry.content.substring(0,150)}${entry.content.length > 150 ? '...' : ''}</p>
                 `;
-            });
-            container.appendChild(table);
-        }
-        
-        function formatDuration(startTimeStr, endTimeStr) {
-            const start = new Date(startTimeStr).getTime();
-            const end = new Date(endTimeStr).getTime();
-            let seconds = Math.floor((end - start) / 1000);
-            let minutes = Math.floor(seconds / 60);
-            let hours = Math.floor(minutes / 60);
-            seconds = seconds % 60;
-            minutes = minutes % 60;
-            return `${hours > 0 ? hours + 'h ' : ''}${minutes > 0 ? minutes + 'm ' : ''}${seconds}s`;
-        }
-
-        // --- Teams Logic ---
-        function populateTeamHuntSelect() {
-            const hunts = getAllHunts().filter(h => h.createdBy === currentUser.id || getPlayerProgress(currentUser.id, h.id)); // Hunts user created or is playing
-            const select = document.getElementById('team-hunt-select');
-            select.innerHTML = '<option value="">Select Hunt for Team</option>';
-            hunts.forEach(hunt => {
-                const option = document.createElement('option');
-                option.value = hunt.id;
-                option.textContent = hunt.name;
-                select.appendChild(option);
-            });
-        }
-        
-        function showTeamCreationForm() {
-            document.getElementById('create-team-form').classList.toggle('hidden');
-        }
-
-        function createTeam() {
-            const teamName = document.getElementById('team-name-input').value.trim();
-            const huntId = document.getElementById('team-hunt-select').value;
-            if (!teamName || !huntId) {
-                showModal('Please enter team name and select a hunt.');
-                return;
-            }
-            const newTeam = {
-                id: 'team-' + generateId(),
-                name: teamName,
-                huntId: huntId,
-                members: [currentUser.id], // Creator is the first member
-                score: 0 // Team score can be sum of members or specific team progress
-            };
-            saveTeamData(newTeam);
-            showModal(`Team "${teamName}" created! Team ID: ${newTeam.id}. Share this ID with others to join.`);
-            document.getElementById('team-name-input').value = '';
-            document.getElementById('create-team-form').classList.add('hidden');
-            loadMyTeams();
-        }
-
-        function joinTeam() {
-            const teamId = document.getElementById('join-team-id').value.trim();
-            if (!teamId) {
-                showModal('Please enter a Team ID.');
-                return;
-            }
-            const team = getTeamById(teamId);
-            if (!team) {
-                showModal('Team not found.');
-                return;
-            }
-            if (team.members.includes(currentUser.id)) {
-                showModal('You are already a member of this team.');
-                return;
-            }
-            // Check if user is part of another team for the same hunt (optional rule)
-            // const myTeams = getAllTeams().filter(t => t.members.includes(currentUser.id) && t.huntId === team.huntId);
-            // if (myTeams.length > 0) {
-            //     showModal(`You are already in a team for hunt "${getHuntById(team.huntId).name}".`);
-            //     return;
-            // }
-
-            team.members.push(currentUser.id);
-            saveTeamData(team);
-            showModal(`Successfully joined team "${team.name}"!`);
-            document.getElementById('join-team-id').value = '';
-            loadMyTeams();
-            // Update player progress to link to team
-            let progress = getPlayerProgress(currentUser.id, team.huntId);
-            if (progress) {
-                progress.teamId = team.id;
-                savePlayerProgress(progress);
-            }
-        }
-
-        function loadMyTeams() {
-            const container = document.getElementById('my-teams-list');
-            container.innerHTML = '';
-            const myTeams = getAllTeams().filter(t => t.members.includes(currentUser.id));
-            if (myTeams.length === 0) {
-                container.innerHTML = '<p class="text-gray-500">You are not part of any teams yet.</p>';
-                return;
-            }
-            myTeams.forEach(team => {
-                const hunt = getHuntById(team.huntId);
-                const item = document.createElement('div');
-                item.className = 'p-3 bg-gray-50 rounded-md shadow-sm';
-                item.innerHTML = `
-                    <h4 class="font-semibold">${team.name} (ID: ${team.id})</h4>
-                    <p class="text-sm text-gray-600">For Hunt: ${hunt ? hunt.name : 'Unknown Hunt'}</p>
-                    <p class="text-xs text-gray-500">Members: ${team.members.length}</p>
-                    `;
-                container.appendChild(item);
-            });
-        }
-        
-        // --- Business Portal Logic ---
-        function registerSponsorshipInterest() {
-            const businessName = document.getElementById('business-name').value.trim();
-            const email = document.getElementById('business-email').value.trim();
-            const interest = document.getElementById('sponsorship-interest').value.trim();
-
-            if (!businessName || !email || !interest) {
-                showModal('Please fill in all fields for sponsorship interest.');
-                return;
-            }
-            const newInterest = {
-                id: 'biz-' + generateId(),
-                businessName,
-                email,
-                interest,
-                registeredAt: new Date().toISOString()
-            };
-            saveSponsorshipInterest(newInterest);
-            showModal('Thank you for your interest! We will contact you soon.');
-            document.getElementById('business-name').value = '';
-            document.getElementById('business-email').value = '';
-            document.getElementById('sponsorship-interest').value = '';
-            loadSponsorshipInterests();
-        }
-
-        function loadSponsorshipInterests() {
-            const container = document.getElementById('sponsorship-interest-list');
-            container.innerHTML = '';
-            const interests = getSponsorshipInterests().filter(i => i.email === (document.getElementById('business-email').value || currentUser.id)); // crude filter for demo
-            
-            if (interests.length === 0) {
-                container.innerHTML = '<p class="text-gray-500">No registered interests found for this email.</p>';
-            } else {
-                interests.forEach(item => {
-                    const div = document.createElement('div');
-                    div.className = 'p-2 bg-gray-100 border rounded-md text-sm';
-                    div.innerHTML = `<strong>${item.businessName}</strong>: ${item.interest} (Registered: ${new Date(item.registeredAt).toLocaleDateString()})`;
-                    container.appendChild(div);
+                // Add click to view full entry modal if desired
+                entryEl.querySelector('.delete-journal-entry-button').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const entryId = e.currentTarget.dataset.entryId;
+                    this.tgWebApp.showConfirm("Delete this journal entry?", (confirmed) => {
+                        if (confirmed) this.deleteJournalEntry(entryId);
+                    });
                 });
-            }
-        }
+                this.dom.journalEntriesList.appendChild(entryEl);
+            },
+            handleCreateJournalEntry: async () => {
+                app.tgWebApp.MainButton.showProgress();
+                const title = app.dom.journalEntryTitleInput.value.trim();
+                const content = app.dom.journalEntryContentInput.value.trim();
 
-
-        // --- Initialization ---
-        function initializeApp() {
-            // User data from Telegram
-            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                currentUser = tg.initDataUnsafe.user;
-                document.getElementById('user-name').textContent = currentUser.first_name || 'Player';
-            } else {
-                // Fallback for testing outside Telegram or if user data is not available
-                currentUser = { id: 'testUser' + generateId(), first_name: 'Test User' };
-                document.getElementById('user-name').textContent = currentUser.first_name;
-                console.warn("Telegram user data not found. Using test user.");
-            }
-            
-            // Setup Back Button
-            tg.BackButton.onClick(() => {
-                if (currentView === 'play-hunt-view') {
-                    // Ask for confirmation before leaving a hunt?
-                    showModal("Exiting hunt. Progress is saved.");
-                    tg.MainButton.hide(); // Hide play-specific main button
-                    showView('home-view');
-                } else if (currentView !== 'home-view') {
-                    showView('home-view');
+                if (!title || !content) {
+                    app.showError("Title and content are required for a journal entry.");
+                    app.tgWebApp.MainButton.hideProgress();
+                    return;
                 }
-            });
-            
-            // Set initial view
-            showView('home-view');
-            
-            // Set theme params (optional)
-            // tg.setHeaderColor('#1E88E5'); // Example: Blue header
-            // tg.setBackgroundColor('#F5F5F5'); // Example: Light gray background
-        }
+                const newEntry = {
+                    id: crypto.randomUUID(), // Simple unique ID
+                    title,
+                    content,
+                    date: new Date().toISOString()
+                };
+                app.userJournalEntries.push(newEntry);
+                app.saveToCloudStorage('userJournalEntries', app.userJournalEntries, (error) => {
+                    app.tgWebApp.MainButton.hideProgress();
+                    if (error) return;
+                    app.showSuccess("Journal entry saved!");
+                    app.dom.createJournalEntryForm.classList.add('hidden');
+                    app.dom.journalEntryTitleInput.value = '';
+                    app.dom.journalEntryContentInput.value = '';
+                    app.loadJournalEntries(); // Refresh list
+                });
+            },
+            deleteJournalEntry(entryId) {
+                this.userJournalEntries = this.userJournalEntries.filter(entry => entry.id !== entryId);
+                this.saveToCloudStorage('userJournalEntries', this.userJournalEntries, (error) => {
+                    if(error) return;
+                    this.showSuccess("Entry deleted.");
+                    this.loadJournalEntries();
+                });
+            },
 
-        // --- DOMContentLoaded ---
-        document.addEventListener('DOMContentLoaded', initializeApp);
+            setupEventListeners() {
+                this.dom.bottomNav.addEventListener('click', (e) => {
+                    const navButton = e.target.closest('.nav-item');
+                    if (navButton && navButton.dataset.view) {
+                        this.navigateTo(navButton.dataset.view);
+                        this.tgWebApp.HapticFeedback.impactOccurred('light');
+                    }
+                });
+                this.dom.profileForm.addEventListener('submit', (e) => { e.preventDefault(); this.handleProfileSave(); });
+                this.dom.modalCloseButton.addEventListener('click', () => this.closeModal());
+                this.dom.modalContainer.addEventListener('click', (e) => { if (e.target === this.dom.modalContainer) this.closeModal(); });
 
+                // Journal listeners
+                this.dom.createJournalEntryButton.addEventListener('click', () => {
+                    this.dom.createJournalEntryForm.classList.remove('hidden');
+                    this.updateHeaderAndMainButton('journal-view');
+                });
+                this.dom.cancelJournalEntryButton.addEventListener('click', () => {
+                    this.dom.createJournalEntryForm.classList.add('hidden');
+                    this.dom.journalEntryTitleInput.value = '';
+                    this.dom.journalEntryContentInput.value = '';
+                    this.updateHeaderAndMainButton('journal-view');
+                });
+                this.dom.createJournalEntryForm.addEventListener('submit', (e) => { e.preventDefault(); this.handleCreateJournalEntry(); });
+                
+                // Invite friend button
+                this.dom.inviteFriendButton.addEventListener('click', () => {
+                    const inviteText = `Check out LoveQuest, a fun app to explore connections! You can open it in Telegram.`; // Customize as needed
+                    // Option 1: Open a link to your Mini App (if you have a direct link)
+                    // this.tgWebApp.openTelegramLink(`https://t.me/your_bot_username/your_app_name`);
+                    // Option 2: Switch to inline query to share the app (more complex, requires bot setup)
+                    // this.tgWebApp.switchInlineQuery(`LoveQuest`);
+                    // Option 3: Simple share text (user copies and pastes)
+                    this.tgWebApp.showPopup({
+                        title: "Invite a Friend",
+                        message: "Share this link with your friends to invite them to LoveQuest:\n(Link to your Mini App)", // Replace with actual link
+                        buttons: [{ type: "ok" }]
+                    });
+                     // For a real share, you'd use a proper link or inline query.
+                     // For now, just show a generic message.
+                     // this.showError("Share functionality to be implemented with a Mini App link or bot inline query.");
+                });
+            },
+            
+            closeModal() { /* ... same as before ... */ 
+                this.dom.modalContainer.classList.add('hidden');
+                this.dom.modalContainer.classList.remove('flex');
+                this.dom.modalBody.innerHTML = ''; 
+            },
+            showError(message) { /* ... same as before ... */ 
+                console.error("App Error:", message);
+                this.tgWebApp.showAlert(message); 
+                this.tgWebApp.HapticFeedback.notificationOccurred('error');
+            },
+            showSuccess(message) { /* ... same as before ... */ 
+                console.log("App Success:", message);
+                this.tgWebApp.HapticFeedback.notificationOccurred('success');
+                const successToast = document.createElement('div');
+                successToast.textContent = message;
+                successToast.className = 'fixed bottom-20 left-1/2 -translate-x-1/2 telegram-button-bg telegram-button-text px-4 py-2 rounded-lg shadow-lg z-[200] text-sm';
+                document.body.appendChild(successToast);
+                setTimeout(() => { successToast.remove(); }, 2500);
+            }
+        };
+
+        window.addEventListener('load', () => {
+            if (app.tgWebApp.initDataUnsafe && app.tgWebApp.initDataUnsafe.user) {
+                 app.init();
+            } else {
+                console.error("Critical: Telegram user data missing at load time.");
+                const loadingView = document.getElementById('loading-view');
+                if (loadingView) {
+                    loadingView.innerHTML = `<p class="text-red-500 text-center p-6">App cannot start: Telegram user data is missing. Please launch from Telegram.</p>`;
+                }
+            }
+        });
     </script>
 </body>
 </html>
