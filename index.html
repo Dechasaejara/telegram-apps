@@ -2,968 +2,1114 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Telegram Food Finder</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Direct Democracy</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
-        // Custom Tailwind Configuration
+        // Tailwind configuration
         tailwind.config = {
-            darkMode: 'class', // Enables dark mode based on class
+            darkMode: 'class', // or 'media' if you prefer OS setting
             theme: {
                 extend: {
                     colors: {
-                        primary: 'var(--tg-theme-button-color, #5D5CDE)', // Use Telegram button color as primary
-                        'primary-dark': 'var(--tg-theme-button-color, #4A49B7)', // Darker shade or same
-                        'telegram': 'var(--tg-theme-link-color, #0088cc)', // Use Telegram link color
-                        'telegram-dark': 'var(--tg-theme-link-color, #0077b5)', // Darker shade or same
-                        'yellow-rating': '#FFCA28',
-                        'tg-bg': 'var(--tg-theme-bg-color, #F0F0F0)',
-                        'tg-text': 'var(--tg-theme-text-color, #000000)',
-                        'tg-hint': 'var(--tg-theme-hint-color, #999999)',
-                        'tg-secondary-bg': 'var(--tg-theme-secondary-bg-color, #FFFFFF)',
+                        tg: {
+                            bg: 'var(--tg-theme-bg-color, #ffffff)',
+                            text: 'var(--tg-theme-text-color, #000000)',
+                            hint: 'var(--tg-theme-hint-color, #999999)',
+                            link: 'var(--tg-theme-link-color, #5D5CDE)',
+                            button: 'var(--tg-theme-button-color, #5D5CDE)',
+                            buttonText: 'var(--tg-theme-button-text-color, #ffffff)',
+                            secondary: 'var(--tg-theme-secondary-bg-color, #f0f0f0)',
+                        }
                     },
-                    spacing: {
-                        '128': '32rem',
+                    fontFamily: {
+                        sans: ['"Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'],
                     }
                 }
             }
-        }
+        };
     </script>
-    <style>
-        /* Apply Telegram theme variables as CSS custom properties for broader use */
+    <style type="text/css">
         :root {
-            --tg-theme-bg-color: #ffffff; /* Default light bg */
-            --tg-theme-text-color: #000000; /* Default light text */
-            --tg-theme-hint-color: #999999;
-            --tg-theme-link-color: #0088cc;
-            --tg-theme-button-color: #0088cc;
-            --tg-theme-button-text-color: #ffffff;
-            --tg-theme-secondary-bg-color: #f0f0f0;
-            --tg-header-color: #ffffff; /* For sticky header */
+            --default-bg-color: #ffffff;
+            --default-text-color: #000000;
+            --default-hint-color: #999999;
+            --default-link-color: #5D5CDE;
+            --default-button-color: #5D5CDE;
+            --default-button-text-color: #ffffff;
+            --default-secondary-bg-color: #f0f0f0;
         }
-
-        /* Basic body styling */
+        
+        .dark {
+            --default-bg-color: #212121;
+            --default-text-color: #ffffff;
+            --default-hint-color: #aaaaaa;
+            --default-link-color: #8E8DFF;
+            --default-button-color: #8E8DFF;
+            --default-button-text-color: #ffffff;
+            --default-secondary-bg-color: #303030;
+        }
+        
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--tg-theme-bg-color);
-            color: var(--tg-theme-text-color);
-            margin: 0;
-            padding: 0;
-            overscroll-behavior-y: contain; /* Prevents pull-to-refresh in Mini App */
+            background-color: var(--tg-theme-bg-color, var(--default-bg-color));
+            color: var(--tg-theme-text-color, var(--default-text-color));
+            min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        /* Custom scrollbar to match Telegram's subtle style */
-        ::-webkit-scrollbar {
-            width: 4px;
-            height: 4px;
+        .message-bubble {
+            position: relative;
+            border-radius: 12px;
+            padding: 8px 12px;
+            max-width: 85%;
+            margin-bottom: 8px;
+            word-wrap: break-word; /* Ensure long words break */
         }
+        
+        .message-bubble.outgoing {
+            background-color: var(--tg-theme-button-color, var(--default-button-color));
+            color: var(--tg-theme-button-text-color, var(--default-button-text-color));
+            margin-left: auto;
+            border-bottom-right-radius: 4px; /* Adjusted for a more common bubble tail */
+        }
+        
+        .message-bubble.incoming {
+            background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color));
+            margin-right: auto;
+            border-bottom-left-radius: 4px; /* Adjusted for a more common bubble tail */
+        }
+
+        /* Simple tail using border, adjust if a more complex SVG/CSS tail is needed */
+        .message-bubble.outgoing::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: -7px;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 8px 0 0 8px; /* Triangle pointing left-up */
+            border-color: transparent transparent transparent var(--tg-theme-button-color, var(--default-button-color));
+        }
+
+        .message-bubble.incoming::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: -7px;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 0 8px 8px 0; /* Triangle pointing right-up */
+            border-color: transparent var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color)) transparent transparent;
+        }
+
+
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        
         ::-webkit-scrollbar-track {
             background: transparent;
         }
+        
         ::-webkit-scrollbar-thumb {
-            background: var(--tg-theme-hint-color, #888);
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--tg-theme-text-color, #555);
-        }
-        .hide-scrollbar::-webkit-scrollbar {
-            display: none; /* For Chrome, Safari, and Opera */
-        }
-        .hide-scrollbar {
-            -ms-overflow-style: none;  /* For IE and Edge */
-            scrollbar-width: none;  /* For Firefox */
+            background: var(--tg-theme-hint-color, var(--default-hint-color));
+            border-radius: 5px;
         }
 
-        /* Modal styles */
-        .modal {
-            transition: opacity 0.2s ease, visibility 0.2s ease;
+        @keyframes vote-pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); } /* Reduced pulse intensity */
+            100% { transform: scale(1); }
         }
-        .modal-content {
-            transform: scale(0.95) translateY(20px);
-            transition: transform 0.2s ease, opacity 0.2s ease;
+        
+        .vote-animate {
+            animation: vote-pulse 0.3s ease;
+        }
+
+        .ripple {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .ripple::after {
+            content: "";
+            display: block;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            background-image: radial-gradient(circle, rgba(255,255,255,0.5) 10%, transparent 10.01%); /* Softer ripple */
+            background-repeat: no-repeat;
+            background-position: 50%;
+            transform: scale(10, 10);
             opacity: 0;
-            background-color: var(--tg-theme-secondary-bg-color);
-            color: var(--tg-theme-text-color);
-        }
-        .modal.active {
-            opacity: 1;
-            visibility: visible;
-        }
-        .modal.active .modal-content {
-            transform: scale(1) translateY(0);
-            opacity: 1;
-        }
-
-        /* Rating stars */
-        .rating-stars { display: inline-flex; direction: rtl; }
-        .rating-stars input { display: none; }
-        .rating-stars label { cursor: pointer; color: var(--tg-theme-hint-color); transition: color 0.2s; font-size: 1.5rem; padding: 0 0.1rem;}
-        .rating-stars label:hover,
-        .rating-stars label:hover ~ label,
-        .rating-stars input:checked ~ label { color: #FFCA28; } /* yellow-rating */
-
-        /* Image effects */
-        .restaurant-image img { transition: transform 0.3s ease; }
-        .restaurant-image:hover img { transform: scale(1.05); }
-
-        /* Animations */
-        @keyframes slideInFromBottom {
-            0% { transform: translateY(20px); opacity: 0; }
-            100% { transform: translateY(0); opacity: 1; }
-        }
-        .restaurant-card { animation: slideInFromBottom 0.3s ease forwards; opacity: 0; }
-        .restaurant-card:nth-child(1) { animation-delay: 0.05s; }
-        .restaurant-card:nth-child(2) { animation-delay: 0.1s; }
-        .restaurant-card:nth-child(3) { animation-delay: 0.15s; }
-        /* Add more if needed or handle dynamically */
-
-        /* Skeleton loading */
-        .skeleton {
-            background: linear-gradient(90deg, var(--tg-theme-secondary-bg-color) 25%, var(--tg-theme-hint-color) 50%, var(--tg-theme-secondary-bg-color) 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-            opacity: 0.5;
-        }
-        .dark .skeleton { /* This will be handled by Telegram's theme variables */
-             background: linear-gradient(90deg, var(--tg-theme-secondary-bg-color) 25%, var(--tg-theme-hint-color) 50%, var(--tg-theme-secondary-bg-color) 75%);
-        }
-        @keyframes shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
+            transition: transform .5s, opacity 1s;
         }
         
-        /* Ensure sticky header uses Telegram theme */
-        header.sticky {
-            background-color: var(--tg-header-color); /* Use a specific var for header if needed, or secondary-bg */
+        .ripple:active::after {
+            transform: scale(0, 0);
+            opacity: .3;
+            transition: 0s;
         }
-
-        /* Style for filter buttons to use Telegram button colors */
-        .filter-btn.active {
-            background-color: var(--tg-theme-button-color) !important;
-            color: var(--tg-theme-button-text-color) !important;
+        .tab-button.active {
+             border-bottom-width: 2px;
+             border-bottom-style: solid;
         }
-        .filter-btn {
-            background-color: var(--tg-theme-secondary-bg-color);
-            color: var(--tg-theme-text-color);
-            border: 1px solid var(--tg-theme-hint-color);
-        }
-        .filter-btn:hover {
-            opacity: 0.8;
-        }
-        
-        /* Input styling to match Telegram */
-        input[type="text"], textarea {
-            background-color: var(--tg-theme-bg-color);
-            color: var(--tg-theme-text-color);
-            border: 1px solid var(--tg-theme-hint-color);
-        }
-        input[type="text"]:focus, textarea:focus {
-            border-color: var(--tg-theme-button-color);
-            box-shadow: 0 0 0 2px var(--tg-theme-button-color);
-        }
-        
-        /* Button styling to use Telegram button colors */
-        .tg-button {
-            background-color: var(--tg-theme-button-color);
-            color: var(--tg-theme-button-text-color);
-            transition: opacity 0.2s;
-        }
-        .tg-button:hover {
-            opacity: 0.85;
-        }
-        .tg-button-secondary {
-            background-color: var(--tg-theme-secondary-bg-color);
-            color: var(--tg-theme-button-color); /* Or text_color */
-            border: 1px solid var(--tg-theme-button-color);
-        }
-        .tg-button-secondary:hover {
-            opacity: 0.85;
-        }
-
     </style>
 </head>
-<body class="min-h-screen transition-colors duration-200">
-    <div id="app">
-        <div id="main-screen" class="block">
-            <header class="shadow-md sticky top-0 z-20" style="background-color: var(--tg-header-color);">
-                <div class="container mx-auto px-4 py-3">
-                    <div class="flex items-center justify-between">
-                        <h1 class="text-xl font-bold" style="color: var(--tg-theme-text-color);">Food Finder</h1>
-                        <div class="flex items-center">
-                            <div id="location-display" class="flex items-center text-sm mr-2" style="color: var(--tg-theme-hint-color);">
-                                <i class="fas fa-location-dot mr-1" style="color: var(--tg-theme-button-color);"></i>
-                                <span id="current-location">Loading location...</span>
+<body class="font-sans">
+    <div id="app" class="flex flex-col h-screen max-h-screen">
+        <header class="sticky top-0 z-10 shadow-sm" style="background-color: var(--tg-theme-bg-color, var(--default-bg-color))">
+            <div class="flex items-center justify-between p-3 border-b" style="border-color: var(--tg-theme-hint-color, var(--default-hint-color)); border-opacity: 0.2;">
+                <div class="flex items-center">
+                    <button id="back-button" class="mr-3 text-lg font-bold hidden" style="color: var(--tg-theme-link-color, var(--default-link-color));">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M15 18l-6-6 6-6"/>
+                        </svg>
+                    </button>
+                    <h1 class="text-lg font-bold" id="header-title">Digital Democracy</h1>
+                </div>
+                <div>
+                    <button id="menu-button" class="text-lg" style="color: var(--tg-theme-link-color, var(--default-link-color));">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="1"></circle>
+                            <circle cx="19" cy="12" r="1"></circle>
+                            <circle cx="5" cy="12" r="1"></circle>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div id="tab-navigation" class="flex border-b overflow-x-auto" style="border-color: var(--tg-theme-hint-color, var(--default-hint-color)); border-opacity: 0.2;">
+                <button class="tab-button px-4 py-2 font-medium whitespace-nowrap active" data-view="proposals">
+                    Proposals
+                </button>
+                <button class="tab-button px-4 py-2 font-medium whitespace-nowrap" data-view="active-votes">
+                    Active Votes
+                </button>
+                <button class="tab-button px-4 py-2 font-medium whitespace-nowrap" data-view="passed">
+                    Passed
+                </button>
+                <button class="tab-button px-4 py-2 font-medium whitespace-nowrap" data-view="my-activities">
+                    My Activities
+                </button>
+            </div>
+        </header>
+
+        <main class="flex-grow overflow-y-auto" id="main-content">
+            <div id="proposals-view" class="view-content">
+                <div class="p-4">
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <h2 class="text-lg font-bold">Active Proposals</h2>
+                            <button id="new-proposal-btn" class="ripple px-3 py-1 rounded-full text-sm" style="background-color: var(--tg-theme-button-color, var(--default-button-color)); color: var(--tg-theme-button-text-color, var(--default-button-text-color));">
+                                + New Proposal
+                            </button>
+                        </div>
+                        <p class="text-sm" style="color: var(--tg-theme-hint-color, var(--default-hint-color));">
+                            Proposals require 100 supporters to advance to voting
+                        </p>
+                    </div>
+                    <div class="proposal-list space-y-3">
+                        </div>
+                </div>
+            </div>
+
+            <div id="active-votes-view" class="view-content hidden">
+                <div class="p-4">
+                    <h2 class="text-lg font-bold mb-4">Active Votes</h2>
+                    <div class="active-votes-list space-y-3">
+                        </div>
+                </div>
+            </div>
+
+            <div id="passed-view" class="view-content hidden">
+                <div class="p-4">
+                    <h2 class="text-lg font-bold mb-4">Passed Legislation</h2>
+                    <div class="passed-list space-y-3">
+                        </div>
+                </div>
+            </div>
+
+            <div id="my-activities-view" class="view-content hidden">
+                <div class="p-4">
+                    <h2 class="text-lg font-bold mb-4">My Activities</h2>
+                    <div class="activities-list space-y-3">
+                        </div>
+                </div>
+            </div>
+
+            <div id="proposal-detail-view" class="view-content hidden">
+                <div class="p-4">
+                    <div class="mb-4">
+                        <h2 id="proposal-detail-title" class="text-xl font-bold mb-1"></h2>
+                        <p id="proposal-detail-author" class="text-sm" style="color: var(--tg-theme-hint-color, var(--default-hint-color));"></p>
+                        <p id="proposal-detail-category" class="text-xs mt-1 p-1 inline-block rounded" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color)); color: var(--tg-theme-text-color, var(--default-text-color));"></p>
+                    </div>
+                    
+                    <div id="proposal-detail-content" class="mb-4 text-sm prose max-w-none" style="color: var(--tg-theme-text-color, var(--default-text-color));"></div>
+                    
+                    <div class="support-section mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <span id="proposal-detail-support-count" class="text-sm" style="color: var(--tg-theme-hint-color, var(--default-hint-color));"></span>
+                            <button id="proposal-detail-support-button" class="ripple px-4 py-2 rounded-full text-sm" style="background-color: var(--tg-theme-button-color, var(--default-button-color)); color: var(--tg-theme-button-text-color, var(--default-button-text-color));">
+                                Support
+                            </button>
+                        </div>
+                        <div class="w-full h-2 rounded-full overflow-hidden" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color));">
+                            <div id="proposal-detail-support-bar" class="h-full transition-all duration-500 ease-out" style="background-color: var(--tg-theme-button-color, var(--default-button-color)); width: 0%;"></div>
+                        </div>
+                    </div>
+                    
+                    <h3 class="font-bold mb-2 mt-6">Discussion</h3>
+                    <div id="proposal-detail-discussion-list" class="mb-4 space-y-3 max-h-60 overflow-y-auto">
+                        </div>
+                    
+                    <div class="flex items-center gap-2 sticky bottom-0 py-2" style="background-color: var(--tg-theme-bg-color, var(--default-bg-color));">
+                        <input type="text" id="proposal-detail-discussion-input" placeholder="Add to the discussion..." class="flex-grow p-2 rounded-full text-base border" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color)); color: var(--tg-theme-text-color, var(--default-text-color)); border-color: var(--tg-theme-hint-color, var(--default-hint-color));">
+                        <button id="proposal-detail-send-discussion" class="ripple p-2 rounded-full" style="background-color: var(--tg-theme-button-color, var(--default-button-color)); color: var(--tg-theme-button-text-color, var(--default-button-text-color));">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="vote-detail-view" class="view-content hidden">
+                <div class="p-4">
+                    <div class="mb-4">
+                        <h2 id="vote-detail-title" class="text-xl font-bold mb-1"></h2>
+                         <p id="vote-detail-category" class="text-xs mb-1 p-1 inline-block rounded" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color)); color: var(--tg-theme-text-color, var(--default-text-color));"></p>
+                        <p id="vote-detail-status" class="text-sm" style="color: var(--tg-theme-hint-color, var(--default-hint-color));"></p>
+                    </div>
+                    
+                    <div id="vote-detail-content" class="mb-4 text-sm prose max-w-none" style="color: var(--tg-theme-text-color, var(--default-text-color));"></div>
+                    
+                    <div class="voting-section mb-4">
+                        <h3 class="font-bold mb-2">Cast Your Vote</h3>
+                        <div class="flex gap-3 mb-4">
+                            <button data-vote-type="yes" class="vote-button ripple flex-1 py-2 rounded-full text-sm font-medium" style="background-color: #4CAF50; color: white;">Yes</button>
+                            <button data-vote-type="no" class="vote-button ripple flex-1 py-2 rounded-full text-sm font-medium" style="background-color: #F44336; color: white;">No</button>
+                            <button data-vote-type="abstain" class="vote-button ripple flex-1 py-2 rounded-full text-sm font-medium" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color)); color: var(--tg-theme-text-color, var(--default-text-color));">Abstain</button>
+                        </div>
+                        
+                        <div class="results-section">
+                            <div class="flex justify-between mb-1 text-sm">
+                                <span>Yes</span>
+                                <span id="vote-detail-yes-percentage">0%</span>
                             </div>
-                            <button id="refresh-location" class="p-2" style="color: var(--tg-theme-button-color);">
-                                <i class="fas fa-arrow-rotate-right"></i>
+                            <div class="w-full h-2 rounded-full overflow-hidden mb-2" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color));">
+                                <div id="vote-detail-yes-bar" class="h-full transition-all duration-500 ease-out" style="background-color: #4CAF50; width: 0%;"></div>
+                            </div>
+                            
+                            <div class="flex justify-between mb-1 text-sm">
+                                <span>No</span>
+                                <span id="vote-detail-no-percentage">0%</span>
+                            </div>
+                            <div class="w-full h-2 rounded-full overflow-hidden mb-2" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color));">
+                                <div id="vote-detail-no-bar" class="h-full transition-all duration-500 ease-out" style="background-color: #F44336; width: 0%;"></div>
+                            </div>
+                            
+                            <div class="flex justify-between mb-1 text-sm">
+                                <span>Abstain</span>
+                                <span id="vote-detail-abstain-percentage">0%</span>
+                            </div>
+                            <div class="w-full h-2 rounded-full overflow-hidden mb-2" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color));">
+                                <div id="vote-detail-abstain-bar" class="h-full transition-all duration-500 ease-out" style="background-color: #9E9E9E; width: 0%;"></div>
+                            </div>
+                            
+                            <p id="vote-detail-time-remaining" class="text-sm mt-2" style="color: var(--tg-theme-hint-color, var(--default-hint-color));"></p>
+                        </div>
+                    </div>
+                    
+                    <div class="discussion-section">
+                        <h3 class="font-bold mb-2 mt-6">Discussion</h3>
+                        <div id="vote-detail-discussion-list" class="mb-4 space-y-3 max-h-60 overflow-y-auto">
+                            </div>
+                        
+                        <div class="flex items-center gap-2 sticky bottom-0 py-2" style="background-color: var(--tg-theme-bg-color, var(--default-bg-color));">
+                            <input type="text" id="vote-detail-discussion-input" placeholder="Add to the discussion..." class="flex-grow p-2 rounded-full text-base border" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color)); color: var(--tg-theme-text-color, var(--default-text-color)); border-color: var(--tg-theme-hint-color, var(--default-hint-color));">
+                            <button id="vote-detail-send-discussion" class="ripple p-2 rounded-full" style="background-color: var(--tg-theme-button-color, var(--default-button-color)); color: var(--tg-theme-button-text-color, var(--default-button-text-color));">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                </svg>
                             </button>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <div id="new-proposal-view" class="view-content hidden">
+                <div class="p-4">
+                    <h2 class="text-lg font-bold mb-4">Create New Proposal</h2>
                     
-                    <div class="relative mt-2">
-                        <input type="text" id="search-input" class="w-full pl-10 pr-4 py-2 rounded-full text-base focus:outline-none" placeholder="Search restaurants, cuisines...">
-                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2" style="color: var(--tg-theme-hint-color);"></i>
-                    </div>
-                    
-                    <div id="category-filters-container" class="flex space-x-2 mt-3 pb-1 overflow-x-auto hide-scrollbar">
-                        </div>
-                </div>
-            </header>
-            
-            <div class="container mx-auto px-4 py-4">
-                <div id="restaurant-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div class="skeleton-card rounded-lg shadow-md overflow-hidden" style="background-color: var(--tg-theme-secondary-bg-color);"> <div class="skeleton h-48 w-full"></div> <div class="p-4"> <div class="skeleton h-6 w-3/4 rounded mb-2"></div> <div class="skeleton h-4 w-1/2 rounded mb-3"></div> <div class="skeleton h-4 w-full rounded mb-2"></div> <div class="skeleton h-4 w-2/3 rounded"></div> </div> </div>
-                    <div class="skeleton-card rounded-lg shadow-md overflow-hidden" style="background-color: var(--tg-theme-secondary-bg-color);"> <div class="skeleton h-48 w-full"></div> <div class="p-4"> <div class="skeleton h-6 w-3/4 rounded mb-2"></div> <div class="skeleton h-4 w-1/2 rounded mb-3"></div> <div class="skeleton h-4 w-full rounded mb-2"></div> <div class="skeleton h-4 w-2/3 rounded"></div> </div> </div>
-                    <div class="skeleton-card rounded-lg shadow-md overflow-hidden" style="background-color: var(--tg-theme-secondary-bg-color);"> <div class="skeleton h-48 w-full"></div> <div class="p-4"> <div class="skeleton h-6 w-3/4 rounded mb-2"></div> <div class="skeleton h-4 w-1/2 rounded mb-3"></div> <div class="skeleton h-4 w-full rounded mb-2"></div> <div class="skeleton h-4 w-2/3 rounded"></div> </div> </div>
-                </div>
-                
-                <div id="no-results" class="hidden text-center py-8">
-                    <i class="fas fa-utensils text-4xl mb-3" style="color: var(--tg-theme-hint-color);"></i>
-                    <p style="color: var(--tg-theme-hint-color);">No restaurants found.</p>
-                    <button id="clear-filters-main" class="mt-2 tg-button px-3 py-1 rounded-md text-sm">Clear Filters</button>
-                </div>
-            </div>
-        </div>
-        
-        <div id="detail-screen" class="hidden">
-            <div class="relative">
-                <div id="restaurant-cover" class="h-48 md:h-60 bg-gray-300 bg-center bg-cover" style="background-color: var(--tg-theme-secondary-bg-color);">
-                </div>
-                <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4 text-white">
-                    <h1 id="detail-name" class="text-2xl font-bold mb-1">Restaurant Name</h1>
-                    <div class="flex items-center text-sm">
-                        <div id="detail-rating-stars" class="flex items-center mr-3">
-                            </div>
-                        <span id="detail-rating-text" class="mr-3"></span>
-                        <div id="detail-cuisine" class="opacity-90">Cuisine</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="container mx-auto px-4 py-4">
-                <div class="rounded-lg shadow-md p-4 mb-4" style="background-color: var(--tg-theme-secondary-bg-color);">
-                    <div class="flex flex-wrap gap-x-6 gap-y-3 mb-3 text-sm">
-                        <div class="flex items-center">
-                            <i class="fas fa-location-dot mr-2" style="color: var(--tg-theme-button-color);"></i>
-                            <span id="detail-distance">Loading...</span>
-                        </div>
-                        <div class="flex items-center">
-                            <i class="fas fa-clock mr-2" style="color: var(--tg-theme-button-color);"></i>
-                            <span id="detail-hours">Loading...</span>
-                        </div>
-                        <div class="flex items-center">
-                            <i class="fas fa-phone mr-2" style="color: var(--tg-theme-button-color);"></i>
-                            <a id="detail-phone" href="tel:" style="color: var(--tg-theme-link-color);">Loading...</a>
-                        </div>
-                    </div>
-                    <p id="detail-description" class="mb-4" style="color: var(--tg-theme-text-color);"></p>
-                    <div class="flex space-x-2">
-                        <button id="share-restaurant" class="flex-1 tg-button py-2 px-4 rounded-md flex justify-center items-center text-sm">
-                            <i class="fas fa-share-alt mr-2"></i>Share
-                        </button>
-                        <button id="view-location" class="flex-1 tg-button py-2 px-4 rounded-md flex justify-center items-center text-sm">
-                            <i class="fas fa-map-marker-alt mr-2"></i>View Map
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="rounded-lg shadow-md p-4 mb-4" style="background-color: var(--tg-theme-secondary-bg-color);">
-                    <h2 class="text-xl font-bold mb-3" style="color: var(--tg-theme-text-color);">Menu</h2>
-                    <div id="menu-categories" class="flex space-x-2 mb-3 overflow-x-auto pb-1 hide-scrollbar">
-                        </div>
-                    <div id="menu-items" class="space-y-3">
-                        </div>
-                </div>
-                
-                <div class="rounded-lg shadow-md p-4 mb-4" style="background-color: var(--tg-theme-secondary-bg-color);">
-                    <div class="flex justify-between items-center mb-3">
-                        <h2 class="text-xl font-bold" style="color: var(--tg-theme-text-color);">Reviews (<span id="review-count">0</span>)</h2>
-                        <button id="add-review" class="tg-button py-1 px-3 rounded-md text-sm">
-                            Write a Review
-                        </button>
-                    </div>
-                    <div id="review-list" class="space-y-4">
-                        </div>
-                </div>
-            </div>
-        </div>
-        
-        <div id="review-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 opacity-0 invisible">
-            <div class="modal-content rounded-lg shadow-lg max-w-md w-11/12 mx-auto">
-                <div class="p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-semibold" style="color: var(--tg-theme-text-color);">Write a Review</h3>
-                        <button class="close-modal-btn text-2xl" style="color: var(--tg-theme-hint-color);">&times;</button>
-                    </div>
-                    <form id="review-form">
-                        <input type="hidden" id="review-restaurant-id">
-                        
-                        <div class="mb-4 text-center">
-                            <div class="text-sm mb-1" style="color: var(--tg-theme-text-color);">Rate your experience</div>
-                            <div class="rating-stars">
-                                <input type="radio" id="star5" name="rating" value="5" required/><label for="star5"><i class="fas fa-star"></i></label>
-                                <input type="radio" id="star4" name="rating" value="4" /><label for="star4"><i class="fas fa-star"></i></label>
-                                <input type="radio" id="star3" name="rating" value="3" /><label for="star3"><i class="fas fa-star"></i></label>
-                                <input type="radio" id="star2" name="rating" value="2" /><label for="star2"><i class="fas fa-star"></i></label>
-                                <input type="radio" id="star1" name="rating" value="1" /><label for="star1"><i class="fas fa-star"></i></label>
-                            </div>
+                    <form id="proposal-form" class="space-y-4">
+                        <div>
+                            <label for="proposal-title-input" class="block mb-1 font-medium text-sm">Title</label>
+                            <input type="text" id="proposal-title-input" class="w-full p-2 rounded text-base border" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color)); color: var(--tg-theme-text-color, var(--default-text-color)); border-color: var(--tg-theme-hint-color, var(--default-hint-color));" placeholder="Enter a clear, concise title" required>
                         </div>
                         
-                        <div class="mb-4">
-                            <label for="review-title" class="block text-sm font-medium mb-1" style="color: var(--tg-theme-text-color);">Title</label>
-                            <input type="text" id="review-title" class="w-full px-3 py-2 border rounded-md text-base focus:outline-none" required placeholder="Summarize your experience">
+                        <div>
+                            <label for="proposal-content-input" class="block mb-1 font-medium text-sm">Content</label>
+                            <textarea id="proposal-content-input" rows="8" class="w-full p-2 rounded text-base border" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color)); color: var(--tg-theme-text-color, var(--default-text-color)); border-color: var(--tg-theme-hint-color, var(--default-hint-color));" placeholder="Describe your proposal in detail..." required></textarea>
                         </div>
                         
-                        <div class="mb-6">
-                            <label for="review-text" class="block text-sm font-medium mb-1" style="color: var(--tg-theme-text-color);">Your Review</label>
-                            <textarea id="review-text" rows="3" class="w-full px-3 py-2 border rounded-md text-base focus:outline-none" required placeholder="Tell others about your experience"></textarea>
+                        <div>
+                            <label for="proposal-category-input" class="block mb-1 font-medium text-sm">Category</label>
+                            <select id="proposal-category-input" class="w-full p-2 rounded text-base border" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color)); color: var(--tg-theme-text-color, var(--default-text-color)); border-color: var(--tg-theme-hint-color, var(--default-hint-color));">
+                                <option value="environment">Environment</option>
+                                <option value="economy">Economy</option>
+                                <option value="education">Education</option>
+                                <option value="healthcare">Healthcare</option>
+                                <option value="infrastructure">Infrastructure</option>
+                                <option value="other">Other</option>
+                            </select>
                         </div>
                         
-                        <div class="flex justify-end space-x-3">
-                            <button type="button" class="close-modal-btn tg-button-secondary px-4 py-2 rounded-lg text-sm">Cancel</button>
-                            <button type="submit" class="tg-button px-4 py-2 rounded-lg text-sm">Submit Review</button>
+                        <div class="flex gap-3 pt-3">
+                            <button type="button" id="cancel-proposal-btn" class="ripple flex-1 py-2 rounded-full" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color)); color: var(--tg-theme-text-color, var(--default-text-color));">Cancel</button>
+                            <button type="submit" id="submit-proposal-btn" class="ripple flex-1 py-2 rounded-full" style="background-color: var(--tg-theme-button-color, var(--default-button-color)); color: var(--tg-theme-button-text-color, var(--default-button-text-color));">Submit Proposal</button>
                         </div>
                     </form>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 
     <script>
-    // --- Telegram WebApp SDK ---
-    const tg = window.Telegram.WebApp;
+        // Initialize Telegram WebApp
+        let tg = window.Telegram?.WebApp;
+        let currentUser = {};
+        let currentView = 'proposals'; // To track the current main list view
+        let previousView = 'proposals'; // To track the view before detail view
+        let currentDetailId = null; // To track the ID of the item in detail view
 
-    // --- App State ---
-    const appState = {
-        userLocation: null, // { latitude, longitude }
-        currentRestaurantId: null,
-        userProfile: { // Will be populated by Telegram data
-            id: null,
-            name: 'Guest',
-            photo: 'https://placehold.co/40x40/E0E0E0/B0B0B0?text=U'
-        },
-        restaurants: [], // Full list of restaurants
-        reviews: [],     // Full list of reviews
-        activeFilter: 'all',
-        searchQuery: '',
-        activeMenuCategory: 'all',
-        isLoading: true,
-    };
-
-    // --- DOM Elements ---
-    const mainScreen = document.getElementById('main-screen');
-    const detailScreen = document.getElementById('detail-screen');
-    const reviewModal = document.getElementById('review-modal');
-    const restaurantListEl = document.getElementById('restaurant-list');
-    const currentLocationEl = document.getElementById('current-location');
-    const noResultsEl = document.getElementById('no-results');
-    const categoryFiltersContainerEl = document.getElementById('category-filters-container');
-    const searchInputEl = document.getElementById('search-input');
-    // Detail Screen Elements
-    const detailNameEl = document.getElementById('detail-name');
-    const detailRatingStarsEl = document.getElementById('detail-rating-stars');
-    const detailRatingTextEl = document.getElementById('detail-rating-text');
-    const detailCuisineEl = document.getElementById('detail-cuisine');
-    const detailDistanceEl = document.getElementById('detail-distance');
-    const detailHoursEl = document.getElementById('detail-hours');
-    const detailPhoneEl = document.getElementById('detail-phone');
-    const detailDescriptionEl = document.getElementById('detail-description');
-    const restaurantCoverEl = document.getElementById('restaurant-cover');
-    const menuCategoriesEl = document.getElementById('menu-categories');
-    const menuItemsEl = document.getElementById('menu-items');
-    const reviewListEl = document.getElementById('review-list');
-    const reviewCountEl = document.getElementById('review-count');
-    // Review Modal Elements
-    const reviewFormEl = document.getElementById('review-form');
-    const reviewRestaurantIdInput = document.getElementById('review-restaurant-id');
-    const reviewTitleInput = document.getElementById('review-title');
-    const reviewTextInput = document.getElementById('review-text');
-
-
-    // --- Telegram SDK Integration Functions ---
-    function applyTelegramTheme(themeParams) {
-        const root = document.documentElement;
-        root.style.setProperty('--tg-theme-bg-color', themeParams.bg_color || '#ffffff');
-        root.style.setProperty('--tg-theme-text-color', themeParams.text_color || '#000000');
-        root.style.setProperty('--tg-theme-hint-color', themeParams.hint_color || '#999999');
-        root.style.setProperty('--tg-theme-link-color', themeParams.link_color || '#0088cc');
-        root.style.setProperty('--tg-theme-button-color', themeParams.button_color || '#0088cc');
-        root.style.setProperty('--tg-theme-button-text-color', themeParams.button_text_color || '#ffffff');
-        root.style.setProperty('--tg-theme-secondary-bg-color', themeParams.secondary_bg_color || '#f0f0f0');
-        
-        // For sticky header, try to use secondary_bg_color or bg_color if it's distinct enough
-        // This is a heuristic, might need adjustment based on typical Telegram themes
-        let headerColor = themeParams.secondary_bg_color;
-        if (headerColor === themeParams.bg_color || !headerColor) { // If secondary is same as main bg or not defined
-             // A simple check to see if bg_color is very dark. If so, use a slightly lighter shade for header or a fixed light color.
-            const isDarkBg = themeParams.bg_color && themeParams.bg_color.startsWith('#') && parseInt(themeParams.bg_color.substring(1, 3), 16) < 60; // very rough check
-            headerColor = isDarkBg ? '#2c2c2c' : '#ffffff'; // Example fixed colors if heuristic is complex
-        }
-         root.style.setProperty('--tg-header-color', headerColor || themeParams.bg_color || '#ffffff');
-
-
-        if (themeParams.bg_color) {
-            const body = document.body;
-            // Determine if the theme is dark
-            // A common heuristic: if the background color is dark, assume dark theme.
-            // This is simplified; Telegram might use a more complex logic or a direct property.
-            const color = themeParams.bg_color.replace('#', '');
-            const r = parseInt(color.substring(0, 2), 16);
-            const g = parseInt(color.substring(2, 4), 16);
-            const b = parseInt(color.substring(4, 6), 16);
-            const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-            if (brightness < 128) { // Arbitrary threshold for darkness
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-        }
-        // Force a re-render or update of components that depend on these CSS variables if necessary
-        // For Tailwind, it should mostly pick up changes to CSS variables if used in `tailwind.config.js` correctly.
-    }
-
-    function setupTelegramFeatures() {
-        tg.expand(); // Expand the Mini App
-        tg.MainButton.hide(); // Hide by default, show when contextually relevant
-        tg.BackButton.onClick(goBackToMainScreen); // Set back button action
-
-        // Apply initial theme
-        if (tg.themeParams) {
-            applyTelegramTheme(tg.themeParams);
-        }
-        // Listen for theme changes
-        tg.onEvent('themeChanged', () => applyTelegramTheme(tg.themeParams));
-        tg.onEvent('viewportChanged', (event) => {
-            if (!event.isStateStable) { // if false, the viewport is still changing
-                // handle intermediate state if needed
-            } else { // if true, the viewport is now stable
-                // final handling, e.g. re-layout if necessary
-            }
-        });
-
-
-        // Populate user profile from Telegram
-        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            const tgUser = tg.initDataUnsafe.user;
-            appState.userProfile.id = tgUser.id;
-            appState.userProfile.name = `${tgUser.first_name}${tgUser.last_name ? ' ' + tgUser.last_name : ''}`;
-            appState.userProfile.photo = tgUser.photo_url || appState.userProfile.photo;
-        }
-    }
-    
-    // --- Utility Functions ---
-    function showLoadingSkeletons(count = 3) {
-        restaurantListEl.innerHTML = ''; // Clear previous content
-        noResultsEl.classList.add('hidden');
-        for (let i = 0; i < count; i++) {
-            const skeletonCard = `
-                <div class="skeleton-card rounded-lg shadow-md overflow-hidden" style="background-color: var(--tg-theme-secondary-bg-color);">
-                    <div class="skeleton h-48 w-full"></div>
-                    <div class="p-4">
-                        <div class="skeleton h-6 w-3/4 rounded mb-2"></div>
-                        <div class="skeleton h-4 w-1/2 rounded mb-3"></div>
-                        <div class="skeleton h-4 w-full rounded mb-2"></div>
-                        <div class="skeleton h-4 w-2/3 rounded"></div>
-                    </div>
-                </div>`;
-            restaurantListEl.innerHTML += skeletonCard;
-        }
-    }
-
-    function hideLoadingSkeletons() {
-        const skeletons = restaurantListEl.querySelectorAll('.skeleton-card');
-        // If actual content will replace skeletons, just clearing innerHTML is fine.
-        // If they need to be hidden before content is ready, then:
-        // skeletons.forEach(sk => sk.classList.add('hidden'));
-    }
-
-    // --- Data Loading and Processing ---
-    function loadSampleData() { // Simulates fetching data
-        appState.isLoading = true;
-        showLoadingSkeletons(6); // Show more skeletons for initial load
-
-        return new Promise(resolve => {
-            setTimeout(() => {
-                // Sample data (similar to what user provided, but expanded)
-                appState.restaurants = [
-                    { id: 1, name: "The Burger Joint", cuisine: "Fast Food", cuisineType: "fastfood", description: "Classic American burgers, fries, and shakes.", distance: 0.5, rating: 4.5, reviewCount: 150, hours: "10:00 AM - 11:00 PM", phone: "+15550100", image: "https://placehold.co/600x400/FFDDC1/333333?text=Burger+Joint", location: { lat: 38.8951, lng: -77.0364 }, menu: [{ category: "Burgers", items: [{ name: "Classic Burger", price: 8.99, description: "Beef patty, lettuce, tomato, onion, pickles."},{ name: "Cheese Burger", price: 9.99, description: "Classic with cheese."}]},{ category: "Sides", items: [{ name: "Fries", price: 3.50, description: "Crispy golden fries."}]}]},
-                    { id: 2, name: "Pasta Palace", cuisine: "Italian", cuisineType: "italian", description: "Authentic Italian pasta dishes and pizzas.", distance: 1.2, rating: 4.8, reviewCount: 210, hours: "11:00 AM - 10:00 PM", phone: "+15550101", image: "https://placehold.co/600x400/C1FFD7/333333?text=Pasta+Palace", location: { lat: 38.8977, lng: -77.0365 }, menu: [{ category: "Pasta", items: [{ name: "Spaghetti Carbonara", price: 15.00, description: "Creamy and delicious."},{ name: "Lasagna", price: 16.50, description: "Layered perfection."}]},{ category: "Pizza", items: [{ name: "Margherita", price: 12.00, description: "Classic tomato and mozzarella."}]}]},
-                    { id: 3, name: "Sushi Central", cuisine: "Japanese", cuisineType: "asian", description: "Fresh sushi and sashimi, vibrant atmosphere.", distance: 2.1, rating: 4.6, reviewCount: 180, hours: "12:00 PM - 10:00 PM", phone: "+15550102", image: "https://placehold.co/600x400/C1D4FF/333333?text=Sushi+Central", location: { lat: 38.9000, lng: -77.0400 }, menu: [{ category: "Sushi Rolls", items: [{ name: "California Roll", price: 7.00},{ name: "Spicy Tuna Roll", price: 8.50}]},{ category: "Nigiri", items: [{ name: "Salmon Nigiri", price: 3.00},{ name: "Tuna Nigiri", price: 3.50}]}]},
-                    { id: 4, name: "Morning Brew Cafe", cuisine: "Café", cuisineType: "cafe", description: "Cozy spot for coffee, pastries, and light meals.", distance: 0.8, rating: 4.3, reviewCount: 95, hours: "07:00 AM - 06:00 PM", phone: "+15550103", image: "https://placehold.co/600x400/FFF0C1/333333?text=Morning+Brew", location: { lat: 38.8920, lng: -77.0300 }, menu: [{ category: "Coffee", items: [{ name: "Espresso", price: 3.00},{ name: "Latte", price: 4.50}]},{ category: "Pastries", items: [{ name: "Croissant", price: 3.25},{ name: "Muffin", price: 3.00}]}]},
-                    { id: 5, name: "Sweet Escape Desserts", cuisine: "Desserts", cuisineType: "desserts", description: "Indulgent cakes, ice creams, and sweet treats.", distance: 1.5, rating: 4.9, reviewCount: 120, hours: "11:00 AM - 09:00 PM", phone: "+15550104", image: "https://placehold.co/600x400/FFC1F5/333333?text=Sweet+Escape", location: { lat: 38.8985, lng: -77.0321 }, menu: [{ category: "Cakes", items: [{ name: "Chocolate Lava Cake", price: 7.50},{ name: "Cheesecake Slice", price: 6.50}]},{ category: "Ice Cream", items: [{ name: "Vanilla Bean Scoop", price: 4.00},{ name: "Strawberry Swirl", price: 4.50}]}]},
-                    { id: 6, name: "Curry House", cuisine: "Indian", cuisineType: "asian", description: "Flavorful Indian curries and tandoori specialties.", distance: 3.0, rating: 4.7, reviewCount: 190, hours: "11:30 AM - 10:30 PM", phone: "+15550105", image: "https://placehold.co/600x400/FFDAB9/333333?text=Curry+House", location: { lat: 38.8940, lng: -77.0380 }, menu: [{ category: "Curries", items: [{ name: "Chicken Tikka Masala", price: 15.99},{ name: "Vegetable Korma", price: 13.99}]},{ category: "Breads", items: [{ name: "Naan", price: 3.00},{ name: "Garlic Naan", price: 3.50}]}]}
-                ];
-                appState.reviews = [
-                    { id: 1, restaurantId: 1, userId: "user123", userName: "Alice Wonderland", userPhoto: "https://placehold.co/40x40/A0C4FF/333333?text=AW", rating: 5, title: "Best Burgers!", text: "The classic burger was juicy and delicious. Fries were perfect too!", date: new Date('2024-05-20T10:00:00Z') },
-                    { id: 2, restaurantId: 1, userId: "user456", userName: "Bob The Builder", userPhoto: "https://placehold.co/40x40/FFB3BA/333333?text=BB", rating: 4, title: "Good stuff", text: "Quick service and tasty food. A bit crowded though.", date: new Date('2024-05-18T14:30:00Z') },
-                    { id: 3, restaurantId: 2, userId: "user123", userName: "Alice Wonderland", userPhoto: "https://placehold.co/40x40/A0C4FF/333333?text=AW", rating: 5, title: "Authentic Italian", text: "Loved the Carbonara! Felt like I was in Italy.", date: new Date('2024-05-22T19:00:00Z') },
-                ];
-                appState.isLoading = false;
-                resolve();
-            }, 1000); // Simulate network delay
-        });
-    }
-
-    // --- Rendering Functions ---
-    function renderRatingStars(rating, container) {
-        container.innerHTML = '';
-        for (let i = 1; i <= 5; i++) {
-            const star = document.createElement('i');
-            star.classList.add('fas', 'fa-star', 'text-sm');
-            star.style.color = i <= rating ? '#FFCA28' : 'var(--tg-theme-hint-color)';
-            container.appendChild(star);
-        }
-    }
-
-    function renderRestaurantCard(restaurant) {
-        const card = document.createElement('div');
-        card.className = 'restaurant-card rounded-lg shadow-lg overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-xl';
-        card.style.backgroundColor = 'var(--tg-theme-secondary-bg-color)';
-        card.addEventListener('click', () => {
-            tg.HapticFeedback.impactOccurred('light');
-            showDetailScreen(restaurant.id);
-        });
-
-        let avgRating = restaurant.rating;
-        let numReviews = restaurant.reviewCount;
-        // If reviews are in appState, calculate from there
-        const restaurantReviews = appState.reviews.filter(r => r.restaurantId === restaurant.id);
-        if (restaurantReviews.length > 0) {
-            avgRating = restaurantReviews.reduce((sum, r) => sum + r.rating, 0) / restaurantReviews.length;
-            numReviews = restaurantReviews.length;
-        }
-
-
-        card.innerHTML = `
-            <div class="restaurant-image h-48 w-full overflow-hidden">
-                <img src="${restaurant.image}" alt="${restaurant.name}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/600x400/cccccc/969696?text=Image+Error';">
-            </div>
-            <div class="p-4">
-                <h3 class="text-lg font-semibold mb-1 truncate" style="color: var(--tg-theme-text-color);">${restaurant.name}</h3>
-                <div class="flex items-center text-xs mb-2" style="color: var(--tg-theme-hint-color);">
-                    <div class="flex items-center mr-2">
-                        ${[...Array(5)].map((_, i) => `<i class="fas fa-star ${i < Math.round(avgRating) ? 'text-yellow-rating' : 'text-gray-300 dark:text-gray-600'}"></i>`).join('')}
-                    </div>
-                    <span>${avgRating.toFixed(1)} (${numReviews} reviews)</span>
-                </div>
-                <p class="text-xs mb-1 truncate" style="color: var(--tg-theme-hint-color);">${restaurant.cuisine}</p>
-                <p class="text-xs" style="color: var(--tg-theme-hint-color);"><i class="fas fa-location-dot text-xs mr-1" style="color: var(--tg-theme-button-color);"></i>${restaurant.distance} km away</p>
-            </div>
-        `;
-        return card;
-    }
-
-    function renderRestaurantList() {
-        restaurantListEl.innerHTML = ''; // Clear skeletons or previous items
-        const query = appState.searchQuery.toLowerCase();
-        const filteredRestaurants = appState.restaurants.filter(r => {
-            const matchesCategory = appState.activeFilter === 'all' || r.cuisineType === appState.activeFilter;
-            const matchesSearch = !query || r.name.toLowerCase().includes(query) || r.cuisine.toLowerCase().includes(query);
-            return matchesCategory && matchesSearch;
-        });
-
-        if (filteredRestaurants.length === 0) {
-            noResultsEl.classList.remove('hidden');
-        } else {
-            noResultsEl.classList.add('hidden');
-            filteredRestaurants.forEach(r => {
-                restaurantListEl.appendChild(renderRestaurantCard(r));
-            });
-        }
-    }
-    
-    function renderCategoryFilters() {
-        categoryFiltersContainerEl.innerHTML = '';
-        const categories = ['all', ...new Set(appState.restaurants.map(r => r.cuisineType))];
-        
-        categories.forEach(cat => {
-            const button = document.createElement('button');
-            button.className = 'filter-btn whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-medium transition-colors';
-            button.dataset.filter = cat;
-            button.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
-            if (cat === appState.activeFilter) {
-                button.classList.add('active');
-            }
-            button.addEventListener('click', () => {
-                tg.HapticFeedback.impactOccurred('light');
-                appState.activeFilter = cat;
-                document.querySelectorAll('#category-filters-container .filter-btn').forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-                renderRestaurantList();
-            });
-            categoryFiltersContainerEl.appendChild(button);
-        });
-    }
-
-    function renderRestaurantDetail(restaurant) {
-        appState.currentRestaurantId = restaurant.id;
-        detailNameEl.textContent = restaurant.name;
-        restaurantCoverEl.style.backgroundImage = `url(${restaurant.image})`;
-        
-        const restaurantReviews = appState.reviews.filter(r => r.restaurantId === restaurant.id);
-        const avgRating = restaurantReviews.length > 0 ? (restaurantReviews.reduce((sum, r) => sum + r.rating, 0) / restaurantReviews.length) : restaurant.rating;
-        const numReviews = restaurantReviews.length > 0 ? restaurantReviews.length : restaurant.reviewCount;
-
-        renderRatingStars(avgRating, detailRatingStarsEl);
-        detailRatingTextEl.textContent = `${avgRating.toFixed(1)} (${numReviews} reviews)`;
-
-        detailCuisineEl.textContent = restaurant.cuisine;
-        detailDistanceEl.textContent = `${restaurant.distance} km away`; // Potentially calculate actual distance if userLocation is available
-        detailHoursEl.textContent = restaurant.hours;
-        detailPhoneEl.textContent = restaurant.phone;
-        detailPhoneEl.href = `tel:${restaurant.phone}`;
-        detailDescriptionEl.textContent = restaurant.description;
-
-        // Render Menu
-        menuCategoriesEl.innerHTML = '';
-        menuItemsEl.innerHTML = '';
-        const menuCats = ['all', ...new Set(restaurant.menu.map(mc => mc.category))];
-        appState.activeMenuCategory = 'all';
-
-        menuCats.forEach(cat => {
-            const btn = document.createElement('button');
-            btn.className = 'filter-btn whitespace-nowrap px-3 py-1 rounded-full text-xs';
-            btn.textContent = cat;
-            btn.dataset.category = cat;
-            if (cat === 'all') btn.classList.add('active');
-            btn.addEventListener('click', () => {
-                tg.HapticFeedback.impactOccurred('light');
-                appState.activeMenuCategory = cat;
-                document.querySelectorAll('#menu-categories .filter-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                renderMenuItemsForDetail(restaurant);
-            });
-            menuCategoriesEl.appendChild(btn);
-        });
-        renderMenuItemsForDetail(restaurant);
-        renderReviewList(restaurant.id);
-    }
-
-    function renderMenuItemsForDetail(restaurant) {
-        menuItemsEl.innerHTML = '';
-        restaurant.menu.forEach(menuCategory => {
-            if (appState.activeMenuCategory === 'all' || menuCategory.category === appState.activeMenuCategory) {
-                if (appState.activeMenuCategory !== 'all') { // Show category title if not 'all'
-                    const catTitle = document.createElement('h4');
-                    catTitle.className = 'text-md font-semibold mt-3 mb-1';
-                    catTitle.textContent = menuCategory.category;
-                    catTitle.style.color = 'var(--tg-theme-text-color)';
-                    menuItemsEl.appendChild(catTitle);
+        // Sample data (to be replaced by actual data fetching in a real app)
+        const mockData = {
+            proposals: [
+                {
+                    id: 1,
+                    title: "Urban Green Space Expansion",
+                    author: "EcoAdvocate",
+                    authorId: "eco123",
+                    content: "Proposal to mandate that 15% of all new urban development must be dedicated to public green spaces, including parks, community gardens, and natural conservation areas. This will improve air quality, provide recreational opportunities, and support local ecosystems.",
+                    supporters: 78,
+                    requiredSupporters: 100,
+                    category: "environment",
+                    timestamp: new Date(Date.now() - 86400000 * 3).toISOString(), // 3 days ago
+                    discussion: [
+                        { id: 1, author: "UrbanPlanner", authorId: "urban456", content: "This proposal would significantly improve quality of life in urban areas while promoting biodiversity.", timestamp: new Date(Date.now() - 86400000 * 2).toISOString() },
+                        { id: 2, author: "DevelopmentPro", authorId: "dev789", content: "While I support the goal, 15% may be excessive in dense urban areas. Perhaps we could consider a sliding scale based on population density?", timestamp: new Date(Date.now() - 86400000 * 1).toISOString() }
+                    ],
+                    supportedBy: [] // Array of user IDs who supported
+                },
+                {
+                    id: 2,
+                    title: "Digital Education Fund",
+                    author: "TechEdu",
+                    authorId: "tech456",
+                    content: "Establish a dedicated fund to provide digital devices (laptops/tablets) and subsidized high-speed internet access to all students in public K-12 education systems. This aims to bridge the digital divide and ensure equal access to modern learning resources.",
+                    supporters: 92,
+                    requiredSupporters: 100,
+                    category: "education",
+                    timestamp: new Date(Date.now() - 86400000 * 2).toISOString(), // 2 days ago
+                    discussion: [
+                         { id: 1, author: "TeacherVoice", authorId: "teach123", content: "As a teacher, I've seen firsthand how the digital divide affects learning outcomes. This is desperately needed.", timestamp: new Date(Date.now() - 86400000 * 1).toISOString() }
+                    ],
+                    supportedBy: []
+                },
+                {
+                    id: 3,
+                    title: "Community Healthcare Centers Expansion",
+                    author: "HealthAdvocate",
+                    authorId: "health789",
+                    content: "Fund the establishment and staffing of 50 new community healthcare centers in underserved urban and rural neighborhoods over the next 3 years. These centers will provide basic preventative care, vaccinations, health education, and mental health support.",
+                    supporters: 65,
+                    requiredSupporters: 100,
+                    category: "healthcare",
+                    timestamp: new Date(Date.now() - 86400000 * 1).toISOString(), // 1 day ago
+                    discussion: [],
+                    supportedBy: []
                 }
-                menuCategory.items.forEach(item => {
-                    const itemDiv = document.createElement('div');
-                    itemDiv.className = 'py-2 border-b';
-                    itemDiv.style.borderColor = 'var(--tg-theme-hint-color)';
-                    itemDiv.innerHTML = `
-                        <div class="flex justify-between items-center">
-                            <h5 class="font-medium" style="color: var(--tg-theme-text-color);">${item.name}</h5>
-                            <span class="font-semibold" style="color: var(--tg-theme-text-color);">$${item.price.toFixed(2)}</span>
-                        </div>
-                        ${item.description ? `<p class="text-xs mt-1" style="color: var(--tg-theme-hint-color);">${item.description}</p>` : ''}
-                    `;
-                    menuItemsEl.appendChild(itemDiv);
+            ],
+            activeVotes: [
+                {
+                    id: 101,
+                    title: "Renewable Energy Transition Act",
+                    content: "Mandate that 50% of all national energy production must come from renewable sources (solar, wind, geothermal, hydroelectric) by the year 2035. The act includes provisions for investment in renewable infrastructure and retraining programs for workers in fossil fuel industries.",
+                    yesVotes: 1245,
+                    noVotes: 532,
+                    abstainVotes: 89,
+                    category: "environment",
+                    endTime: new Date(Date.now() + 86400000 * 3).toISOString(), // Ends in 3 days
+                    discussion: [
+                        { id: 1, author: "EnergyExpert", authorId: "energy123", content: "The timeline is ambitious but achievable with proper investment. I support this transition.", timestamp: new Date(Date.now() - 86400000 * 2).toISOString() },
+                        { id: 2, author: "EconomistView", authorId: "econ456", content: "We need to ensure that energy prices remain affordable during this transition. Has an economic impact study been conducted?", timestamp: new Date(Date.now() - 86400000 * 1).toISOString() }
+                    ],
+                    votedBy: {} // { userId: 'yes'/'no'/'abstain' }
+                },
+                {
+                    id: 102,
+                    title: "Universal Basic Income Pilot Program",
+                    content: "Establish a 2-year pilot program providing a universal basic income (UBI) of $1,000 per month to 5,000 randomly selected adult citizens across five diverse regions. The program aims to study the economic, social, and health impacts of UBI.",
+                    yesVotes: 983,
+                    noVotes: 1024,
+                    abstainVotes: 121,
+                    category: "economy",
+                    endTime: new Date(Date.now() + 86400000 * 5).toISOString(), // Ends in 5 days
+                    discussion: [],
+                    votedBy: {}
+                }
+            ],
+            passedLegislation: [
+                {
+                    id: 201,
+                    title: "National Parks Protection Act",
+                    content: "Increased funding for national park maintenance and expansion of protected wilderness areas. This act passed with significant public support.",
+                    category: "environment",
+                    passedDate: new Date(Date.now() - 86400000 * 30).toISOString(), // Passed 30 days ago
+                    finalVotes: { yes: 2500, no: 500, abstain: 100 }
+                },
+                 {
+                    id: 202,
+                    title: "Early Childhood Education Grant",
+                    content: "Provided federal grants to states for expanding access to quality pre-kindergarten education programs for all four-year-olds.",
+                    category: "education",
+                    passedDate: new Date(Date.now() - 86400000 * 60).toISOString(), // Passed 60 days ago
+                    finalVotes: { yes: 3100, no: 800, abstain: 150 }
+                }
+            ],
+            myActivities: [] // Will be populated by user actions
+        };
+
+        let appData = JSON.parse(JSON.stringify(mockData)); // Deep copy for manipulation
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                tg.expand();
+                tg.ready();
+                currentUser = {
+                    id: tg.initDataUnsafe.user.id.toString() || 'anonymous' + Date.now(),
+                    first_name: tg.initDataUnsafe.user.first_name || 'Anonymous',
+                    last_name: tg.initDataUnsafe.user.last_name || '',
+                    username: tg.initDataUnsafe.user.username || ('user' + Date.now())
+                };
+                 // Apply Telegram theme variables
+                document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#ffffff');
+                document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#000000');
+                document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color || '#999999');
+                document.documentElement.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color || '#5D5CDE');
+                document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#5D5CDE');
+                document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color || '#ffffff');
+                document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color || '#f0f0f0');
+
+                if (tg.colorScheme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+
+
+            } else {
+                console.log("Telegram WebApp is not available. Using demo mode.");
+                // Mock user for testing if Telegram is not available
+                currentUser = {
+                    id: 'demoUser' + Math.floor(Math.random() * 1000),
+                    first_name: 'Demo',
+                    last_name: 'User',
+                    username: 'demouser'
+                };
+                 // Fallback styling if Telegram object is not available
+                const isSystemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (isSystemDark) {
+                    document.documentElement.classList.add('dark');
+                }
+                applyColorScheme(isSystemDark); // Apply initial scheme
+
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+                    document.documentElement.classList.toggle('dark', event.matches);
+                    applyColorScheme(event.matches);
                 });
             }
+            
+            initAppUI(); // Initialize UI elements that depend on theme
+            initData();
+            setupEventListeners();
+            showView('proposals'); // Default view
         });
-    }
 
-    function renderReviewList(restaurantId) {
-        reviewListEl.innerHTML = '';
-        const reviews = appState.reviews.filter(r => r.restaurantId === restaurantId)
-                                     .sort((a,b) => b.date - a.date); // Newest first
-        reviewCountEl.textContent = reviews.length;
-
-        if (reviews.length === 0) {
-            reviewListEl.innerHTML = `<p class="text-sm text-center py-4" style="color: var(--tg-theme-hint-color);">No reviews yet. Be the first!</p>`;
-            return;
+        function applyColorScheme(isDark) {
+            if (isDark) {
+                document.documentElement.style.setProperty('--tg-theme-bg-color', 'var(--default-bg-color)');
+                document.documentElement.style.setProperty('--tg-theme-text-color', 'var(--default-text-color)');
+                // ... set other dark mode colors from :root .dark
+            } else {
+                 document.documentElement.style.setProperty('--tg-theme-bg-color', 'var(--default-bg-color)');
+                document.documentElement.style.setProperty('--tg-theme-text-color', 'var(--default-text-color)');
+                // ... set other light mode colors from :root
+            }
         }
-        reviews.forEach(review => {
-            const reviewDiv = document.createElement('div');
-            reviewDiv.className = 'py-3 border-b';
-            reviewDiv.style.borderColor = 'var(--tg-theme-hint-color)';
-            reviewDiv.innerHTML = `
-                <div class="flex items-start space-x-3">
-                    <img src="${review.userPhoto}" alt="${review.userName}" class="w-10 h-10 rounded-full object-cover">
-                    <div>
-                        <div class="flex items-center mb-0.5">
-                            <h5 class="font-semibold text-sm mr-2" style="color: var(--tg-theme-text-color);">${review.userName}</h5>
-                            <div class="flex items-center">
-                                ${[...Array(5)].map((_, i) => `<i class="fas fa-star text-xs ${i < review.rating ? 'text-yellow-rating' : ''}" style="${i < review.rating ? '' : 'color: var(--tg-theme-hint-color);'}"></i>`).join('')}
+        
+        function initAppUI() {
+            // Set active tab style based on current theme
+            document.querySelectorAll('.tab-button').forEach(button => {
+                if (button.classList.contains('active')) {
+                    button.style.borderBottomColor = `var(--tg-theme-button-color, var(--default-button-color))`;
+                    button.style.color = `var(--tg-theme-button-color, var(--default-button-color))`;
+                } else {
+                    button.style.borderBottomColor = 'transparent'; // Or initial border color
+                    button.style.color = `var(--tg-theme-text-color, var(--default-text-color))`;
+                }
+            });
+        }
+
+
+        // Data handling functions
+        function initData() {
+            renderProposals();
+            renderActiveVotes();
+            renderPassedLegislation();
+            renderMyActivities();
+        }
+
+        function formatDate(isoString) {
+            if (!isoString) return 'N/A';
+            const date = new Date(isoString);
+            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+        
+        function timeAgo(isoString) {
+            if (!isoString) return 'some time ago';
+            const date = new Date(isoString);
+            const now = new Date();
+            const seconds = Math.round((now - date) / 1000);
+            const minutes = Math.round(seconds / 60);
+            const hours = Math.round(minutes / 60);
+            const days = Math.round(hours / 24);
+
+            if (seconds < 60) return `${seconds} sec ago`;
+            if (minutes < 60) return `${minutes} min ago`;
+            if (hours < 24) return `${hours} hr ago`;
+            return `${days} day(s) ago`;
+        }
+
+
+        function renderProposals() {
+            const list = document.querySelector('.proposal-list');
+            list.innerHTML = ''; // Clear existing
+            appData.proposals.forEach(p => {
+                const card = `
+                    <div class="proposal-card p-3 rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color));" data-id="${p.id}">
+                        <h3 class="font-bold text-md mb-1">${p.title}</h3>
+                        <p class="text-xs mb-1" style="color: var(--tg-theme-hint-color, var(--default-hint-color));">By ${p.author} • ${timeAgo(p.timestamp)}</p>
+                        <p class="text-xs mb-2 truncate">${p.content.substring(0,100)}...</p>
+                        <div class="flex justify-between items-center text-xs">
+                            <span>${p.supporters}/${p.requiredSupporters} supporters</span>
+                            <span class="px-2 py-0.5 rounded-full text-xs" style="background-color: var(--tg-theme-button-color, var(--default-button-color)); color: var(--tg-theme-button-text-color, var(--default-button-text-color)); opacity:0.7;">${p.category}</span>
+                        </div>
+                        <div class="w-full h-1 mt-2 rounded-full overflow-hidden" style="background-color: var(--tg-theme-bg-color, var(--default-bg-color));">
+                            <div class="h-full" style="background-color: var(--tg-theme-button-color, var(--default-button-color)); width: ${Math.min(100, (p.supporters / p.requiredSupporters) * 100)}%;"></div>
+                        </div>
+                    </div>`;
+                list.insertAdjacentHTML('beforeend', card);
+            });
+             // Add event listeners to newly created cards
+            document.querySelectorAll('.proposal-card').forEach(card => {
+                card.addEventListener('click', () => showProposalDetail(card.dataset.id));
+            });
+        }
+
+        function renderActiveVotes() {
+            const list = document.querySelector('.active-votes-list');
+            list.innerHTML = '';
+            appData.activeVotes.forEach(v => {
+                const totalVoted = v.yesVotes + v.noVotes + v.abstainVotes;
+                const yesPercent = totalVoted > 0 ? (v.yesVotes / totalVoted) * 100 : 0;
+                const noPercent = totalVoted > 0 ? (v.noVotes / totalVoted) * 100 : 0;
+                const timeRemaining = new Date(v.endTime) > new Date() ? `${Math.ceil((new Date(v.endTime) - new Date()) / (1000 * 60 * 60 * 24))} days remaining` : 'Voting ended';
+
+                const card = `
+                    <div class="vote-card p-3 rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color));" data-id="${v.id}">
+                        <h3 class="font-bold text-md mb-1">${v.title}</h3>
+                        <p class="text-xs mb-2 truncate">${v.content.substring(0,100)}...</p>
+                         <div class="text-xs mb-2">
+                            <span class="px-2 py-0.5 rounded-full" style="background-color: var(--tg-theme-button-color, var(--default-button-color)); color: var(--tg-theme-button-text-color, var(--default-button-text-color)); opacity:0.7;">${v.category}</span>
+                        </div>
+                        <div class="mb-1">
+                            <div class="flex justify-between text-xs"><span style="color: #4CAF50;">Yes</span> <span>${yesPercent.toFixed(1)}%</span></div>
+                            <div class="w-full h-1 rounded-full overflow-hidden" style="background-color: var(--tg-theme-bg-color, var(--default-bg-color));">
+                                <div class="h-full" style="background-color: #4CAF50; width: ${yesPercent}%;"></div>
                             </div>
                         </div>
-                        <p class="text-xs mb-1" style="color: var(--tg-theme-hint-color);">${new Date(review.date).toLocaleDateString()}</p>
-                        <h6 class="font-medium text-sm mb-1" style="color: var(--tg-theme-text-color);">${review.title}</h6>
-                        <p class="text-sm" style="color: var(--tg-theme-text-color);">${review.text}</p>
-                    </div>
-                </div>
-            `;
-            reviewListEl.appendChild(reviewDiv);
-        });
-    }
-
-    // --- Navigation and Modal Logic ---
-    function showMainScreen() {
-        mainScreen.classList.remove('hidden');
-        detailScreen.classList.add('hidden');
-        tg.BackButton.hide();
-        tg.MainButton.hide(); // Or set MainButton for main screen context
-        appState.currentRestaurantId = null;
-        // Potentially refresh list if data could have changed
-        // renderRestaurantList(); 
-    }
-
-    function showDetailScreen(restaurantId) {
-        const restaurant = appState.restaurants.find(r => r.id === restaurantId);
-        if (!restaurant) {
-            tg.showAlert('Restaurant not found!');
-            return;
-        }
-        mainScreen.classList.add('hidden');
-        detailScreen.classList.remove('hidden');
-        renderRestaurantDetail(restaurant);
-        tg.BackButton.show();
-        // Example: Use MainButton to "Book Table" or "Order"
-        // tg.MainButton.setText('Book a Table (Not Impl.)');
-        // tg.MainButton.show();
-        // tg.MainButton.onClick(() => tg.showAlert(`Booking for ${restaurant.name} (Not Implemented)`));
-        window.scrollTo(0, 0); // Scroll to top of detail view
-    }
-    
-    function goBackToMainScreen() { // Called by Telegram BackButton
-        tg.HapticFeedback.impactOccurred('light');
-        showMainScreen();
-    }
-
-    function showReviewModal() {
-        if (!appState.currentRestaurantId) return;
-        tg.HapticFeedback.impactOccurred('medium');
-        reviewRestaurantIdInput.value = appState.currentRestaurantId;
-        reviewFormEl.reset(); // Clear previous input
-        // Reset stars
-        document.querySelectorAll('.rating-stars input').forEach(input => input.checked = false);
-
-        reviewModal.classList.add('active');
-    }
-
-    function hideReviewModal() {
-        reviewModal.classList.remove('active');
-    }
-
-    // --- Event Handlers ---
-    function handleSearch(event) {
-        appState.searchQuery = event.target.value;
-        // Debounce rendering for better performance if needed
-        renderRestaurantList();
-    }
-
-    function handleReviewSubmit(event) {
-        event.preventDefault();
-        tg.HapticFeedback.notificationOccurred('success');
-        const newReview = {
-            id: Date.now(), // Simple unique ID
-            restaurantId: parseInt(reviewRestaurantIdInput.value),
-            userId: appState.userProfile.id,
-            userName: appState.userProfile.name,
-            userPhoto: appState.userProfile.photo,
-            rating: parseInt(event.target.rating.value),
-            title: reviewTitleInput.value,
-            text: reviewTextInput.value,
-            date: new Date()
-        };
-        appState.reviews.push(newReview);
-        // In a real app, send to backend here
-        hideReviewModal();
-        renderReviewList(newReview.restaurantId); // Re-render reviews for current restaurant
-        // Update rating on main list if needed (more complex, requires re-rendering list or updating specific card)
-        const restaurant = appState.restaurants.find(r => r.id === newReview.restaurantId);
-        if(restaurant) { // Update the main restaurant object's review count and potentially rating for card display
-            const restaurantReviews = appState.reviews.filter(r => r.restaurantId === restaurant.id);
-            restaurant.rating = restaurantReviews.reduce((sum, r) => sum + r.rating, 0) / restaurantReviews.length;
-            restaurant.reviewCount = restaurantReviews.length;
-            renderRestaurantList(); // Re-render the whole list to reflect new average rating on cards
+                        <div>
+                            <div class="flex justify-between text-xs"><span style="color: #F44336;">No</span> <span>${noPercent.toFixed(1)}%</span></div>
+                            <div class="w-full h-1 rounded-full overflow-hidden" style="background-color: var(--tg-theme-bg-color, var(--default-bg-color));">
+                                <div class="h-full" style="background-color: #F44336; width: ${noPercent}%;"></div>
+                            </div>
+                        </div>
+                        <p class="text-xs mt-2" style="color: var(--tg-theme-hint-color, var(--default-hint-color));">${timeRemaining}</p>
+                    </div>`;
+                list.insertAdjacentHTML('beforeend', card);
+            });
+            document.querySelectorAll('.vote-card').forEach(card => {
+                card.addEventListener('click', () => showVoteDetail(card.dataset.id));
+            });
         }
 
-        tg.showPopup({
-            title: 'Review Submitted!',
-            message: 'Thank you for your feedback.',
-            buttons: [{ type: 'ok' }]
-        });
-    }
-    
-    function shareRestaurant() {
-        if (!appState.currentRestaurantId) return;
-        const restaurant = appState.restaurants.find(r => r.id === appState.currentRestaurantId);
-        if (!restaurant) return;
+        function renderPassedLegislation() {
+            const list = document.querySelector('.passed-list');
+            list.innerHTML = '';
+            appData.passedLegislation.forEach(l => {
+                const card = `
+                    <div class="passed-card p-3 rounded-lg shadow" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color));">
+                        <h3 class="font-bold text-md mb-1">${l.title}</h3>
+                        <p class="text-xs mb-1" style="color: var(--tg-theme-hint-color, var(--default-hint-color));">Passed on: ${formatDate(l.passedDate)}</p>
+                        <p class="text-xs mb-2 truncate">${l.content.substring(0,150)}...</p>
+                        <div class="text-xs">
+                            Final Votes: <span style="color: #4CAF50;">Yes: ${l.finalVotes.yes}</span>, <span style="color: #F44336;">No: ${l.finalVotes.no}</span>, Abstain: ${l.finalVotes.abstain}
+                        </div>
+                         <span class="mt-1 px-2 py-0.5 rounded-full text-xs inline-block" style="background-color: var(--tg-theme-button-color, var(--default-button-color)); color: var(--tg-theme-button-text-color, var(--default-button-text-color)); opacity:0.7;">${l.category}</span>
+                    </div>`;
+                list.insertAdjacentHTML('beforeend', card);
+            });
+        }
 
-        tg.HapticFeedback.impactOccurred('light');
-        // For a real app, this URL should point to your Mini App with params to open this specific restaurant
-        const shareUrl = `https://t.me/${tg.initDataUnsafe.bot_username || 'your_bot_username'}/${tg.WebApp.appName}?startapp=restaurant-${restaurant.id}`;
-        const text = `Check out ${restaurant.name} on Food Finder! Great ${restaurant.cuisine}.`;
-
-        try {
-            // Try using the Web Share API if available and not in Telegram context (for local testing)
-            if (navigator.share) {
-                 navigator.share({
-                    title: restaurant.name,
-                    text: text,
-                    url: shareUrl,
-                });
-            } else {
-                // Fallback to Telegram's way of sharing
-                tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`);
+        function renderMyActivities() {
+            const list = document.querySelector('.activities-list');
+            list.innerHTML = ''; // Clear existing
+            if (appData.myActivities.length === 0) {
+                list.innerHTML = `<p class="text-sm" style="color: var(--tg-theme-hint-color, var(--default-hint-color));">No activities yet. Get involved!</p>`;
+                return;
             }
-        } catch (e) {
-            tg.showAlert('Sharing failed. You can manually copy the link.');
-            console.error("Share error: ", e);
-        }
-    }
-
-    function viewRestaurantLocation() {
-        if (!appState.currentRestaurantId) return;
-        const restaurant = appState.restaurants.find(r => r.id === appState.currentRestaurantId);
-        if (!restaurant || !restaurant.location) {
-            tg.showAlert('Location data not available for this restaurant.');
-            return;
-        }
-        tg.HapticFeedback.impactOccurred('light');
-        // tg.openLink(`https://www.google.com/maps?q=${restaurant.location.lat},${restaurant.location.lng}`);
-        // More native: request to show point on map
-        try {
-            tg.showMap(restaurant.location.lat, restaurant.location.lng);
-        } catch (e) {
-            // Fallback if showMap is not available or fails
-            tg.openLink(`https://maps.google.com/?q=${restaurant.location.lat},${restaurant.location.lng}`, {try_instant_view: true});
-            console.error("showMap error, falling back to openLink: ", e);
-        }
-    }
-    
-    function requestUserLocation() {
-        currentLocationEl.textContent = 'Fetching location...';
-        if (tg.CloudStorage && tg.CloudStorage.getItem) { // Check if CloudStorage is available
-            tg.CloudStorage.getItem('user_city', (error, value) => {
-                if (error) {
-                    console.warn('Error getting city from cloud:', error);
+            appData.myActivities.slice().reverse().forEach(activity => { // Show newest first
+                let activityHtml = '';
+                switch(activity.type) {
+                    case 'created_proposal':
+                        activityHtml = `Created proposal: <strong>"${activity.proposalTitle}"</strong>`;
+                        break;
+                    case 'supported_proposal':
+                        activityHtml = `Supported proposal: <strong>"${activity.proposalTitle}"</strong>`;
+                        break;
+                    case 'commented_proposal':
+                        activityHtml = `Commented on proposal <strong>"${activity.itemTitle}"</strong>: "${activity.comment.substring(0,50)}..."`;
+                        break;
+                    case 'voted':
+                        activityHtml = `Voted <strong>${activity.voteType.toUpperCase()}</strong> on: <strong>"${activity.voteTitle}"</strong>`;
+                        break;
+                    case 'commented_vote':
+                        activityHtml = `Commented on vote <strong>"${activity.itemTitle}"</strong>: "${activity.comment.substring(0,50)}..."`;
+                        break;
+                    default:
+                        activityHtml = `Performed an activity.`;
                 }
-                if (value) {
-                    currentLocationEl.textContent = `City: ${value}`;
-                    // Potentially use this city to filter/sort restaurants if lat/lng not available
+                const card = `
+                    <div class="activity-card p-3 rounded-lg" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color));">
+                        <p class="text-sm">${activityHtml}</p>
+                        <p class="text-xs mt-1" style="color: var(--tg-theme-hint-color, var(--default-hint-color));">${timeAgo(activity.timestamp)}</p>
+                    </div>`;
+                list.insertAdjacentHTML('beforeend', card);
+            });
+        }
+
+        function showView(viewId, detailId = null) {
+            document.querySelectorAll('.view-content').forEach(view => view.classList.add('hidden'));
+            document.getElementById(`${viewId}-view`).classList.remove('hidden');
+            
+            const tabNav = document.getElementById('tab-navigation');
+            const backButton = document.getElementById('back-button');
+            const headerTitle = document.getElementById('header-title');
+
+            if (viewId.includes('-detail') || viewId === 'new-proposal') {
+                tabNav.classList.add('hidden');
+                backButton.classList.remove('hidden');
+                currentDetailId = detailId; // Store the ID for detail views
+                if (viewId === 'proposal-detail') headerTitle.textContent = "Proposal Details";
+                else if (viewId === 'vote-detail') headerTitle.textContent = "Vote Details";
+                else if (viewId === 'new-proposal') headerTitle.textContent = "New Proposal";
+
+            } else {
+                tabNav.classList.remove('hidden');
+                backButton.classList.add('hidden');
+                headerTitle.textContent = "Digital Democracy";
+                currentView = viewId; // Update current main list view
+                currentDetailId = null;
+
+                // Update active tab
+                document.querySelectorAll('.tab-button').forEach(button => {
+                    const isActive = button.dataset.view === viewId;
+                    button.classList.toggle('active', isActive);
+                     button.style.borderBottomColor = isActive ? `var(--tg-theme-button-color, var(--default-button-color))` : 'transparent';
+                    button.style.color = isActive ? `var(--tg-theme-button-color, var(--default-button-color))` : `var(--tg-theme-text-color, var(--default-text-color))`;
+                });
+            }
+        }
+
+        function addRippleEffect(event) {
+            const button = event.currentTarget;
+            const ripple = document.createElement("span");
+            const rect = button.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = event.clientX - rect.left - size / 2;
+            const y = event.clientY - rect.top - size / 2;
+
+            ripple.style.width = ripple.style.height = `${size}px`;
+            ripple.style.left = `${x}px`;
+            ripple.style.top = `${y}px`;
+            ripple.classList.add("ripple-effect"); // You might need a CSS class for this
+            
+            // Style for ripple-effect if not in main CSS
+            const style = document.createElement('style');
+            style.innerHTML = `
+            .ripple-effect {
+                position: absolute;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.5);
+                transform: scale(0);
+                animation: ripple-animation 0.6s linear;
+            }
+            @keyframes ripple-animation {
+                to {
+                    transform: scale(4);
+                    opacity: 0;
+                }
+            }`;
+            document.head.appendChild(style);
+
+
+            const existingRipple = button.querySelector(".ripple-effect");
+            if (existingRipple) {
+                existingRipple.remove();
+            }
+            button.appendChild(ripple);
+        }
+        document.querySelectorAll('.ripple').forEach(button => {
+            button.addEventListener('click', addRippleEffect);
+        });
+
+
+        // CRUD and interaction functions
+        function addProposal(title, content, category) {
+            const newId = appData.proposals.length > 0 ? Math.max(...appData.proposals.map(p => p.id)) + 1 : 1;
+            const newProposal = {
+                id: newId,
+                title,
+                author: `${currentUser.first_name} ${currentUser.last_name} (@${currentUser.username})`,
+                authorId: currentUser.id,
+                content,
+                supporters: 0,
+                requiredSupporters: 100,
+                category,
+                timestamp: new Date().toISOString(),
+                discussion: [],
+                supportedBy: []
+            };
+            appData.proposals.unshift(newProposal); // Add to the beginning of the array
+            addActivity('created_proposal', { proposalId: newId, proposalTitle: title });
+            renderProposals();
+            showView('proposals');
+            if (tg) tg.HapticFeedback.notificationOccurred('success');
+        }
+
+        function addSupport(proposalId) {
+            const proposal = appData.proposals.find(p => p.id === parseInt(proposalId));
+            if (proposal && !proposal.supportedBy.includes(currentUser.id)) {
+                proposal.supporters++;
+                proposal.supportedBy.push(currentUser.id);
+                addActivity('supported_proposal', { proposalId: proposal.id, proposalTitle: proposal.title });
+                renderProposals(); // Re-render list to update card
+                if (document.getElementById('proposal-detail-view').classList.contains('hidden') === false && currentDetailId == proposalId) {
+                     // If detail view is active for this proposal, update it too
+                    renderProposalDetail(proposalId);
+                }
+                if (tg) tg.HapticFeedback.impactOccurred('light');
+            } else if (proposal && proposal.supportedBy.includes(currentUser.id)) {
+                // User already supported, maybe allow unsupport or just do nothing
+                console.log("Already supported");
+                if (tg) tg.showAlert("You have already supported this proposal.");
+            }
+        }
+        
+        function addVote(voteId, voteType) {
+            const vote = appData.activeVotes.find(v => v.id === parseInt(voteId));
+            if (vote && (!vote.votedBy[currentUser.id] || vote.votedBy[currentUser.id] !== voteType)) {
+                // If user previously voted differently, adjust old vote count
+                if(vote.votedBy[currentUser.id]) {
+                    const oldVoteType = vote.votedBy[currentUser.id];
+                    if (oldVoteType === 'yes') vote.yesVotes--;
+                    else if (oldVoteType === 'no') vote.noVotes--;
+                    else if (oldVoteType === 'abstain') vote.abstainVotes--;
+                }
+
+                if (voteType === 'yes') vote.yesVotes++;
+                else if (voteType === 'no') vote.noVotes++;
+                else if (voteType === 'abstain') vote.abstainVotes++;
+                
+                vote.votedBy[currentUser.id] = voteType;
+
+                addActivity('voted', { voteId: vote.id, voteTitle: vote.title, voteType: voteType });
+                renderActiveVotes(); // Re-render list
+                if (document.getElementById('vote-detail-view').classList.contains('hidden') === false && currentDetailId == voteId) {
+                    renderVoteDetail(voteId); // Update detail view if active
+                }
+                 if (tg) tg.HapticFeedback.impactOccurred('medium');
+            } else if (vote && vote.votedBy[currentUser.id] === voteType) {
+                 if (tg) tg.showAlert(`You have already voted ${voteType.toUpperCase()} for this item.`);
+            }
+        }
+
+        function addDiscussionMessage(itemId, itemType, content) {
+            if (!content.trim()) return; 
+
+            const item = itemType === 'proposal' 
+                ? appData.proposals.find(p => p.id === parseInt(itemId))
+                : appData.activeVotes.find(v => v.id === parseInt(itemId));
+
+            if (item) {
+                const newDiscussionId = item.discussion.length > 0 ? Math.max(...item.discussion.map(d => d.id)) + 1 : 1;
+                const newMessage = {
+                    id: newDiscussionId,
+                    author: `${currentUser.first_name} (@${currentUser.username})`,
+                    authorId: currentUser.id,
+                    content,
+                    timestamp: new Date().toISOString()
+                };
+                item.discussion.push(newMessage);
+                addActivity(itemType === 'proposal' ? 'commented_proposal' : 'commented_vote', { itemId: item.id, itemTitle: item.title, comment: content });
+                
+                if (itemType === 'proposal' && document.getElementById('proposal-detail-view').classList.contains('hidden') === false && currentDetailId == itemId) {
+                    renderDiscussionList(item.discussion, document.getElementById('proposal-detail-discussion-list'));
+                    document.getElementById('proposal-detail-discussion-input').value = '';
+                } else if (itemType === 'vote' && document.getElementById('vote-detail-view').classList.contains('hidden') === false && currentDetailId == itemId) {
+                    renderDiscussionList(item.discussion, document.getElementById('vote-detail-discussion-list'));
+                     document.getElementById('vote-detail-discussion-input').value = '';
+                }
+                 if (tg) tg.HapticFeedback.notificationOccurred('success');
+            }
+        }
+
+        function addActivity(type, details) {
+            const activity = {
+                type,
+                ...details,
+                timestamp: new Date().toISOString(),
+                id: appData.myActivities.length > 0 ? Math.max(...appData.myActivities.map(a => a.id)) + 1 : 1
+            };
+            appData.myActivities.push(activity);
+            renderMyActivities(); // Update the My Activities view
+        }
+
+        function renderProposalDetail(proposalId) {
+            const proposal = appData.proposals.find(p => p.id === parseInt(proposalId));
+            if (!proposal) return;
+
+            previousView = currentView; // Store the view we came from
+            currentDetailId = proposal.id;
+
+            document.getElementById('proposal-detail-title').textContent = proposal.title;
+            document.getElementById('proposal-detail-author').textContent = `By ${proposal.author} • ${timeAgo(proposal.timestamp)}`;
+            document.getElementById('proposal-detail-category').textContent = proposal.category;
+            document.getElementById('proposal-detail-content').innerHTML = proposal.content.replace(/\n/g, '<br>'); // Basic formatting
+
+            const supportCountEl = document.getElementById('proposal-detail-support-count');
+            const supportBarEl = document.getElementById('proposal-detail-support-bar');
+            const supportButtonEl = document.getElementById('proposal-detail-support-button');
+
+            supportCountEl.textContent = `${proposal.supporters}/${proposal.requiredSupporters} supporters`;
+            supportBarEl.style.width = `${Math.min(100, (proposal.supporters / proposal.requiredSupporters) * 100)}%`;
+            
+            if (proposal.supportedBy.includes(currentUser.id)) {
+                supportButtonEl.textContent = 'Supported';
+                supportButtonEl.disabled = true;
+                supportButtonEl.style.opacity = '0.7';
+            } else {
+                supportButtonEl.textContent = 'Support';
+                supportButtonEl.disabled = false;
+                supportButtonEl.style.opacity = '1';
+            }
+            
+            renderDiscussionList(proposal.discussion, document.getElementById('proposal-detail-discussion-list'));
+            showView('proposal-detail', proposal.id);
+        }
+
+        function renderVoteDetail(voteId) {
+            const vote = appData.activeVotes.find(v => v.id === parseInt(voteId));
+            if (!vote) return;
+
+            previousView = currentView;
+            currentDetailId = vote.id;
+
+            document.getElementById('vote-detail-title').textContent = vote.title;
+            document.getElementById('vote-detail-category').textContent = vote.category;
+            document.getElementById('vote-detail-content').innerHTML = vote.content.replace(/\n/g, '<br>');
+
+            const endTime = new Date(vote.endTime);
+            const now = new Date();
+            let statusText = '';
+            if (now < endTime) {
+                const diff = endTime - now;
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                statusText = `Voting ends in: ${days}d ${hours}h`;
+            } else {
+                statusText = 'Voting has ended.';
+            }
+            document.getElementById('vote-detail-status').textContent = statusText;
+            document.getElementById('vote-detail-time-remaining').textContent = statusText; // Also update the one near bars
+
+            updateVoteResultsUI(vote);
+            renderDiscussionList(vote.discussion, document.getElementById('vote-detail-discussion-list'));
+            
+            // Highlight user's existing vote
+            document.querySelectorAll('#vote-detail-view .vote-button').forEach(btn => {
+                btn.classList.remove('ring-2', 'ring-offset-2'); // Clear previous highlights
+                btn.style.borderColor = 'transparent';
+                if (vote.votedBy[currentUser.id] === btn.dataset.voteType) {
+                    btn.classList.add('ring-2', 'ring-offset-2');
+                    btn.style.borderColor = `var(--tg-theme-link-color, var(--default-link-color))`;
+                }
+            });
+
+            showView('vote-detail', vote.id);
+        }
+        
+        function updateVoteResultsUI(vote) {
+            const totalVoted = vote.yesVotes + vote.noVotes + vote.abstainVotes;
+            const yesPercent = totalVoted > 0 ? (vote.yesVotes / totalVoted) * 100 : 0;
+            const noPercent = totalVoted > 0 ? (vote.noVotes / totalVoted) * 100 : 0;
+            const abstainPercent = totalVoted > 0 ? (vote.abstainVotes / totalVoted) * 100 : 0;
+
+            document.getElementById('vote-detail-yes-percentage').textContent = `${yesPercent.toFixed(1)}% (${vote.yesVotes})`;
+            document.getElementById('vote-detail-yes-bar').style.width = `${yesPercent}%`;
+            document.getElementById('vote-detail-no-percentage').textContent = `${noPercent.toFixed(1)}% (${vote.noVotes})`;
+            document.getElementById('vote-detail-no-bar').style.width = `${noPercent}%`;
+            document.getElementById('vote-detail-abstain-percentage').textContent = `${abstainPercent.toFixed(1)}% (${vote.abstainVotes})`;
+            document.getElementById('vote-detail-abstain-bar').style.width = `${abstainPercent}%`;
+        }
+
+        function renderDiscussionList(discussionData, listElement) {
+            listElement.innerHTML = ''; // Clear existing
+            if (discussionData.length === 0) {
+                listElement.innerHTML = `<p class="text-sm text-center py-4" style="color: var(--tg-theme-hint-color, var(--default-hint-color));">No discussion yet. Be the first!</p>`;
+            }
+            discussionData.forEach(msg => {
+                const isOutgoing = msg.authorId === currentUser.id;
+                const bubbleClass = isOutgoing ? 'outgoing' : 'incoming';
+                const alignmentClass = isOutgoing ? 'ml-auto' : 'mr-auto';
+                
+                const messageHtml = `
+                    <div class="message-container flex flex-col ${isOutgoing ? 'items-end' : 'items-start'}">
+                        <div class="message-bubble ${bubbleClass} ${alignmentClass}">
+                            <p class="font-medium text-xs ${isOutgoing ? '' : 'text-tg-link'}">${msg.author}</p>
+                            <p>${msg.content}</p>
+                            <p class="text-xs opacity-70 mt-1 text-right">${timeAgo(msg.timestamp)}</p>
+                        </div>
+                    </div>`;
+                listElement.insertAdjacentHTML('beforeend', messageHtml);
+            });
+            listElement.scrollTop = listElement.scrollHeight; // Scroll to bottom
+        }
+
+        // Event listeners setup
+        function setupEventListeners() {
+            // Tab navigation
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    showView(this.dataset.view);
+                });
+            });
+
+            // New Proposal Button
+            document.getElementById('new-proposal-btn').addEventListener('click', () => {
+                previousView = currentView; // Store where we came from
+                showView('new-proposal');
+                document.getElementById('proposal-form').reset(); // Clear form
+            });
+
+            // Back button
+            document.getElementById('back-button').addEventListener('click', () => {
+                showView(previousView || 'proposals'); // Go back to stored previous list view or default
+            });
+
+            // Proposal Form
+            document.getElementById('proposal-form').addEventListener('submit', function(event) {
+                event.preventDefault();
+                const title = document.getElementById('proposal-title-input').value;
+                const content = document.getElementById('proposal-content-input').value;
+                const category = document.getElementById('proposal-category-input').value;
+                if (title.trim() && content.trim()) {
+                    addProposal(title, content, category);
                 } else {
-                    // If no city in cloud or cloud not used, try geolocation
-                    fetchGeoLocation();
+                    if (tg) tg.showAlert("Title and content cannot be empty.");
+                    else alert("Title and content cannot be empty.");
                 }
             });
-        } else {
-            fetchGeoLocation();
-        }
-    }
-
-    function fetchGeoLocation() {
-         if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    appState.userLocation = {
-                        latitude: position.coords.latitude,
-                        longitude: position.coords.longitude,
-                    };
-                    currentLocationEl.textContent = `Lat: ${appState.userLocation.latitude.toFixed(2)}, Lon: ${appState.userLocation.longitude.toFixed(2)}`;
-                    tg.HapticFeedback.notificationOccurred('success');
-                    // TODO: In a real app, re-fetch or sort restaurants by distance
-                    // For now, we just display it. If restaurants have lat/lng, we could calculate distance.
-                    // For example, update restaurant.distance here.
-                    appState.restaurants.forEach(r => {
-                        if (r.location && appState.userLocation) {
-                            r.distance = calculateDistance(appState.userLocation.latitude, appState.userLocation.longitude, r.location.lat, r.location.lng);
-                        }
-                    });
-                    appState.restaurants.sort((a,b) => a.distance - b.distance); // Sort by new distance
-                    renderRestaurantList(); // Re-render with updated distances and order
-                },
-                (error) => {
-                    console.warn("Error getting location:", error.message);
-                    currentLocationEl.textContent = "Location access denied.";
-                    tg.HapticFeedback.notificationOccurred('error');
-                    tg.showAlert(`Could not get location: ${error.message}. Some features might be limited.`);
-                },
-                { timeout: 10000, enableHighAccuracy: true }
-            );
-        } else {
-            currentLocationEl.textContent = "Geolocation not supported.";
-            tg.showAlert("Geolocation is not supported by your browser.");
-        }
-    }
-
-    function calculateDistance(lat1, lon1, lat2, lon2) { // Haversine formula
-        const R = 6371; // Radius of the earth in km
-        const dLat = deg2rad(lat2-lat1);
-        const dLon = deg2rad(lon2-lon1);
-        const a =
-            Math.sin(dLat/2) * Math.sin(dLat/2) +
-            Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
-            Math.sin(dLon/2) * Math.sin(dLon/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        const d = R * c; // Distance in km
-        return parseFloat(d.toFixed(1));
-    }
-    function deg2rad(deg) {
-        return deg * (Math.PI/180)
-    }
-
-
-    function clearAllFilters() {
-        tg.HapticFeedback.impactOccurred('light');
-        appState.activeFilter = 'all';
-        appState.searchQuery = '';
-        searchInputEl.value = '';
-        document.querySelectorAll('#category-filters-container .filter-btn').forEach(btn => btn.classList.remove('active'));
-        document.querySelector('#category-filters-container .filter-btn[data-filter="all"]').classList.add('active');
-        renderRestaurantList();
-    }
-
-
-    // --- Initialization ---
-    async function initApp() {
-        setupTelegramFeatures(); // Initialize Telegram SDK features first
-        
-        // Attempt to get location
-        requestUserLocation(); // This will also trigger initial render after location or on error
-
-        await loadSampleData(); // Load mock data
-        
-        // Initial Render
-        renderCategoryFilters();
-        renderRestaurantList(); // This will be called again if location updates distances
-
-        // Attach Event Listeners
-        document.getElementById('refresh-location').addEventListener('click', () => {
-            tg.HapticFeedback.impactOccurred('medium');
-            requestUserLocation();
-        });
-        searchInputEl.addEventListener('input', handleSearch);
-        document.getElementById('clear-filters-main').addEventListener('click', clearAllFilters);
-
-        // Detail screen buttons
-        document.getElementById('add-review').addEventListener('click', showReviewModal);
-        document.getElementById('share-restaurant').addEventListener('click', shareRestaurant);
-        document.getElementById('view-location').addEventListener('click', viewRestaurantLocation);
-        
-        // Review Modal
-        reviewFormEl.addEventListener('submit', handleReviewSubmit);
-        document.querySelectorAll('.close-modal-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                tg.HapticFeedback.impactOccurred('light');
-                hideReviewModal();
+            document.getElementById('cancel-proposal-btn').addEventListener('click', () => {
+                 showView(previousView || 'proposals');
             });
-        });
-        
-        tg.ready(); // Inform Telegram that the app is ready
-    }
 
-    // Start the app
-    document.addEventListener('DOMContentLoaded', initApp);
+            // Proposal Detail View Support Button
+            document.getElementById('proposal-detail-support-button').addEventListener('click', function() {
+                if (currentDetailId) {
+                    addSupport(currentDetailId);
+                    this.classList.add('vote-animate'); // Add animation
+                    setTimeout(() => this.classList.remove('vote-animate'), 300);
+                }
+            });
+            
+            // Proposal Detail View Send Discussion
+            document.getElementById('proposal-detail-send-discussion').addEventListener('click', () => {
+                const input = document.getElementById('proposal-detail-discussion-input');
+                if (currentDetailId && input.value.trim()) {
+                    addDiscussionMessage(currentDetailId, 'proposal', input.value.trim());
+                }
+            });
+             document.getElementById('proposal-detail-discussion-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    document.getElementById('proposal-detail-send-discussion').click();
+                }
+            });
 
+
+            // Vote Detail View Buttons
+            document.querySelectorAll('#vote-detail-view .vote-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    if (currentDetailId) {
+                        const voteType = this.dataset.voteType;
+                        addVote(currentDetailId, voteType);
+                        this.classList.add('vote-animate');
+                        setTimeout(() => this.classList.remove('vote-animate'), 300);
+                    }
+                });
+            });
+            
+            // Vote Detail View Send Discussion
+            document.getElementById('vote-detail-send-discussion').addEventListener('click', () => {
+                const input = document.getElementById('vote-detail-discussion-input');
+                 if (currentDetailId && input.value.trim()) {
+                    addDiscussionMessage(currentDetailId, 'vote', input.value.trim());
+                }
+            });
+            document.getElementById('vote-detail-discussion-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    document.getElementById('vote-detail-send-discussion').click();
+                }
+            });
+
+            // Menu button (placeholder for future functionality)
+            document.getElementById('menu-button').addEventListener('click', () => {
+                if (tg) tg.showAlert("Menu options coming soon!");
+                else alert("Menu options coming soon!");
+            });
+        }
     </script>
 </body>
 </html>
