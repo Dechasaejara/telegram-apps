@@ -1,1548 +1,2290 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital Direct Democracy</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script>
-        // Tailwind configuration
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        tg: {
-                            bg: 'var(--tg-theme-bg-color, #ffffff)',
-                            text: 'var(--tg-theme-text-color, #000000)',
-                            hint: 'var(--tg-theme-hint-color, #999999)',
-                            link: 'var(--tg-theme-link-color, #5D5CDE)',
-                            button: 'var(--tg-theme-button-color, #5D5CDE)',
-                            buttonText: 'var(--tg-theme-button-text-color, #ffffff)',
-                            secondary: 'var(--tg-theme-secondary-bg-color, #f0f0f0)',
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['"Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'],
-                    }
-                }
-            }
-        };
-    </script>
-    <style type="text/css">
-        :root {
-            --default-bg-color: #ffffff;
-            --default-text-color: #000000;
-            --default-hint-color: #999999;
-            --default-link-color: #5D5CDE;
-            --default-button-color: #5D5CDE;
-            --default-button-text-color: #ffffff;
-            --default-secondary-bg-color: #f0f0f0;
-        }
-        
-        /* Dark mode defaults if Telegram theme not available */
-        .dark {
-            --default-bg-color: #212121;
-            --default-text-color: #ffffff;
-            --default-hint-color: #aaaaaa;
-            --default-link-color: #8E8DFF;
-            --default-button-color: #8E8DFF;
-            --default-button-text-color: #ffffff;
-            --default-secondary-bg-color: #303030;
-        }
-        
-        body {
-            background-color: var(--tg-theme-bg-color, var(--default-bg-color));
-            color: var(--tg-theme-text-color, var(--default-text-color));
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>City Cycle Tours</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: 'var(--tg-theme-button-color, #5D5CDE)',
+            'primary-text': 'var(--tg-theme-button-text-color, #ffffff)',
+            bg: 'var(--tg-theme-bg-color, #ffffff)',
+            text: 'var(--tg-theme-text-color, #222222)',
+            hint: 'var(--tg-theme-hint-color, #999999)',
+            link: 'var(--tg-theme-link-color, #2678b6)',
+            'section-bg': 'var(--tg-theme-secondary-bg-color, #f0f0f0)',
+            'section-header-bg': 'var(--tg-theme-header-bg-color, #ffffff)',
+            'section-header-text': 'var(--tg-theme-header-text-color, #222222)',
+          },
+          fontFamily: {
+            sans: ['system-ui', 'sans-serif'],
+          },
+          animation: {
+            'pulse-light': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    :root {
+      --safe-area-inset-top: env(safe-area-inset-top, 0px);
+      --safe-area-inset-right: env(safe-area-inset-right, 0px);
+      --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-area-inset-left: env(safe-area-inset-left, 0px);
+    }
 
-        /* Telegram-style bubbles */
-        .message-bubble {
-            position: relative;
-            border-radius: 12px;
-            padding: 8px 12px;
-            max-width: 85%;
-            margin-bottom: 8px;
-        }
-        
-        .message-bubble::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            width: 12px;
-            height: 12px;
-        }
-        
-        .message-bubble.outgoing {
-            background-color: var(--tg-theme-button-color, var(--default-button-color));
-            color: var(--tg-theme-button-text-color, var(--default-button-text-color));
-            margin-left: auto;
-            border-bottom-right-radius: 0;
-        }
-        
-        .message-bubble.incoming {
-            background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color));
-            margin-right: auto;
-            border-bottom-left-radius: 0;
-        }
+    body {
+      padding-top: var(--safe-area-inset-top);
+      padding-right: var(--safe-area-inset-right);
+      padding-bottom: calc(var(--safe-area-inset-bottom) + 64px); /* Add space for bottom navigation */
+      padding-left: var(--safe-area-inset-left);
+      background-color: var(--tg-theme-bg-color, #ffffff);
+      color: var(--tg-theme-text-color, #222222);
+      font-family: system-ui, sans-serif;
+      touch-action: manipulation;
+      overscroll-behavior: none;
+      -webkit-tap-highlight-color: transparent;
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
 
-        /* Telegram-style scrollbar */
-        ::-webkit-scrollbar {
-            width: 5px;
-            height: 5px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: var(--tg-theme-hint-color, var(--default-hint-color));
-            border-radius: 5px;
-        }
+    .hidden {
+      display: none !important;
+    }
 
-        /* Telegram-style vote animation */
-        @keyframes vote-pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-        
-        .vote-animate {
-            animation: vote-pulse 0.3s ease;
-        }
+    .page {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      transform: translateX(100%);
+      opacity: 0;
+      z-index: 10;
+      padding-top: var(--safe-area-inset-top);
+      padding-bottom: 64px;
+      overflow-y: auto;
+      background-color: var(--tg-theme-bg-color, #ffffff);
+    }
 
-        /* Ripple effect for buttons */
-        .ripple {
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .ripple::after {
-            content: "";
-            display: block;
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            pointer-events: none;
-            background-image: radial-gradient(circle, #fff 10%, transparent 10.01%);
-            background-repeat: no-repeat;
-            background-position: 50%;
-            transform: scale(10, 10);
-            opacity: 0;
-            transition: transform .5s, opacity 1s;
-        }
-        
-        .ripple:active::after {
-            transform: scale(0, 0);
-            opacity: .3;
-            transition: 0s;
-        }
-    </style>
+    .page.active {
+      transform: translateX(0);
+      opacity: 1;
+      z-index: 20;
+    }
+
+    .page-content {
+      padding-bottom: 80px;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+      z-index: 5;
+    }
+
+    .active-route-info {
+      z-index: 6;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 64px;
+      background-color: var(--tg-theme-bg-color, #ffffff);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+      z-index: 50;
+      padding-bottom: var(--safe-area-inset-bottom);
+    }
+
+    .skeleton {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      background-color: var(--tg-theme-hint-color, #999999);
+      opacity: 0.2;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 0.2;
+      }
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .modal.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-content {
+      width: 90%;
+      max-width: 400px;
+      background-color: var(--tg-theme-bg-color, #ffffff);
+      border-radius: 12px;
+      padding: 20px;
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+    }
+
+    .modal.active .modal-content {
+      transform: scale(1);
+    }
+
+    .leaflet-container {
+      background-color: var(--tg-theme-bg-color, #ffffff);
+    }
+
+    /* Make sure popup and controls are properly themed */
+    .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+      background-color: var(--tg-theme-bg-color, #ffffff);
+      color: var(--tg-theme-text-color, #222222);
+    }
+
+    .leaflet-control {
+      color: var(--tg-theme-text-color, #222222);
+    }
+  </style>
 </head>
-<body class="font-sans">
-    <div id="app" class="flex flex-col h-screen max-h-screen">
-        <!-- Header -->
-        <header class="sticky top-0 z-10 shadow-sm" style="background-color: var(--tg-theme-bg-color, var(--default-bg-color))">
-            <div class="flex items-center justify-between p-3 border-b" style="border-color: var(--tg-theme-hint-color, var(--default-hint-color)); border-opacity: 0.2;">
-                <div class="flex items-center">
-                    <button id="back-button" class="mr-3 text-lg font-bold" style="color: var(--tg-theme-link-color, var(--default-link-color));">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M15 18l-6-6 6-6"/>
-                        </svg>
-                    </button>
-                    <h1 class="text-lg font-bold" id="header-title">Digital Democracy</h1>
-                </div>
-                <div>
-                    <button id="menu-button" class="text-lg" style="color: var(--tg-theme-link-color, var(--default-link-color));">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="1"></circle>
-                            <circle cx="19" cy="12" r="1"></circle>
-                            <circle cx="5" cy="12" r="1"></circle>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-            <!-- Tab navigation -->
-            <div class="flex border-b overflow-x-auto" style="border-color: var(--tg-theme-hint-color, var(--default-hint-color)); border-opacity: 0.2;">
-                <button class="tab-button px-4 py-2 font-medium whitespace-nowrap active" data-view="proposals">
-                    Proposals
-                </button>
-                <button class="tab-button px-4 py-2 font-medium whitespace-nowrap" data-view="active-votes">
-                    Active Votes
-                </button>
-                <button class="tab-button px-4 py-2 font-medium whitespace-nowrap" data-view="passed">
-                    Passed
-                </button>
-                <button class="tab-button px-4 py-2 font-medium whitespace-nowrap" data-view="my-activities">
-                    My Activities
-                </button>
-            </div>
-        </header>
-
-        <!-- Main content area -->
-        <main class="flex-grow overflow-y-auto" id="main-content">
-            <!-- Proposals View (default) -->
-            <div id="proposals-view" class="view-content">
-                <div class="p-4">
-                    <div class="mb-4">
-                        <div class="flex justify-between items-center mb-2">
-                            <h2 class="text-lg font-bold">Active Proposals</h2>
-                            <button id="new-proposal-btn" class="ripple px-3 py-1 rounded-full text-sm" style="background-color: var(--tg-theme-button-color, var(--default-button-color)); color: var(--tg-theme-button-text-color, var(--default-button-text-color));">
-                                + New Proposal
-                            </button>
-                        </div>
-                        <p class="text-sm" style="color: var(--tg-theme-hint-color, var(--default-hint-color));">
-                            Proposals require 100 supporters to advance to voting
-                        </p>
-                    </div>
-
-                    <div class="proposal-list space-y-3">
-                        <!-- Proposal cards will be dynamically generated here -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Active Votes View -->
-            <div id="active-votes-view" class="view-content hidden">
-                <div class="p-4">
-                    <h2 class="text-lg font-bold mb-4">Active Votes</h2>
-                    <div class="active-votes-list space-y-3">
-                        <!-- Active votes will be dynamically generated here -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Passed Legislation View -->
-            <div id="passed-view" class="view-content hidden">
-                <div class="p-4">
-                    <h2 class="text-lg font-bold mb-4">Passed Legislation</h2>
-                    <div class="passed-list space-y-3">
-                        <!-- Passed legislation will be dynamically generated here -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- My Activities View -->
-            <div id="my-activities-view" class="view-content hidden">
-                <div class="p-4">
-                    <h2 class="text-lg font-bold mb-4">My Activities</h2>
-                    <div class="activities-list space-y-3">
-                        <!-- User activities will be dynamically generated here -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Proposal Detail View -->
-            <div id="proposal-detail-view" class="view-content hidden">
-                <div class="p-4">
-                    <div class="mb-4">
-                        <h2 id="proposal-title" class="text-lg font-bold mb-1"></h2>
-                        <p id="proposal-author" class="text-sm" style="color: var(--tg-theme-hint-color, var(--default-hint-color));"></p>
-                    </div>
-                    
-                    <div id="proposal-content" class="mb-4 text-sm"></div>
-                    
-                    <div class="support-section mb-4">
-                        <div class="flex justify-between items-center mb-2">
-                            <span id="support-count" class="text-sm" style="color: var(--tg-theme-hint-color, var(--default-hint-color));"></span>
-                            <button id="support-button" class="ripple px-4 py-2 rounded-full text-sm" style="background-color: var(--tg-theme-button-color, var(--default-button-color)); color: var(--tg-theme-button-text-color, var(--default-button-text-color));">
-                                Support
-                            </button>
-                        </div>
-                        <div class="w-full h-2 rounded-full overflow-hidden" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color));">
-                            <div id="support-bar" class="h-full" style="background-color: var(--tg-theme-button-color, var(--default-button-color)); width: 0%;"></div>
-                        </div>
-                    </div>
-                    
-                    <h3 class="font-bold mb-2">Discussion</h3>
-                    <div id="discussion-list" class="mb-4 space-y-3">
-                        <!-- Discussion messages will be dynamically generated here -->
-                    </div>
-                    
-                    <div class="flex items-center gap-2">
-                        <input type="text" id="discussion-input" placeholder="Add to the discussion..." class="flex-grow p-2 rounded-full text-base" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color)); color: var(--tg-theme-text-color, var(--default-text-color));">
-                        <button id="send-discussion" class="ripple p-2 rounded-full" style="background-color: var(--tg-theme-button-color, var(--default-button-color)); color: var(--tg-theme-button-text-color, var(--default-button-text-color));">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="22" y1="2" x2="11" y2="13"></line>
-                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Vote Detail View -->
-            <div id="vote-detail-view" class="view-content hidden">
-                <div class="p-4">
-                    <div class="mb-4">
-                        <h2 id="vote-title" class="text-lg font-bold mb-1"></h2>
-                        <p id="vote-status" class="text-sm" style="color: var(--tg-theme-hint-color, var(--default-hint-color));"></p>
-                    </div>
-                    
-                    <div id="vote-content" class="mb-4 text-sm"></div>
-                    
-                    <div class="voting-section mb-4">
-                        <h3 class="font-bold mb-2">Cast Your Vote</h3>
-                        <div class="flex gap-3 mb-4">
-                            <button id="vote-yes" class="ripple flex-1 py-2 rounded-full text-sm" style="background-color: #4CAF50; color: white;">Yes</button>
-                            <button id="vote-no" class="ripple flex-1 py-2 rounded-full text-sm" style="background-color: #F44336; color: white;">No</button>
-                            <button id="vote-abstain" class="ripple flex-1 py-2 rounded-full text-sm" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color)); color: var(--tg-theme-text-color, var(--default-text-color));">Abstain</button>
-                        </div>
-                        
-                        <div class="results-section">
-                            <div class="flex justify-between mb-1">
-                                <span>Yes</span>
-                                <span id="yes-percentage">0%</span>
-                            </div>
-                            <div class="w-full h-2 rounded-full overflow-hidden mb-2" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color));">
-                                <div id="yes-bar" class="h-full" style="background-color: #4CAF50; width: 0%;"></div>
-                            </div>
-                            
-                            <div class="flex justify-between mb-1">
-                                <span>No</span>
-                                <span id="no-percentage">0%</span>
-                            </div>
-                            <div class="w-full h-2 rounded-full overflow-hidden mb-2" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color));">
-                                <div id="no-bar" class="h-full" style="background-color: #F44336; width: 0%;"></div>
-                            </div>
-                            
-                            <div class="flex justify-between mb-1">
-                                <span>Abstain</span>
-                                <span id="abstain-percentage">0%</span>
-                            </div>
-                            <div class="w-full h-2 rounded-full overflow-hidden mb-2" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color));">
-                                <div id="abstain-bar" class="h-full" style="background-color: #9E9E9E; width: 0%;"></div>
-                            </div>
-                            
-                            <p id="vote-time-remaining" class="text-sm mt-2" style="color: var(--tg-theme-hint-color, var(--default-hint-color));"></p>
-                        </div>
-                    </div>
-                    
-                    <div class="discussion-section">
-                        <h3 class="font-bold mb-2">Discussion</h3>
-                        <div id="vote-discussion-list" class="mb-4 space-y-3">
-                            <!-- Vote discussion messages will be dynamically generated here -->
-                        </div>
-                        
-                        <div class="flex items-center gap-2">
-                            <input type="text" id="vote-discussion-input" placeholder="Add to the discussion..." class="flex-grow p-2 rounded-full text-base" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color)); color: var(--tg-theme-text-color, var(--default-text-color));">
-                            <button id="send-vote-discussion" class="ripple p-2 rounded-full" style="background-color: var(--tg-theme-button-color, var(--default-button-color)); color: var(--tg-theme-button-text-color, var(--default-button-text-color));">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="22" y1="2" x2="11" y2="13"></line>
-                                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- New Proposal Form -->
-            <div id="new-proposal-view" class="view-content hidden">
-                <div class="p-4">
-                    <h2 class="text-lg font-bold mb-4">Create New Proposal</h2>
-                    
-                    <form id="proposal-form" class="space-y-4">
-                        <div>
-                            <label for="proposal-title-input" class="block mb-1 font-medium">Title</label>
-                            <input type="text" id="proposal-title-input" class="w-full p-2 rounded text-base" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color)); color: var(--tg-theme-text-color, var(--default-text-color));" placeholder="Enter a clear, concise title">
-                        </div>
-                        
-                        <div>
-                            <label for="proposal-content-input" class="block mb-1 font-medium">Content</label>
-                            <textarea id="proposal-content-input" rows="8" class="w-full p-2 rounded text-base" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color)); color: var(--tg-theme-text-color, var(--default-text-color));" placeholder="Describe your proposal in detail..."></textarea>
-                        </div>
-                        
-                        <div>
-                            <label for="proposal-category" class="block mb-1 font-medium">Category</label>
-                            <select id="proposal-category" class="w-full p-2 rounded text-base" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color)); color: var(--tg-theme-text-color, var(--default-text-color));">
-                                <option value="environment">Environment</option>
-                                <option value="economy">Economy</option>
-                                <option value="education">Education</option>
-                                <option value="healthcare">Healthcare</option>
-                                <option value="infrastructure">Infrastructure</option>
-                                <option value="other">Other</option>
-                            </select>
-                        </div>
-                        
-                        <div class="flex gap-3 pt-3">
-                            <button type="button" id="cancel-proposal" class="ripple flex-1 py-2 rounded-full" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color)); color: var(--tg-theme-text-color, var(--default-text-color));">Cancel</button>
-                            <button type="submit" id="submit-proposal" class="ripple flex-1 py-2 rounded-full" style="background-color: var(--tg-theme-button-color, var(--default-button-color)); color: var(--tg-theme-button-text-color, var(--default-button-text-color));">Submit</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </main>
+<body>
+  <!-- Header Component -->
+  <header class="fixed top-0 left-0 w-full bg-section-header-bg text-section-header-text z-40 border-b border-section-bg" style="padding-top: var(--safe-area-inset-top);">
+    <div class="px-4 py-3 flex items-center justify-between">
+      <div class="text-lg font-semibold" id="header-title">City Cycle Tours</div>
+      <button id="header-action" class="hidden p-2 rounded-full hover:bg-section-bg transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+      </button>
     </div>
+  </header>
 
-    <script>
-        // Initialize Telegram WebApp
-        let tg = window.Telegram?.WebApp;
-        let user = {};
-        
-        // Initialize the app
-        document.addEventListener('DOMContentLoaded', function() {
-            if (tg) {
-                tg.expand();
-                tg.ready();
-                user = {
-                    id: tg.initDataUnsafe?.user?.id || 'anonymous',
-                    first_name: tg.initDataUnsafe?.user?.first_name || 'Anonymous',
-                    last_name: tg.initDataUnsafe?.user?.last_name || 'User',
-                    username: tg.initDataUnsafe?.user?.username || 'anonymous'
-                };
+  <!-- Loading Indicator -->
+  <div id="loading" class="fixed inset-0 flex items-center justify-center bg-bg z-50">
+    <div class="flex flex-col items-center">
+      <div class="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <p class="mt-4 text-text">Loading app...</p>
+    </div>
+  </div>
+
+  <!-- Discover Page -->
+  <div id="discover-page" class="page active pt-16">
+    <div class="page-content px-4">
+      <div class="mb-4">
+        <div id="user-greeting" class="flex items-center my-4">
+          <div id="user-avatar" class="w-12 h-12 rounded-full bg-section-bg overflow-hidden flex-shrink-0 skeleton"></div>
+          <div class="ml-3">
+            <div id="user-name" class="font-medium text-lg skeleton h-6 w-32 rounded"></div>
+            <div id="user-stats" class="text-hint text-sm skeleton h-4 w-48 mt-1 rounded"></div>
+          </div>
+        </div>
+
+        <!-- Weather Widget -->
+        <div class="bg-section-bg rounded-lg p-4 mb-4">
+          <div class="flex justify-between items-center">
+            <div>
+              <h3 class="font-medium">Today's Weather</h3>
+              <div id="weather-info" class="flex items-center mt-1">
+                <span id="weather-temp" class="text-lg">--°C</span>
+                <span id="weather-desc" class="ml-2 text-hint">Loading...</span>
+              </div>
+            </div>
+            <div id="weather-icon" class="w-10 h-10 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tour Categories -->
+        <div class="mb-4">
+          <h2 class="font-semibold text-lg mb-3">Explore Tours</h2>
+          <div class="flex overflow-x-auto pb-2 -mx-4 px-4 space-x-3">
+            <button class="category-btn flex-shrink-0 bg-primary text-primary-text py-2 px-4 rounded-full text-sm font-medium">All Routes</button>
+            <button class="category-btn flex-shrink-0 bg-section-bg text-text py-2 px-4 rounded-full text-sm font-medium">Scenic</button>
+            <button class="category-btn flex-shrink-0 bg-section-bg text-text py-2 px-4 rounded-full text-sm font-medium">Historical</button>
+            <button class="category-btn flex-shrink-0 bg-section-bg text-text py-2 px-4 rounded-full text-sm font-medium">Challenging</button>
+            <button class="category-btn flex-shrink-0 bg-section-bg text-text py-2 px-4 rounded-full text-sm font-medium">Family</button>
+          </div>
+        </div>
+
+        <!-- Featured Tour -->
+        <div class="mb-6">
+          <h2 class="font-semibold text-lg mb-3">Featured Tour</h2>
+          <div id="featured-tour" class="bg-section-bg rounded-lg overflow-hidden skeleton h-48"></div>
+        </div>
+
+        <!-- Tour List -->
+        <div class="mb-4">
+          <div class="flex justify-between items-center mb-3">
+            <h2 class="font-semibold text-lg">Popular Tours</h2>
+            <button class="text-primary text-sm">See All</button>
+          </div>
+          <div id="tour-list" class="space-y-4">
+            <!-- Tours will be populated here -->
+            <!-- Skeleton loaders -->
+            <div class="tour-item skeleton h-24 rounded-lg"></div>
+            <div class="tour-item skeleton h-24 rounded-lg"></div>
+            <div class="tour-item skeleton h-24 rounded-lg"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Map Page -->
+  <div id="map-page" class="page pt-16">
+    <div id="map" class="w-full h-full"></div>
+    <div id="active-route-card" class="hidden fixed bottom-20 left-0 right-0 mx-4 bg-bg rounded-lg shadow-lg p-4 active-route-info">
+      <div class="flex justify-between items-center mb-2">
+        <h3 id="active-route-name" class="font-medium text-lg">Route Name</h3>
+        <button id="close-active-route" class="p-1 rounded-full hover:bg-section-bg transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="flex justify-between text-sm text-hint mb-3">
+        <span id="active-route-distance">0.0 km</span>
+        <span id="active-route-duration">0 min</span>
+      </div>
+      <div class="flex justify-between">
+        <button id="start-navigation-btn" class="bg-primary text-primary-text py-2 px-6 rounded-lg text-sm font-medium">Start Tour</button>
+        <button id="show-details-btn" class="bg-section-bg text-text py-2 px-6 rounded-lg text-sm font-medium">Details</button>
+      </div>
+    </div>
+    <div id="route-navigation" class="hidden fixed bottom-20 left-0 right-0 mx-4 bg-bg rounded-lg shadow-lg p-4 active-route-info">
+      <div class="flex justify-between items-center mb-2">
+        <h3 class="font-medium text-lg">Navigation</h3>
+        <button id="close-navigation" class="p-1 rounded-full hover:bg-section-bg transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="flex justify-between text-sm mb-2">
+        <div>
+          <div class="text-hint">Current Speed</div>
+          <div id="current-speed" class="font-medium">0.0 km/h</div>
+        </div>
+        <div>
+          <div class="text-hint">Distance Left</div>
+          <div id="distance-left" class="font-medium">0.0 km</div>
+        </div>
+        <div>
+          <div class="text-hint">Time</div>
+          <div id="elapsed-time" class="font-medium">00:00</div>
+        </div>
+      </div>
+      <button id="end-tour-btn" class="w-full bg-primary text-primary-text py-2 rounded-lg text-sm font-medium">End Tour</button>
+    </div>
+  </div>
+
+  <!-- Profile Page -->
+  <div id="profile-page" class="page pt-16">
+    <div class="page-content px-4">
+      <div class="flex flex-col items-center mb-6 pt-4">
+        <div id="profile-avatar" class="w-20 h-20 rounded-full bg-section-bg overflow-hidden mb-3 skeleton"></div>
+        <h2 id="profile-name" class="text-xl font-semibold skeleton h-7 w-40 rounded mb-1"></h2>
+        <p id="profile-username" class="text-hint skeleton h-5 w-32 rounded"></p>
+      </div>
+
+      <div class="bg-section-bg rounded-lg p-4 mb-6">
+        <h3 class="font-medium mb-3">Your Stats</h3>
+        <div class="grid grid-cols-3 gap-4 text-center">
+          <div class="p-2">
+            <div id="stats-tours" class="text-xl font-semibold">0</div>
+            <div class="text-hint text-sm">Tours</div>
+          </div>
+          <div class="p-2">
+            <div id="stats-distance" class="text-xl font-semibold">0</div>
+            <div class="text-hint text-sm">km</div>
+          </div>
+          <div class="p-2">
+            <div id="stats-achievements" class="text-xl font-semibold">0</div>
+            <div class="text-hint text-sm">Badges</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-section-bg rounded-lg p-4 mb-6">
+        <h3 class="font-medium mb-3">Recent Activities</h3>
+        <div id="recent-activities" class="space-y-3">
+          <div class="skeleton h-12 rounded-lg"></div>
+          <div class="skeleton h-12 rounded-lg"></div>
+          <div class="skeleton h-12 rounded-lg"></div>
+        </div>
+      </div>
+
+      <div class="bg-section-bg rounded-lg p-4 mb-6">
+        <h3 class="font-medium mb-3">Achievements</h3>
+        <div id="achievements" class="grid grid-cols-3 gap-3">
+          <div class="skeleton h-20 rounded-lg"></div>
+          <div class="skeleton h-20 rounded-lg"></div>
+          <div class="skeleton h-20 rounded-lg"></div>
+          <div class="skeleton h-20 rounded-lg"></div>
+          <div class="skeleton h-20 rounded-lg"></div>
+          <div class="skeleton h-20 rounded-lg"></div>
+        </div>
+      </div>
+
+      <div class="space-y-3 mb-6">
+        <h3 class="font-medium mb-2">Settings</h3>
+        <div class="bg-section-bg rounded-lg overflow-hidden">
+          <div class="p-4 border-b border-bg">
+            <div class="flex justify-between items-center">
+              <div>
+                <div class="font-medium">Distance Units</div>
+                <div class="text-hint text-sm">Choose between km or miles</div>
+              </div>
+              <select id="distance-unit" class="bg-bg border border-hint text-text rounded px-2 py-1 text-base">
+                <option value="km">Kilometers</option>
+                <option value="mi">Miles</option>
+              </select>
+            </div>
+          </div>
+          <div class="p-4 border-b border-bg">
+            <div class="flex justify-between items-center">
+              <div>
+                <div class="font-medium">Notifications</div>
+                <div class="text-hint text-sm">Receive tour suggestions</div>
+              </div>
+              <div class="relative inline-block w-12 align-middle select-none">
+                <input type="checkbox" id="notifications-toggle" class="sr-only">
+                <div class="block bg-hint w-12 h-6 rounded-full"></div>
+                <div id="toggle-dot" class="dot absolute left-1 top-1 bg-bg w-4 h-4 rounded-full transition-transform"></div>
+              </div>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex justify-between items-center">
+              <div>
+                <div class="font-medium">Map Style</div>
+                <div class="text-hint text-sm">Choose map appearance</div>
+              </div>
+              <select id="map-style" class="bg-bg border border-hint text-text rounded px-2 py-1 text-base">
+                <option value="standard">Standard</option>
+                <option value="satellite">Satellite</option>
+                <option value="terrain">Terrain</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Activity Page -->
+  <div id="activity-page" class="page pt-16">
+    <div class="page-content px-4">
+      <div class="flex justify-between items-center mb-4 pt-2">
+        <h2 class="font-semibold text-lg">Your Activities</h2>
+        <select id="activity-filter" class="bg-section-bg border-none text-text rounded px-2 py-1 text-sm">
+          <option value="all">All Activities</option>
+          <option value="completed">Completed Tours</option>
+          <option value="saved">Saved Tours</option>
+        </select>
+      </div>
+
+      <div id="activity-list" class="space-y-4 mb-6">
+        <!-- Activities will be populated here -->
+        <!-- Skeleton loaders -->
+        <div class="skeleton h-32 rounded-lg"></div>
+        <div class="skeleton h-32 rounded-lg"></div>
+        <div class="skeleton h-32 rounded-lg"></div>
+      </div>
+
+      <div id="no-activities" class="hidden text-center py-8">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-hint mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+        </svg>
+        <h3 class="font-medium text-lg mb-2">No Activities Yet</h3>
+        <p class="text-hint">Start exploring tours to see your activity history</p>
+        <button id="explore-btn" class="mt-4 bg-primary text-primary-text py-2 px-6 rounded-lg text-sm font-medium">Explore Tours</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Route Details Modal -->
+  <div id="route-details-modal" class="modal">
+    <div class="modal-content">
+      <div class="flex justify-between items-start mb-3">
+        <h3 id="modal-route-name" class="font-semibold text-lg">Route Name</h3>
+        <button id="close-modal" class="p-1 rounded-full hover:bg-section-bg transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div id="modal-route-image" class="w-full h-40 bg-section-bg rounded-lg overflow-hidden mb-3 skeleton"></div>
+      <div class="flex justify-between text-sm text-hint mb-3">
+        <span id="modal-route-distance">0.0 km</span>
+        <span id="modal-route-duration">0 min</span>
+        <span id="modal-route-difficulty">Easy</span>
+      </div>
+      <div id="modal-route-description" class="text-sm mb-4 skeleton h-24 rounded-lg"></div>
+      <h4 class="font-medium mb-2">Points of Interest</h4>
+      <div id="modal-route-poi" class="space-y-2 mb-4">
+        <div class="skeleton h-8 rounded-lg"></div>
+        <div class="skeleton h-8 rounded-lg"></div>
+        <div class="skeleton h-8 rounded-lg"></div>
+      </div>
+      <div class="flex justify-between">
+        <button id="modal-start-tour" class="bg-primary text-primary-text py-2 px-4 rounded-lg text-sm font-medium">Start Tour</button>
+        <button id="modal-save-tour" class="bg-section-bg text-text py-2 px-4 rounded-lg text-sm font-medium">Save Tour</button>
+        <button id="modal-share-tour" class="bg-section-bg text-text py-2 px-4 rounded-lg text-sm font-medium">Share</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Completed Tour Modal -->
+  <div id="completed-tour-modal" class="modal">
+    <div class="modal-content">
+      <div class="flex justify-center mb-4">
+        <div class="w-16 h-16 rounded-full bg-primary flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-primary-text" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+      </div>
+      <h3 class="text-xl font-semibold text-center mb-2">Tour Completed!</h3>
+      <p class="text-center text-hint mb-4">Congratulations on completing your tour</p>
+      <div class="grid grid-cols-3 gap-4 text-center mb-4">
+        <div>
+          <div id="completed-distance" class="font-semibold">0.0 km</div>
+          <div class="text-hint text-sm">Distance</div>
+        </div>
+        <div>
+          <div id="completed-duration" class="font-semibold">00:00</div>
+          <div class="text-hint text-sm">Duration</div>
+        </div>
+        <div>
+          <div id="completed-avg-speed" class="font-semibold">0.0 km/h</div>
+          <div class="text-hint text-sm">Avg Speed</div>
+        </div>
+      </div>
+      <div class="flex justify-between">
+        <button id="view-summary-btn" class="bg-primary text-primary-text py-2 px-4 rounded-lg text-sm font-medium">View Summary</button>
+        <button id="share-result-btn" class="bg-section-bg text-text py-2 px-4 rounded-lg text-sm font-medium">Share Results</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <button id="nav-discover" class="nav-btn flex flex-col items-center justify-center w-1/4 h-full text-primary">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+      </svg>
+      <span class="text-xs mt-1">Discover</span>
+    </button>
+    <button id="nav-map" class="nav-btn flex flex-col items-center justify-center w-1/4 h-full text-hint">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+      </svg>
+      <span class="text-xs mt-1">Map</span>
+    </button>
+    <button id="nav-activity" class="nav-btn flex flex-col items-center justify-center w-1/4 h-full text-hint">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      </svg>
+      <span class="text-xs mt-1">Activity</span>
+    </button>
+    <button id="nav-profile" class="nav-btn flex flex-col items-center justify-center w-1/4 h-full text-hint">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      </svg>
+      <span class="text-xs mt-1">Profile</span>
+    </button>
+  </nav>
+
+  <script>
+    // Initialize Telegram Web App
+    const tgApp = window.Telegram?.WebApp;
+    let map, userMarker, routeLayer, activeTourInterval;
+    let routes = [];
+    let activities = [];
+    let userStats = {
+      tours: 0,
+      distance: 0,
+      achievements: 0
+    };
+    let settings = {
+      distanceUnit: 'km',
+      notifications: true,
+      mapStyle: 'standard'
+    };
+    let activeRoute = null;
+    let isNavigating = false;
+    let navigationStartTime = null;
+    let userPosition = null;
+    let activeTourData = {
+      distance: 0,
+      duration: 0,
+      avgSpeed: 0
+    };
+
+    // Sample data for routes
+    const routesData = [
+      {
+        id: 1,
+        name: "City Center Historical Tour",
+        description: "Explore the historic landmarks and architecture of the city center. This route takes you through centuries of history, showcasing the evolution of urban design and cultural heritage.",
+        distance: 8.5,
+        duration: 45,
+        difficulty: "Easy",
+        category: "Historical",
+        popularity: 4.8,
+        image: generateCityImage("historical"),
+        coords: generateRandomRoute(10),
+        pois: [
+          { name: "Old Town Square", description: "Historic central square" },
+          { name: "Cathedral of St. Peter", description: "Gothic cathedral from 14th century" },
+          { name: "Liberty Bridge", description: "Iconic city landmark" },
+          { name: "Museum of History", description: "Exhibitions spanning 500 years" }
+        ]
+      },
+      {
+        id: 2,
+        name: "Riverside Scenic Route",
+        description: "Follow the river through beautiful parks and natural areas. Enjoy the serene atmosphere and stunning views of the water, with plenty of spots to stop and take photos.",
+        distance: 12.3,
+        duration: 60,
+        difficulty: "Medium",
+        category: "Scenic",
+        popularity: 4.9,
+        image: generateCityImage("riverside"),
+        coords: generateRandomRoute(15),
+        pois: [
+          { name: "Waterfront Park", description: "Green space with river views" },
+          { name: "Botanical Gardens", description: "Diverse collection of plants" },
+          { name: "Sunset Point", description: "Perfect spot for evening views" },
+          { name: "River Cafe", description: "Refreshments with a view" }
+        ]
+      },
+      {
+        id: 3,
+        name: "Urban Arts District Tour",
+        description: "Discover the vibrant street art and cultural spots in the arts district. This route showcases murals, galleries, and creative spaces that define the city's contemporary art scene.",
+        distance: 6.8,
+        duration: 35,
+        difficulty: "Easy",
+        category: "Cultural",
+        popularity: 4.6,
+        image: generateCityImage("arts"),
+        coords: generateRandomRoute(8),
+        pois: [
+          { name: "Modern Art Gallery", description: "Contemporary exhibitions" },
+          { name: "Street Art Alley", description: "Famous murals and graffiti" },
+          { name: "Artisan Market", description: "Local crafts and designs" },
+          { name: "Creative Hub", description: "Artist studios and workshops" }
+        ]
+      },
+      {
+        id: 4,
+        name: "Hill Climb Challenge",
+        description: "Test your endurance with this challenging route up the city's highest points. Rewarding views await at the top, making the climb worth every pedal stroke.",
+        distance: 18.5,
+        duration: 90,
+        difficulty: "Hard",
+        category: "Challenging",
+        popularity: 4.5,
+        image: generateCityImage("hills"),
+        coords: generateRandomRoute(20),
+        pois: [
+          { name: "North Hill Viewpoint", description: "Panoramic city views" },
+          { name: "Mountain Pass", description: "Challenging uphill section" },
+          { name: "Forest Reserve", description: "Protected natural area" },
+          { name: "Summit Cafe", description: "Refreshments at the top" }
+        ]
+      },
+      {
+        id: 5,
+        name: "Family Park Loop",
+        description: "A gentle ride perfect for families with children. This safe, traffic-free route circles through the city's largest park with playgrounds and picnic spots along the way.",
+        distance: 5.2,
+        duration: 30,
+        difficulty: "Easy",
+        category: "Family",
+        popularity: 4.7,
+        image: generateCityImage("park"),
+        coords: generateRandomRoute(6),
+        pois: [
+          { name: "Central Playground", description: "Family-friendly play area" },
+          { name: "Duck Pond", description: "Wildlife viewing spot" },
+          { name: "Picnic Meadow", description: "Open space for breaks" },
+          { name: "Ice Cream Stand", description: "Treats for all ages" }
+        ]
+      }
+    ];
+
+    // Sample data for achievements
+    const achievementsData = [
+      { id: 1, name: "First Ride", description: "Complete your first tour", icon: "🚲", unlocked: false },
+      { id: 2, name: "Explorer", description: "Complete 5 different tours", icon: "🧭", unlocked: false },
+      { id: 3, name: "Distance Crusher", description: "Ride more than 50km total", icon: "📏", unlocked: false },
+      { id: 4, name: "Early Bird", description: "Start a tour before 8 AM", icon: "🌅", unlocked: false },
+      { id: 5, name: "History Buff", description: "Complete all historical tours", icon: "🏛️", unlocked: false },
+      { id: 6, name: "Scenic Lover", description: "Complete all scenic tours", icon: "🌄", unlocked: false }
+    ];
+
+    // Initialize the app
+    document.addEventListener('DOMContentLoaded', () => {
+      // Check if Telegram WebApp is available
+      if (tgApp) {
+        console.log("Telegram WebApp is available");
+        tgApp.ready();
+        initTelegramApp();
+      } else {
+        console.log("Telegram WebApp not available, running in standalone mode");
+        setTimeout(() => {
+          document.getElementById('loading').classList.add('hidden');
+          initStandaloneApp();
+        }, 1000);
+      }
+
+      // Set up the map
+      setupMap();
+
+      // Initialize event listeners
+      setupEventListeners();
+
+      // Load data
+      loadData();
+    });
+
+    // Initialize app with Telegram WebApp integration
+    function initTelegramApp() {
+      // Configure app theme based on Telegram theme
+      document.body.style.backgroundColor = tgApp.themeParams.bg_color || '#ffffff';
+      document.body.style.color = tgApp.themeParams.text_color || '#222222';
+
+      // Get user data from Telegram
+      if (tgApp.initDataUnsafe && tgApp.initDataUnsafe.user) {
+        const user = tgApp.initDataUnsafe.user;
+        updateUserProfile(user);
+      }
+
+      // Initialize BackButton
+      tgApp.BackButton.onClick(() => {
+        handleBackNavigation();
+      });
+
+      // Initialize MainButton
+      tgApp.MainButton.setParams({
+        text: 'Start Exploring',
+        color: tgApp.themeParams.button_color || '#5D5CDE',
+        text_color: tgApp.themeParams.button_text_color || '#ffffff'
+      });
+
+      tgApp.MainButton.onClick(() => {
+        if (isNavigating) {
+          endTour();
+        } else if (activeRoute) {
+          startNavigation();
+        } else {
+          openPage('discover-page');
+          tgApp.MainButton.hide();
+        }
+      });
+
+      // Hide loading screen
+      setTimeout(() => {
+        document.getElementById('loading').classList.add('hidden');
+      }, 1000);
+
+      // Enable haptic feedback
+      if (tgApp.HapticFeedback) {
+        setupHapticFeedback();
+      }
+    }
+
+    // Initialize standalone app (without Telegram WebApp)
+    function initStandaloneApp() {
+      // Simulate user data
+      const mockUser = {
+        first_name: 'Demo',
+        last_name: 'User',
+        username: 'demo_user',
+        photo_url: generateAvatar('Demo User')
+      };
+      updateUserProfile(mockUser);
+    }
+
+    // Update user profile with data
+    function updateUserProfile(user) {
+      // Update user greeting
+      const userAvatar = document.getElementById('user-avatar');
+      const userName = document.getElementById('user-name');
+      const userStats = document.getElementById('user-stats');
+
+      userAvatar.style.backgroundImage = user.photo_url ? `url(${user.photo_url})` : `url(${generateAvatar(user.first_name)})`;
+      userAvatar.classList.remove('skeleton');
+      userName.textContent = `Hi, ${user.first_name}!`;
+      userName.classList.remove('skeleton');
+      userStats.textContent = `Ready to explore new routes?`;
+      userStats.classList.remove('skeleton');
+
+      // Update profile page
+      const profileAvatar = document.getElementById('profile-avatar');
+      const profileName = document.getElementById('profile-name');
+      const profileUsername = document.getElementById('profile-username');
+
+      profileAvatar.style.backgroundImage = user.photo_url ? `url(${user.photo_url})` : `url(${generateAvatar(user.first_name)})`;
+      profileAvatar.classList.remove('skeleton');
+      profileName.textContent = `${user.first_name} ${user.last_name || ''}`;
+      profileName.classList.remove('skeleton');
+      profileUsername.textContent = user.username ? `@${user.username}` : '';
+      profileUsername.classList.remove('skeleton');
+    }
+
+    // Set up the map
+    function setupMap() {
+      map = L.map('map', {
+        zoomControl: false,
+        attributionControl: false
+      });
+
+      // Use OpenStreetMap tiles
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19
+      }).addTo(map);
+
+      // Add zoom control to top right
+      L.control.zoom({
+        position: 'topright'
+      }).addTo(map);
+
+      // Initialize with a default location
+      map.setView([51.505, -0.09], 13);
+
+      // Create a layer for routes
+      routeLayer = L.layerGroup().addTo(map);
+
+      // Try to get user location
+      getUserLocation();
+    }
+
+    // Get user location
+    function getUserLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            userPosition = { lat: latitude, lng: longitude };
+            map.setView([latitude, longitude], 14);
+
+            // Add user marker
+            if (!userMarker) {
+              const userIcon = L.divIcon({
+                className: 'user-marker',
+                html: `<div class="w-4 h-4 bg-primary rounded-full border-2 border-white shadow-lg"></div>`,
+                iconSize: [16, 16],
+                iconAnchor: [8, 8]
+              });
+              userMarker = L.marker([latitude, longitude], { icon: userIcon }).addTo(map);
             } else {
-                console.log("Telegram WebApp is not available. Using demo mode.");
-                // Set default theme colors for testing
-                document.documentElement.style.setProperty('--tg-theme-bg-color', '#ffffff');
-                document.documentElement.style.setProperty('--tg-theme-text-color', '#000000');
-                document.documentElement.style.setProperty('--tg-theme-hint-color', '#999999');
-                document.documentElement.style.setProperty('--tg-theme-link-color', '#5D5CDE');
-                document.documentElement.style.setProperty('--tg-theme-button-color', '#5D5CDE');
-                document.documentElement.style.setProperty('--tg-theme-button-text-color', '#ffffff');
-                document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', '#f0f0f0');
-                
-                // Check for dark mode
-                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                    document.documentElement.classList.add('dark');
-                    document.documentElement.style.setProperty('--tg-theme-bg-color', '#212121');
-                    document.documentElement.style.setProperty('--tg-theme-text-color', '#ffffff');
-                    document.documentElement.style.setProperty('--tg-theme-hint-color', '#aaaaaa');
-                    document.documentElement.style.setProperty('--tg-theme-link-color', '#8E8DFF');
-                    document.documentElement.style.setProperty('--tg-theme-button-color', '#8E8DFF');
-                    document.documentElement.style.setProperty('--tg-theme-button-text-color', '#ffffff');
-                    document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', '#303030');
-                }
-                
-                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
-                    if (event.matches) {
-                        document.documentElement.classList.add('dark');
-                        document.documentElement.style.setProperty('--tg-theme-bg-color', '#212121');
-                        document.documentElement.style.setProperty('--tg-theme-text-color', '#ffffff');
-                        document.documentElement.style.setProperty('--tg-theme-hint-color', '#aaaaaa');
-                        document.documentElement.style.setProperty('--tg-theme-link-color', '#8E8DFF');
-                        document.documentElement.style.setProperty('--tg-theme-button-color', '#8E8DFF');
-                        document.documentElement.style.setProperty('--tg-theme-button-text-color', '#ffffff');
-                        document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', '#303030');
-                    } else {
-                        document.documentElement.classList.remove('dark');
-                        document.documentElement.style.setProperty('--tg-theme-bg-color', '#ffffff');
-                        document.documentElement.style.setProperty('--tg-theme-text-color', '#000000');
-                        document.documentElement.style.setProperty('--tg-theme-hint-color', '#999999');
-                        document.documentElement.style.setProperty('--tg-theme-link-color', '#5D5CDE');
-                        document.documentElement.style.setProperty('--tg-theme-button-color', '#5D5CDE');
-                        document.documentElement.style.setProperty('--tg-theme-button-text-color', '#ffffff');
-                        document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', '#f0f0f0');
-                    }
-                });
-                
-                // Mock user for testing
-                user = {
-                    id: 'demo123',
-                    first_name: 'Demo',
-                    last_name: 'User',
-                    username: 'demouser'
-                };
+              userMarker.setLatLng([latitude, longitude]);
             }
+
+            // Start watching position for navigation
+            startPositionWatching();
+          },
+          (error) => {
+            console.log("Error getting location:", error);
+            showLocationError();
+          }
+        );
+      } else {
+        console.log("Geolocation is not supported by this browser.");
+        showLocationError();
+      }
+    }
+
+    // Start watching user position for navigation
+    function startPositionWatching() {
+      if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            userPosition = { lat: latitude, lng: longitude };
             
-            // Set active tab style
-            document.querySelectorAll('.tab-button').forEach(button => {
-                if (button.classList.contains('active')) {
-                    button.style.borderBottom = `2px solid var(--tg-theme-button-color, var(--default-button-color))`;
-                    button.style.color = `var(--tg-theme-button-color, var(--default-button-color))`;
-                } else {
-                    button.style.borderBottom = 'none';
-                    button.style.color = `var(--tg-theme-text-color, var(--default-text-color))`;
-                }
-            });
-            
-            initData();
-            setupEventListeners();
+            if (userMarker) {
+              userMarker.setLatLng([latitude, longitude]);
+            }
+
+            if (isNavigating && activeRoute) {
+              updateNavigationInfo();
+            }
+          },
+          (error) => {
+            console.log("Error watching position:", error);
+          },
+          { enableHighAccuracy: true }
+        );
+      }
+    }
+
+    // Show location error
+    function showLocationError() {
+      // Create a notification at the top of the map
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-20 left-0 right-0 mx-4 bg-bg rounded-lg shadow-lg p-4 z-30';
+      notification.innerHTML = `
+        <div class="flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span>Location access is required for navigation. Please enable location services.</span>
+        </div>
+        <button id="retry-location" class="mt-2 bg-primary text-primary-text py-1 px-4 rounded text-sm">Retry</button>
+      `;
+      document.body.appendChild(notification);
+
+      // Add event listener to retry button
+      document.getElementById('retry-location').addEventListener('click', () => {
+        notification.remove();
+        getUserLocation();
+      });
+
+      // Auto-remove after 10 seconds
+      setTimeout(() => {
+        notification.remove();
+      }, 10000);
+    }
+
+    // Set up event listeners
+    function setupEventListeners() {
+      // Navigation buttons
+      document.getElementById('nav-discover').addEventListener('click', () => navigateTo('discover-page'));
+      document.getElementById('nav-map').addEventListener('click', () => navigateTo('map-page'));
+      document.getElementById('nav-activity').addEventListener('click', () => navigateTo('activity-page'));
+      document.getElementById('nav-profile').addEventListener('click', () => navigateTo('profile-page'));
+
+      // Route interaction
+      document.getElementById('close-active-route').addEventListener('click', closeActiveRoute);
+      document.getElementById('start-navigation-btn').addEventListener('click', startNavigation);
+      document.getElementById('show-details-btn').addEventListener('click', showRouteDetails);
+      
+      // Navigation controls
+      document.getElementById('close-navigation').addEventListener('click', endTour);
+      document.getElementById('end-tour-btn').addEventListener('click', endTour);
+
+      // Modal controls
+      document.getElementById('close-modal').addEventListener('click', closeModal);
+      document.getElementById('modal-start-tour').addEventListener('click', () => {
+        closeModal();
+        if (activeRoute) {
+          showRoute(activeRoute);
+          startNavigation();
+        }
+      });
+      document.getElementById('modal-save-tour').addEventListener('click', saveRoute);
+      document.getElementById('modal-share-tour').addEventListener('click', shareRoute);
+
+      // Completed tour modal
+      document.getElementById('view-summary-btn').addEventListener('click', viewTourSummary);
+      document.getElementById('share-result-btn').addEventListener('click', shareTourResults);
+
+      // Settings
+      document.getElementById('distance-unit').addEventListener('change', (e) => {
+        settings.distanceUnit = e.target.value;
+        saveSettings();
+        triggerHapticFeedback('medium');
+      });
+
+      document.getElementById('notifications-toggle').addEventListener('change', (e) => {
+        settings.notifications = e.target.checked;
+        document.getElementById('toggle-dot').style.transform = e.target.checked ? 'translateX(1.5rem)' : 'translateX(0)';
+        document.getElementById('toggle-dot').parentElement.querySelector('.block').style.backgroundColor = e.target.checked ? 'var(--tg-theme-button-color, #5D5CDE)' : 'var(--tg-theme-hint-color, #999999)';
+        saveSettings();
+        triggerHapticFeedback('medium');
+      });
+
+      document.getElementById('map-style').addEventListener('change', (e) => {
+        settings.mapStyle = e.target.value;
+        saveSettings();
+        triggerHapticFeedback('medium');
+      });
+
+      // Activity filters
+      document.getElementById('activity-filter').addEventListener('change', (e) => {
+        filterActivities(e.target.value);
+        triggerHapticFeedback('light');
+      });
+
+      // No activities explore button
+      document.getElementById('explore-btn').addEventListener('click', () => navigateTo('discover-page'));
+
+      // Category buttons
+      document.querySelectorAll('.category-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          // Deselect all category buttons
+          document.querySelectorAll('.category-btn').forEach(b => {
+            b.classList.remove('bg-primary', 'text-primary-text');
+            b.classList.add('bg-section-bg', 'text-text');
+          });
+          
+          // Select clicked button
+          e.target.classList.remove('bg-section-bg', 'text-text');
+          e.target.classList.add('bg-primary', 'text-primary-text');
+          
+          // Filter routes by category
+          const category = e.target.textContent;
+          filterRoutesByCategory(category);
+          
+          triggerHapticFeedback('light');
         });
+      });
+    }
 
-        // Sample data
-        const mockData = {
-            proposals: [
-                {
-                    id: 1,
-                    title: "Urban Green Space Expansion",
-                    author: "EcoAdvocate",
-                    authorId: "eco123",
-                    content: "Proposal to mandate that 15% of all new urban development must be dedicated to public green spaces, including parks, community gardens, and natural conservation areas.",
-                    supporters: 78,
-                    requiredSupporters: 100,
-                    category: "environment",
-                    timestamp: new Date(Date.now() - 86400000 * 3).toISOString(),
-                    discussion: [
-                        {
-                            id: 1,
-                            author: "UrbanPlanner",
-                            authorId: "urban456",
-                            content: "This proposal would significantly improve quality of life in urban areas while promoting biodiversity.",
-                            timestamp: new Date(Date.now() - 86400000 * 2).toISOString()
-                        },
-                        {
-                            id: 2,
-                            author: "DevelopmentPro",
-                            authorId: "dev789",
-                            content: "While I support the goal, 15% may be excessive in dense urban areas. Perhaps we could consider a sliding scale based on population density?",
-                            timestamp: new Date(Date.now() - 86400000 * 1).toISOString()
-                        }
-                    ]
-                },
-                {
-                    id: 2,
-                    title: "Digital Education Fund",
-                    author: "TechEdu",
-                    authorId: "tech456",
-                    content: "Establish a dedicated fund to provide digital devices and high-speed internet access to all students in public education systems, ensuring equal access to digital learning resources.",
-                    supporters: 92,
-                    requiredSupporters: 100,
-                    category: "education",
-                    timestamp: new Date(Date.now() - 86400000 * 2).toISOString(),
-                    discussion: [
-                        {
-                            id: 1,
-                            author: "TeacherVoice",
-                            authorId: "teach123",
-                            content: "As a teacher, I've seen firsthand how the digital divide affects learning outcomes. This is desperately needed.",
-                            timestamp: new Date(Date.now() - 86400000 * 1).toISOString()
-                        }
-                    ]
-                },
-                {
-                    id: 3,
-                    title: "Community Healthcare Centers",
-                    author: "HealthAdvocate",
-                    authorId: "health789",
-                    content: "Fund the establishment of community healthcare centers in underserved neighborhoods to provide basic preventative care, vaccinations, and health education.",
-                    supporters: 65,
-                    requiredSupporters: 100,
-                    category: "healthcare",
-                    timestamp: new Date(Date.now() - 86400000 * 1).toISOString(),
-                    discussion: []
-                }
-            ],
-            activeVotes: [
-                {
-                    id: 101,
-                    title: "Renewable Energy Transition",
-                    content: "Mandate that 50% of all energy production must come from renewable sources by 2030, with incentives for solar, wind, and hydroelectric power development.",
-                    yesVotes: 1245,
-                    noVotes: 532,
-                    abstainVotes: 89,
-                    totalVotes: 1866,
-                    category: "environment",
-                    endTime: new Date(Date.now() + 86400000 * 3).toISOString(),
-                    discussion: [
-                        {
-                            id: 1,
-                            author: "EnergyExpert",
-                            authorId: "energy123",
-                            content: "The timeline is ambitious but achievable with proper investment. I support this transition.",
-                            timestamp: new Date(Date.now() - 86400000 * 2).toISOString()
-                        },
-                        {
-                            id: 2,
-                            author: "EconomistView",
-                            authorId: "econ456",
-                            content: "We need to ensure that energy prices remain affordable during this transition. Has an economic impact study been conducted?",
-                            timestamp: new Date(Date.now() - 86400000 * 1).toISOString()
-                        }
-                    ]
-                },
-                {
-                    id: 102,
-                    title: "Universal Basic Income Pilot",
-                    content: "Establish a 2-year pilot program providing a universal basic income of $1,000 per month to 5,000 randomly selected adult citizens to study the economic and social impacts.",
-                    yesVotes: 983,
-                    noVotes: 1024,
-                    abstainVotes: 121,
-                    totalVotes: 2128,
-                    category: "economy",
-                    endTime: new Date(Date.now() + 86400000 * 5).toISOString(),
-                    discussion: [
-                        {
-                            id: 1,
-                            author: "EconomicJustice",
-                            authorId: "justice123",
-                            content: "This pilot would provide valuable data on UBI effects while supporting vulnerable citizens.",
-                            timestamp: new Date(Date.now() - 86400000 * 3).toISOString()
-                        }
-                    ]
-                }
-            ],
-            passedLegislation: [
-                {
-                    id: 201,
-                    title: "Public Transportation Expansion",
-                    content: "Allocate funding to expand public transportation networks, including bus routes and light rail, to reduce traffic congestion and decrease carbon emissions from private vehicles.",
-                    yesVotes: 1876,
-                    noVotes: 423,
-                    abstainVotes: 102,
-                    totalVotes: 2401,
-                    category: "infrastructure",
-                    implementationDate: new Date(Date.now() + 86400000 * 30).toISOString(),
-                    passedDate: new Date(Date.now() - 86400000 * 5).toISOString()
-                },
-                {
-                    id: 202,
-                    title: "Mental Health Services Funding",
-                    content: "Increase funding for mental health services by 15%, with a focus on community-based treatment options, prevention programs, and reducing stigma around mental health issues.",
-                    yesVotes: 2103,
-                    noVotes: 298,
-                    abstainVotes: 76,
-                    totalVotes: 2477,
-                    category: "healthcare",
-                    implementationDate: new Date(Date.now() + 86400000 * 45).toISOString(),
-                    passedDate: new Date(Date.now() - 86400000 * 10).toISOString()
-                }
-            ],
-            userActivities: [
-                {
-                    id: 301,
-                    type: "support",
-                    title: "Digital Education Fund",
-                    timestamp: new Date(Date.now() - 86400000 * 1).toISOString(),
-                    relatedId: 2
-                },
-                {
-                    id: 302,
-                    type: "vote",
-                    title: "Renewable Energy Transition",
-                    vote: "yes",
-                    timestamp: new Date(Date.now() - 86400000 * 2).toISOString(),
-                    relatedId: 101
-                },
-                {
-                    id: 303,
-                    type: "comment",
-                    title: "Urban Green Space Expansion",
-                    comment: "I think this is crucial for improving urban livability and addressing climate change.",
-                    timestamp: new Date(Date.now() - 86400000 * 3).toISOString(),
-                    relatedId: 1
-                }
-            ]
-        };
+    // Navigate to a page
+    function navigateTo(pageId) {
+      const currentPage = document.querySelector('.page.active');
+      const targetPage = document.getElementById(pageId);
+      
+      if (currentPage) {
+        currentPage.classList.remove('active');
+      }
+      
+      targetPage.classList.add('active');
+      
+      // Update header title
+      const headerTitle = document.getElementById('header-title');
+      switch(pageId) {
+        case 'discover-page':
+          headerTitle.textContent = 'City Cycle Tours';
+          break;
+        case 'map-page':
+          headerTitle.textContent = 'Explore Map';
+          break;
+        case 'activity-page':
+          headerTitle.textContent = 'Your Activity';
+          break;
+        case 'profile-page':
+          headerTitle.textContent = 'Profile';
+          break;
+      }
+      
+      // Update navigation buttons
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('text-primary');
+        btn.classList.add('text-hint');
+      });
+      
+      // Highlight active nav button
+      const buttonId = 'nav-' + pageId.split('-')[0];
+      document.getElementById(buttonId).classList.remove('text-hint');
+      document.getElementById(buttonId).classList.add('text-primary');
+      
+      // Update Telegram back button
+      updateBackButton(pageId);
+      
+      // Special handling for map page
+      if (pageId === 'map-page') {
+        setTimeout(() => {
+          map.invalidateSize();
+          if (userPosition) {
+            map.setView([userPosition.lat, userPosition.lng], 14);
+          }
+        }, 300);
+      }
+      
+      triggerHapticFeedback('medium');
+    }
 
-        function initData() {
-            renderProposals();
-            renderActiveVotes();
-            renderPassedLegislation();
-            renderUserActivities();
+    // Update Telegram back button
+    function updateBackButton(pageId) {
+      if (!tgApp) return;
+      
+      if (pageId === 'discover-page') {
+        tgApp.BackButton.hide();
+      } else {
+        tgApp.BackButton.show();
+      }
+    }
+
+    // Handle back navigation
+    function handleBackNavigation() {
+      navigateTo('discover-page');
+    }
+
+    // Load app data
+    function loadData() {
+      // Load routes from sample data
+      routes = routesData;
+      
+      // Load user data from local storage
+      const storedSettings = localStorage.getItem('cycleAppSettings');
+      if (storedSettings) {
+        settings = JSON.parse(storedSettings);
+        
+        // Apply settings to UI
+        document.getElementById('distance-unit').value = settings.distanceUnit;
+        document.getElementById('notifications-toggle').checked = settings.notifications;
+        document.getElementById('toggle-dot').style.transform = settings.notifications ? 'translateX(1.5rem)' : 'translateX(0)';
+        document.getElementById('toggle-dot').parentElement.querySelector('.block').style.backgroundColor = settings.notifications ? 'var(--tg-theme-button-color, #5D5CDE)' : 'var(--tg-theme-hint-color, #999999)';
+        document.getElementById('map-style').value = settings.mapStyle;
+      }
+      
+      // Load activities
+      const storedActivities = localStorage.getItem('cycleAppActivities');
+      if (storedActivities) {
+        activities = JSON.parse(storedActivities);
+      }
+      
+      // Load user stats
+      const storedStats = localStorage.getItem('cycleAppStats');
+      if (storedStats) {
+        userStats = JSON.parse(storedStats);
+      }
+      
+      // Update UI with data
+      updateRoutesList();
+      updateFeaturedTour();
+      updateActivitiesList();
+      updateUserStats();
+      updateWeatherInfo();
+      updateAchievements();
+    }
+
+    // Update routes list
+    function updateRoutesList() {
+      const tourList = document.getElementById('tour-list');
+      tourList.innerHTML = '';
+      
+      routes.sort((a, b) => b.popularity - a.popularity).slice(0, 5).forEach(route => {
+        const routeItem = document.createElement('div');
+        routeItem.className = 'tour-item bg-section-bg rounded-lg overflow-hidden';
+        routeItem.innerHTML = `
+          <div class="flex h-24">
+            <div class="w-1/3 bg-cover bg-center" style="background-image: url('${route.image}')"></div>
+            <div class="w-2/3 p-3 flex flex-col justify-between">
+              <div>
+                <h3 class="font-medium text-sm">${route.name}</h3>
+                <div class="flex text-xs text-hint mt-1">
+                  <span>${route.distance} km</span>
+                  <span class="mx-2">•</span>
+                  <span>${route.duration} min</span>
+                  <span class="mx-2">•</span>
+                  <span>${route.difficulty}</span>
+                </div>
+              </div>
+              <div class="flex items-center">
+                <div class="flex items-center text-xs mr-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-primary mr-1" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                  </svg>
+                  <span>${route.popularity.toFixed(1)}</span>
+                </div>
+                <div class="text-xs text-primary font-medium">${route.category}</div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        routeItem.addEventListener('click', () => {
+          activeRoute = route;
+          showRouteDetails();
+        });
+        
+        tourList.appendChild(routeItem);
+      });
+    }
+
+    // Update featured tour
+    function updateFeaturedTour() {
+      const featuredTour = routes.sort((a, b) => b.popularity - a.popularity)[0];
+      const featuredElement = document.getElementById('featured-tour');
+      
+      featuredElement.classList.remove('skeleton');
+      featuredElement.style.backgroundImage = `url('${featuredTour.image}')`;
+      featuredElement.style.backgroundSize = 'cover';
+      featuredElement.style.backgroundPosition = 'center';
+      featuredElement.innerHTML = `
+        <div class="h-full flex flex-col justify-end p-4 bg-gradient-to-t from-black/70 to-transparent">
+          <h3 class="text-white font-semibold text-lg">${featuredTour.name}</h3>
+          <div class="flex text-white/80 text-sm mt-1">
+            <span>${featuredTour.distance} km</span>
+            <span class="mx-2">•</span>
+            <span>${featuredTour.duration} min</span>
+            <span class="mx-2">•</span>
+            <span>${featuredTour.difficulty}</span>
+          </div>
+        </div>
+      `;
+      
+      featuredElement.addEventListener('click', () => {
+        activeRoute = featuredTour;
+        showRouteDetails();
+      });
+    }
+
+    // Filter routes by category
+    function filterRoutesByCategory(category) {
+      const tourList = document.getElementById('tour-list');
+      tourList.innerHTML = '';
+      
+      let filteredRoutes = routes;
+      if (category !== 'All Routes') {
+        filteredRoutes = routes.filter(route => route.category === category);
+      }
+      
+      if (filteredRoutes.length === 0) {
+        tourList.innerHTML = `
+          <div class="text-center py-4 text-hint">
+            No tours found in this category
+          </div>
+        `;
+        return;
+      }
+      
+      filteredRoutes.forEach(route => {
+        const routeItem = document.createElement('div');
+        routeItem.className = 'tour-item bg-section-bg rounded-lg overflow-hidden';
+        routeItem.innerHTML = `
+          <div class="flex h-24">
+            <div class="w-1/3 bg-cover bg-center" style="background-image: url('${route.image}')"></div>
+            <div class="w-2/3 p-3 flex flex-col justify-between">
+              <div>
+                <h3 class="font-medium text-sm">${route.name}</h3>
+                <div class="flex text-xs text-hint mt-1">
+                  <span>${route.distance} km</span>
+                  <span class="mx-2">•</span>
+                  <span>${route.duration} min</span>
+                  <span class="mx-2">•</span>
+                  <span>${route.difficulty}</span>
+                </div>
+              </div>
+              <div class="flex items-center">
+                <div class="flex items-center text-xs mr-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-primary mr-1" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                  </svg>
+                  <span>${route.popularity.toFixed(1)}</span>
+                </div>
+                <div class="text-xs text-primary font-medium">${route.category}</div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        routeItem.addEventListener('click', () => {
+          activeRoute = route;
+          showRouteDetails();
+        });
+        
+        tourList.appendChild(routeItem);
+      });
+    }
+
+    // Update activities list
+    function updateActivitiesList() {
+      const activityList = document.getElementById('activity-list');
+      const noActivities = document.getElementById('no-activities');
+      
+      if (activities.length === 0) {
+        activityList.classList.add('hidden');
+        noActivities.classList.remove('hidden');
+        return;
+      }
+      
+      activityList.classList.remove('hidden');
+      noActivities.classList.add('hidden');
+      
+      activityList.innerHTML = '';
+      
+      activities.sort((a, b) => b.date - a.date).forEach(activity => {
+        const activityItem = document.createElement('div');
+        activityItem.className = 'bg-section-bg rounded-lg overflow-hidden';
+        
+        const date = new Date(activity.date);
+        const formattedDate = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        
+        activityItem.innerHTML = `
+          <div class="flex h-32">
+            <div class="w-1/3 bg-cover bg-center" style="background-image: url('${activity.image}')"></div>
+            <div class="w-2/3 p-3 flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-start">
+                  <h3 class="font-medium">${activity.name}</h3>
+                  <span class="text-xs text-hint">${formattedDate}</span>
+                </div>
+                <div class="flex text-xs text-hint mt-1">
+                  <span>${activity.distance} km</span>
+                  <span class="mx-2">•</span>
+                  <span>${activity.duration} min</span>
+                </div>
+              </div>
+              <div class="mt-2">
+                <div class="flex justify-between items-center">
+                  <div class="flex items-center text-xs">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span>Avg: ${activity.avgSpeed} km/h</span>
+                  </div>
+                  <button class="text-xs bg-primary text-primary-text py-1 px-3 rounded-full">View</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        activityItem.querySelector('button').addEventListener('click', () => {
+          showActivityDetails(activity);
+        });
+        
+        activityList.appendChild(activityItem);
+      });
+      
+      // Update recent activities in profile
+      updateRecentActivities();
+    }
+
+    // Filter activities
+    function filterActivities(filter) {
+      const activityList = document.getElementById('activity-list');
+      const noActivities = document.getElementById('no-activities');
+      
+      if (activities.length === 0) {
+        activityList.classList.add('hidden');
+        noActivities.classList.remove('hidden');
+        return;
+      }
+      
+      activityList.classList.remove('hidden');
+      noActivities.classList.add('hidden');
+      
+      activityList.innerHTML = '';
+      
+      let filteredActivities = activities;
+      if (filter === 'completed') {
+        filteredActivities = activities.filter(activity => activity.completed);
+      } else if (filter === 'saved') {
+        filteredActivities = activities.filter(activity => activity.saved);
+      }
+      
+      if (filteredActivities.length === 0) {
+        activityList.classList.add('hidden');
+        noActivities.classList.remove('hidden');
+        return;
+      }
+      
+      filteredActivities.sort((a, b) => b.date - a.date).forEach(activity => {
+        const activityItem = document.createElement('div');
+        activityItem.className = 'bg-section-bg rounded-lg overflow-hidden';
+        
+        const date = new Date(activity.date);
+        const formattedDate = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        
+        activityItem.innerHTML = `
+          <div class="flex h-32">
+            <div class="w-1/3 bg-cover bg-center" style="background-image: url('${activity.image}')"></div>
+            <div class="w-2/3 p-3 flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-start">
+                  <h3 class="font-medium">${activity.name}</h3>
+                  <span class="text-xs text-hint">${formattedDate}</span>
+                </div>
+                <div class="flex text-xs text-hint mt-1">
+                  <span>${activity.distance} km</span>
+                  <span class="mx-2">•</span>
+                  <span>${activity.duration} min</span>
+                </div>
+              </div>
+              <div class="mt-2">
+                <div class="flex justify-between items-center">
+                  <div class="flex items-center text-xs">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span>Avg: ${activity.avgSpeed} km/h</span>
+                  </div>
+                  <button class="text-xs bg-primary text-primary-text py-1 px-3 rounded-full">View</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        activityItem.querySelector('button').addEventListener('click', () => {
+          showActivityDetails(activity);
+        });
+        
+        activityList.appendChild(activityItem);
+      });
+    }
+
+    // Update recent activities in profile
+    function updateRecentActivities() {
+      const recentActivities = document.getElementById('recent-activities');
+      
+      if (activities.length === 0) {
+        recentActivities.innerHTML = `
+          <div class="text-center py-2 text-hint text-sm">
+            No activities yet
+          </div>
+        `;
+        return;
+      }
+      
+      recentActivities.innerHTML = '';
+      
+      activities.sort((a, b) => b.date - a.date).slice(0, 3).forEach(activity => {
+        const activityItem = document.createElement('div');
+        activityItem.className = 'flex justify-between items-center p-2 bg-bg rounded-lg';
+        
+        const date = new Date(activity.date);
+        const formattedDate = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        
+        activityItem.innerHTML = `
+          <div class="flex items-center">
+            <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary mr-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.933 12.8a1 1 0 000-1.6L6.6 7.2A1 1 0 005 8v8a1 1 0 001.6.8l5.333-4z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.933 12.8a1 1 0 000-1.6l-5.333-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.333-4z" />
+              </svg>
+            </div>
+            <div>
+              <div class="text-sm font-medium">${activity.name}</div>
+              <div class="text-xs text-hint">${activity.distance} km • ${activity.duration} min</div>
+            </div>
+          </div>
+          <div class="text-xs text-hint">${formattedDate}</div>
+        `;
+        
+        recentActivities.appendChild(activityItem);
+      });
+    }
+
+    // Update user stats
+    function updateUserStats() {
+      document.getElementById('stats-tours').textContent = userStats.tours;
+      document.getElementById('stats-distance').textContent = userStats.distance;
+      document.getElementById('stats-achievements').textContent = userStats.achievements;
+    }
+
+    // Update weather info
+    function updateWeatherInfo() {
+      // In a real app, this would fetch from a weather API
+      // Simulated weather data
+      const weatherTemp = document.getElementById('weather-temp');
+      const weatherDesc = document.getElementById('weather-desc');
+      const weatherIcon = document.getElementById('weather-icon');
+      
+      setTimeout(() => {
+        const temp = Math.floor(Math.random() * 15) + 15; // Random temp between 15-30°C
+        const descriptions = ['Sunny', 'Partly Cloudy', 'Clear Sky', 'Light Breeze'];
+        const description = descriptions[Math.floor(Math.random() * descriptions.length)];
+        
+        weatherTemp.textContent = `${temp}°C`;
+        weatherDesc.textContent = description;
+        
+        // Update icon based on description
+        if (description.includes('Sunny')) {
+          weatherIcon.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+          `;
+        } else if (description.includes('Cloudy')) {
+          weatherIcon.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+            </svg>
+          `;
+        } else {
+          weatherIcon.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+          `;
         }
+      }, 1500);
+    }
 
-        function setupEventListeners() {
-            // Tab navigation
-            document.querySelectorAll('.tab-button').forEach(button => {
-                button.addEventListener('click', function() {
-                    const view = this.dataset.view;
-                    document.querySelectorAll('.tab-button').forEach(btn => {
-                        btn.classList.remove('active');
-                        btn.style.borderBottom = 'none';
-                        btn.style.color = `var(--tg-theme-text-color, var(--default-text-color))`;
-                    });
-                    this.classList.add('active');
-                    this.style.borderBottom = `2px solid var(--tg-theme-button-color, var(--default-button-color))`;
-                    this.style.color = `var(--tg-theme-button-color, var(--default-button-color))`;
-                    
-                    document.querySelectorAll('.view-content').forEach(content => {
-                        content.classList.add('hidden');
-                    });
-                    document.getElementById(`${view}-view`).classList.remove('hidden');
-                    document.getElementById('header-title').textContent = view.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-                });
-            });
-            
-            // Back button
-            document.getElementById('back-button').addEventListener('click', function() {
-                const detailViews = ['proposal-detail-view', 'vote-detail-view', 'new-proposal-view'];
-                let isDetailView = false;
-                
-                detailViews.forEach(viewId => {
-                    if (!document.getElementById(viewId).classList.contains('hidden')) {
-                        document.getElementById(viewId).classList.add('hidden');
-                        isDetailView = true;
-                    }
-                });
-                
-                if (isDetailView) {
-                    // Return to the main view
-                    document.querySelectorAll('.tab-button').forEach(btn => {
-                        if (btn.classList.contains('active')) {
-                            document.getElementById(`${btn.dataset.view}-view`).classList.remove('hidden');
-                        }
-                    });
-                    return;
-                }
-                
-                // If we're not in a detail view, just close the WebApp
-                if (tg) {
-                    tg.close();
-                }
-            });
-            
-            // New proposal button
-            document.getElementById('new-proposal-btn').addEventListener('click', function() {
-                document.querySelectorAll('.view-content').forEach(content => {
-                    content.classList.add('hidden');
-                });
-                document.getElementById('new-proposal-view').classList.remove('hidden');
-                document.getElementById('header-title').textContent = 'New Proposal';
-            });
-            
-            // Cancel proposal button
-            document.getElementById('cancel-proposal').addEventListener('click', function() {
-                document.getElementById('new-proposal-view').classList.add('hidden');
-                document.getElementById('proposals-view').classList.remove('hidden');
-                document.getElementById('header-title').textContent = 'Proposals';
-                document.getElementById('proposal-form').reset();
-            });
-            
-            // Submit proposal form
-            document.getElementById('proposal-form').addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const title = document.getElementById('proposal-title-input').value;
-                const content = document.getElementById('proposal-content-input').value;
-                const category = document.getElementById('proposal-category').value;
-                
-                if (!title || !content) {
-                    alert('Please fill in all required fields');
-                    return;
-                }
-                
-                // Create new proposal
-                const newProposal = {
-                    id: mockData.proposals.length + 1 + 100,
-                    title: title,
-                    author: user.first_name + (user.last_name ? ' ' + user.last_name : ''),
-                    authorId: user.id,
-                    content: content,
-                    supporters: 1, // Author supports by default
-                    requiredSupporters: 100,
-                    category: category,
-                    timestamp: new Date().toISOString(),
-                    discussion: []
-                };
-                
-                mockData.proposals.push(newProposal);
-                
-                // Add to user activities
-                mockData.userActivities.push({
-                    id: mockData.userActivities.length + 1 + 1000,
-                    type: "proposal",
-                    title: title,
-                    timestamp: new Date().toISOString(),
-                    relatedId: newProposal.id
-                });
-                
-                // Update views
-                renderProposals();
-                renderUserActivities();
-                
-                // Show success notification
-                const notification = document.createElement('div');
-                notification.classList.add('fixed', 'bottom-4', 'left-1/2', 'transform', '-translate-x-1/2', 'px-4', 'py-2', 'rounded', 'shadow-lg');
-                notification.style.backgroundColor = 'var(--tg-theme-button-color, var(--default-button-color))';
-                notification.style.color = 'var(--tg-theme-button-text-color, var(--default-button-text-color))';
-                notification.textContent = 'Proposal submitted successfully!';
-                document.body.appendChild(notification);
-                
-                setTimeout(() => {
-                    notification.remove();
-                }, 3000);
-                
-                // Reset form and go back to proposals
-                document.getElementById('proposal-form').reset();
-                document.getElementById('new-proposal-view').classList.add('hidden');
-                document.getElementById('proposals-view').classList.remove('hidden');
-                document.getElementById('header-title').textContent = 'Proposals';
-            });
-            
-            // Support button
-            document.getElementById('support-button').addEventListener('click', function() {
-                const proposalId = parseInt(this.dataset.proposalId);
-                const proposal = mockData.proposals.find(p => p.id === proposalId);
-                
-                if (!proposal) return;
-                
-                // Check if user already supported
-                const alreadySupported = mockData.userActivities.some(activity => 
-                    activity.type === 'support' && activity.relatedId === proposalId
-                );
-                
-                if (alreadySupported) {
-                    // Show notification that user already supported
-                    const notification = document.createElement('div');
-                    notification.classList.add('fixed', 'bottom-4', 'left-1/2', 'transform', '-translate-x-1/2', 'px-4', 'py-2', 'rounded', 'shadow-lg');
-                    notification.style.backgroundColor = 'var(--tg-theme-button-color, var(--default-button-color))';
-                    notification.style.color = 'var(--tg-theme-button-text-color, var(--default-button-text-color))';
-                    notification.textContent = 'You have already supported this proposal';
-                    document.body.appendChild(notification);
-                    
-                    setTimeout(() => {
-                        notification.remove();
-                    }, 3000);
-                    
-                    return;
-                }
-                
-                // Add support
-                proposal.supporters += 1;
-                
-                // Add to user activities
-                mockData.userActivities.push({
-                    id: mockData.userActivities.length + 1 + 1000,
-                    type: "support",
-                    title: proposal.title,
-                    timestamp: new Date().toISOString(),
-                    relatedId: proposalId
-                });
-                
-                // Check if proposal has enough support to move to voting
-                if (proposal.supporters >= proposal.requiredSupporters) {
-                    // Move to active votes
-                    const newVote = {
-                        id: mockData.activeVotes.length + 1 + 1000,
-                        title: proposal.title,
-                        content: proposal.content,
-                        yesVotes: 0,
-                        noVotes: 0,
-                        abstainVotes: 0,
-                        totalVotes: 0,
-                        category: proposal.category,
-                        endTime: new Date(Date.now() + 86400000 * 7).toISOString(), // 7 days from now
-                        discussion: proposal.discussion
-                    };
-                    
-                    mockData.activeVotes.push(newVote);
-                    
-                    // Remove from proposals
-                    mockData.proposals = mockData.proposals.filter(p => p.id !== proposalId);
-                    
-                    // Update views
-                    renderProposals();
-                    renderActiveVotes();
-                    
-                    // Show success notification
-                    const notification = document.createElement('div');
-                    notification.classList.add('fixed', 'bottom-4', 'left-1/2', 'transform', '-translate-x-1/2', 'px-4', 'py-2', 'rounded', 'shadow-lg');
-                    notification.style.backgroundColor = 'var(--tg-theme-button-color, var(--default-button-color))';
-                    notification.style.color = 'var(--tg-theme-button-text-color, var(--default-button-text-color))';
-                    notification.textContent = 'Proposal has advanced to voting stage!';
-                    document.body.appendChild(notification);
-                    
-                    setTimeout(() => {
-                        notification.remove();
-                    }, 3000);
-                    
-                    // Go back to proposals
-                    document.getElementById('proposal-detail-view').classList.add('hidden');
-                    document.getElementById('proposals-view').classList.remove('hidden');
-                    document.getElementById('header-title').textContent = 'Proposals';
-                } else {
-                    // Update proposal details
-                    updateProposalDetails(proposalId);
-                    
-                    // Add animation to the support button
-                    this.classList.add('vote-animate');
-                    setTimeout(() => {
-                        this.classList.remove('vote-animate');
-                    }, 300);
-                }
-                
-                // Update user activities
-                renderUserActivities();
-            });
-            
-            // Voting buttons
-            ['vote-yes', 'vote-no', 'vote-abstain'].forEach(buttonId => {
-                document.getElementById(buttonId).addEventListener('click', function() {
-                    const voteId = parseInt(this.dataset.voteId);
-                    const vote = mockData.activeVotes.find(v => v.id === voteId);
-                    
-                    if (!vote) return;
-                    
-                    // Check if user already voted
-                    const alreadyVoted = mockData.userActivities.some(activity => 
-                        activity.type === 'vote' && activity.relatedId === voteId
-                    );
-                    
-                    if (alreadyVoted) {
-                        // Show notification that user already voted
-                        const notification = document.createElement('div');
-                        notification.classList.add('fixed', 'bottom-4', 'left-1/2', 'transform', '-translate-x-1/2', 'px-4', 'py-2', 'rounded', 'shadow-lg');
-                        notification.style.backgroundColor = 'var(--tg-theme-button-color, var(--default-button-color))';
-                        notification.style.color = 'var(--tg-theme-button-text-color, var(--default-button-text-color))';
-                        notification.textContent = 'You have already voted on this proposal';
-                        document.body.appendChild(notification);
-                        
-                        setTimeout(() => {
-                            notification.remove();
-                        }, 3000);
-                        
-                        return;
-                    }
-                    
-                    // Add vote
-                    const voteType = buttonId.split('-')[1];
-                    if (voteType === 'yes') {
-                        vote.yesVotes += 1;
-                    } else if (voteType === 'no') {
-                        vote.noVotes += 1;
-                    } else {
-                        vote.abstainVotes += 1;
-                    }
-                    
-                    vote.totalVotes += 1;
-                    
-                    // Add to user activities
-                    mockData.userActivities.push({
-                        id: mockData.userActivities.length + 1 + 1000,
-                        type: "vote",
-                        title: vote.title,
-                        vote: voteType,
-                        timestamp: new Date().toISOString(),
-                        relatedId: voteId
-                    });
-                    
-                    // Update vote details
-                    updateVoteDetails(voteId);
-                    
-                    // Add animation to the vote button
-                    this.classList.add('vote-animate');
-                    setTimeout(() => {
-                        this.classList.remove('vote-animate');
-                    }, 300);
-                    
-                    // Update user activities
-                    renderUserActivities();
-                    
-                    // Show success notification
-                    const notification = document.createElement('div');
-                    notification.classList.add('fixed', 'bottom-4', 'left-1/2', 'transform', '-translate-x-1/2', 'px-4', 'py-2', 'rounded', 'shadow-lg');
-                    notification.style.backgroundColor = 'var(--tg-theme-button-color, var(--default-button-color))';
-                    notification.style.color = 'var(--tg-theme-button-text-color, var(--default-button-text-color))';
-                    notification.textContent = 'Vote cast successfully!';
-                    document.body.appendChild(notification);
-                    
-                    setTimeout(() => {
-                        notification.remove();
-                    }, 3000);
-                });
-            });
-            
-            // Discussion send buttons
-            document.getElementById('send-discussion').addEventListener('click', function() {
-                sendDiscussion('proposal');
-            });
-            
-            document.getElementById('send-vote-discussion').addEventListener('click', function() {
-                sendDiscussion('vote');
-            });
-            
-            // Setup discussion input enter key press
-            document.getElementById('discussion-input').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    sendDiscussion('proposal');
-                }
-            });
-            
-            document.getElementById('vote-discussion-input').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    sendDiscussion('vote');
-                }
-            });
+    // Update achievements
+    function updateAchievements() {
+      const achievementsContainer = document.getElementById('achievements');
+      achievementsContainer.innerHTML = '';
+      
+      achievementsData.forEach(achievement => {
+        const achievementItem = document.createElement('div');
+        achievementItem.className = `flex flex-col items-center justify-center p-3 rounded-lg ${achievement.unlocked ? 'bg-primary/10' : 'bg-bg'}`;
+        
+        achievementItem.innerHTML = `
+          <div class="text-2xl mb-1">${achievement.icon}</div>
+          <div class="text-xs font-medium text-center">${achievement.name}</div>
+        `;
+        
+        // Add tooltip with achievement description on hover
+        achievementItem.title = achievement.description;
+        
+        achievementsContainer.appendChild(achievementItem);
+      });
+    }
+
+    // Show a route on the map
+    function showRoute(route) {
+      // Clear previous routes
+      routeLayer.clearLayers();
+      
+      // Center map on route
+      const firstPoint = route.coords[0];
+      map.setView([firstPoint.lat, firstPoint.lng], 14);
+      
+      // Draw route on map
+      const routePath = L.polyline(route.coords, {
+        color: 'var(--tg-theme-button-color, #5D5CDE)',
+        weight: 5,
+        opacity: 0.8,
+        lineJoin: 'round'
+      }).addTo(routeLayer);
+      
+      // Add start marker
+      const startIcon = L.divIcon({
+        className: 'start-marker',
+        html: `<div class="flex items-center justify-center w-6 h-6 bg-primary rounded-full text-primary-text font-bold shadow-lg">S</div>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+      });
+      
+      L.marker([route.coords[0].lat, route.coords[0].lng], { icon: startIcon }).addTo(routeLayer);
+      
+      // Add end marker
+      const endIcon = L.divIcon({
+        className: 'end-marker',
+        html: `<div class="flex items-center justify-center w-6 h-6 bg-primary rounded-full text-primary-text font-bold shadow-lg">F</div>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+      });
+      
+      const lastPoint = route.coords[route.coords.length - 1];
+      L.marker([lastPoint.lat, lastPoint.lng], { icon: endIcon }).addTo(routeLayer);
+      
+      // Add POI markers
+      route.pois.forEach((poi, index) => {
+        // Create a position for POI based on route (evenly distributed)
+        const position = Math.floor((index + 1) * route.coords.length / (route.pois.length + 1));
+        const poiPoint = route.coords[position];
+        
+        const poiIcon = L.divIcon({
+          className: 'poi-marker',
+          html: `<div class="flex items-center justify-center w-6 h-6 bg-white rounded-full text-primary font-bold border-2 border-primary shadow-lg">${index + 1}</div>`,
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
+        });
+        
+        const marker = L.marker([poiPoint.lat, poiPoint.lng], { icon: poiIcon }).addTo(routeLayer);
+        
+        marker.bindPopup(`<b>${poi.name}</b><br>${poi.description}`);
+      });
+      
+      // Fit map to route bounds
+      const bounds = routePath.getBounds();
+      map.fitBounds(bounds, { padding: [50, 50] });
+      
+      // Show route card
+      document.getElementById('active-route-card').classList.remove('hidden');
+      document.getElementById('active-route-name').textContent = route.name;
+      document.getElementById('active-route-distance').textContent = `${route.distance} km`;
+      document.getElementById('active-route-duration').textContent = `${route.duration} min`;
+      
+      // Hide navigation card if visible
+      document.getElementById('route-navigation').classList.add('hidden');
+      
+      // Update Telegram MainButton
+      if (tgApp) {
+        tgApp.MainButton.setText('Start Tour');
+        tgApp.MainButton.show();
+      }
+      
+      triggerHapticFeedback('medium');
+    }
+
+    // Close active route
+    function closeActiveRoute() {
+      document.getElementById('active-route-card').classList.add('hidden');
+      routeLayer.clearLayers();
+      activeRoute = null;
+      
+      // Hide Telegram MainButton
+      if (tgApp && !isNavigating) {
+        tgApp.MainButton.hide();
+      }
+      
+      triggerHapticFeedback('light');
+    }
+
+    // Show route details
+    function showRouteDetails() {
+      if (!activeRoute) return;
+      
+      const modal = document.getElementById('route-details-modal');
+      const modalRouteName = document.getElementById('modal-route-name');
+      const modalRouteImage = document.getElementById('modal-route-image');
+      const modalRouteDistance = document.getElementById('modal-route-distance');
+      const modalRouteDuration = document.getElementById('modal-route-duration');
+      const modalRouteDifficulty = document.getElementById('modal-route-difficulty');
+      const modalRouteDescription = document.getElementById('modal-route-description');
+      const modalRoutePoi = document.getElementById('modal-route-poi');
+      
+      modalRouteName.textContent = activeRoute.name;
+      modalRouteImage.style.backgroundImage = `url('${activeRoute.image}')`;
+      modalRouteImage.classList.remove('skeleton');
+      modalRouteDistance.textContent = `${activeRoute.distance} km`;
+      modalRouteDuration.textContent = `${activeRoute.duration} min`;
+      modalRouteDifficulty.textContent = activeRoute.difficulty;
+      modalRouteDescription.textContent = activeRoute.description;
+      modalRouteDescription.classList.remove('skeleton');
+      
+      // Add POIs
+      modalRoutePoi.innerHTML = '';
+      activeRoute.pois.forEach((poi, index) => {
+        const poiItem = document.createElement('div');
+        poiItem.className = 'flex items-center p-2 bg-bg rounded';
+        poiItem.innerHTML = `
+          <div class="flex items-center justify-center w-5 h-5 bg-primary rounded-full text-primary-text text-xs font-medium mr-2">${index + 1}</div>
+          <div>
+            <div class="text-sm font-medium">${poi.name}</div>
+            <div class="text-xs text-hint">${poi.description}</div>
+          </div>
+        `;
+        modalRoutePoi.appendChild(poiItem);
+      });
+      
+      // Update Save Tour button text
+      const modalSaveBtn = document.getElementById('modal-save-tour');
+      const isSaved = activities.some(a => a.id === activeRoute.id && a.saved);
+      modalSaveBtn.textContent = isSaved ? 'Unsave Tour' : 'Save Tour';
+      
+      // Show modal
+      modal.classList.add('active');
+      
+      triggerHapticFeedback('medium');
+    }
+
+    // Close modal
+    function closeModal() {
+      document.getElementById('route-details-modal').classList.remove('active');
+      document.getElementById('completed-tour-modal').classList.remove('active');
+      triggerHapticFeedback('light');
+    }
+
+    // Save a route
+    function saveRoute() {
+      if (!activeRoute) return;
+      
+      const isSaved = activities.some(a => a.id === activeRoute.id && a.saved);
+      
+      if (isSaved) {
+        // Unsave route
+        activities = activities.filter(a => !(a.id === activeRoute.id && a.saved && !a.completed));
+      } else {
+        // Save route
+        activities.push({
+          id: activeRoute.id,
+          name: activeRoute.name,
+          distance: activeRoute.distance,
+          duration: activeRoute.duration,
+          image: activeRoute.image,
+          date: new Date().getTime(),
+          saved: true,
+          completed: false,
+          avgSpeed: 0
+        });
+      }
+      
+      // Update UI
+      saveActivities();
+      updateActivitiesList();
+      
+      // Update button text
+      const modalSaveBtn = document.getElementById('modal-save-tour');
+      modalSaveBtn.textContent = isSaved ? 'Save Tour' : 'Unsave Tour';
+      
+      // Show toast notification
+      showToast(isSaved ? 'Tour removed from saved' : 'Tour saved successfully');
+      
+      triggerHapticFeedback('medium');
+    }
+
+    // Share a route
+    function shareRoute() {
+      if (!activeRoute) return;
+      
+      if (tgApp && tgApp.switchInlineQuery) {
+        // Share to Telegram chat
+        tgApp.switchInlineQuery(`Check out this cycling tour: ${activeRoute.name} (${activeRoute.distance} km)`, ['users', 'groups', 'channels']);
+      } else {
+        // Show toast if sharing not available
+        showToast('Sharing not available in this context');
+      }
+      
+      triggerHapticFeedback('medium');
+    }
+
+    // Start navigation for a route
+    function startNavigation() {
+      if (!activeRoute) return;
+      
+      // Check if location is available
+      if (!userPosition) {
+        showToast('Location access is required for navigation');
+        getUserLocation();
+        return;
+      }
+      
+      // Hide route card
+      document.getElementById('active-route-card').classList.add('hidden');
+      
+      // Show navigation card
+      document.getElementById('route-navigation').classList.remove('hidden');
+      
+      // Set navigation state
+      isNavigating = true;
+      navigationStartTime = new Date();
+      
+      // Center map on user
+      map.setView([userPosition.lat, userPosition.lng], 15);
+      
+      // Start tracking progress
+      startTrackingProgress();
+      
+      // Update Telegram MainButton
+      if (tgApp) {
+        tgApp.MainButton.setText('End Tour');
+        tgApp.MainButton.show();
+      }
+      
+      triggerHapticFeedback('heavy');
+    }
+
+    // Start tracking progress
+    function startTrackingProgress() {
+      // Clear any existing interval
+      if (activeTourInterval) {
+        clearInterval(activeTourInterval);
+      }
+      
+      // Update navigation info immediately
+      updateNavigationInfo();
+      
+      // Set interval to update navigation info
+      activeTourInterval = setInterval(() => {
+        updateNavigationInfo();
+      }, 1000);
+    }
+
+    // Update navigation info
+    function updateNavigationInfo() {
+      if (!isNavigating || !activeRoute || !userPosition) return;
+      
+      // Calculate current speed (random for demo)
+      const speed = Math.random() * 15 + 5;
+      document.getElementById('current-speed').textContent = `${speed.toFixed(1)} km/h`;
+      
+      // Calculate distance left (random decreasing for demo)
+      const elapsedSeconds = (new Date() - navigationStartTime) / 1000;
+      const progressPercent = Math.min(elapsedSeconds / (activeRoute.duration * 60), 1);
+      const distanceLeft = Math.max(activeRoute.distance * (1 - progressPercent), 0);
+      document.getElementById('distance-left').textContent = `${distanceLeft.toFixed(1)} km`;
+      
+      // Update elapsed time
+      const minutes = Math.floor(elapsedSeconds / 60);
+      const seconds = Math.floor(elapsedSeconds % 60);
+      document.getElementById('elapsed-time').textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      
+      // Check if tour should be automatically completed (for demo)
+      if (progressPercent >= 1) {
+        endTour();
+      }
+    }
+
+    // End the current tour
+    function endTour() {
+      if (!isNavigating || !activeRoute) return;
+      
+      // Stop tracking progress
+      if (activeTourInterval) {
+        clearInterval(activeTourInterval);
+        activeTourInterval = null;
+      }
+      
+      // Calculate tour data
+      const elapsedSeconds = (new Date() - navigationStartTime) / 1000;
+      const elapsedMinutes = Math.max(Math.round(elapsedSeconds / 60), 1);
+      const distanceCovered = Math.min(activeRoute.distance, activeRoute.distance * (elapsedSeconds / (activeRoute.duration * 60)));
+      const avgSpeed = distanceCovered / (elapsedSeconds / 3600);
+      
+      // Save tour data
+      activeTourData = {
+        distance: distanceCovered.toFixed(1),
+        duration: elapsedMinutes,
+        avgSpeed: avgSpeed.toFixed(1)
+      };
+      
+      // Update UI
+      document.getElementById('completed-distance').textContent = `${activeTourData.distance} km`;
+      document.getElementById('completed-duration').textContent = `${Math.floor(elapsedMinutes / 60)}:${(elapsedMinutes % 60).toString().padStart(2, '0')}`;
+      document.getElementById('completed-avg-speed').textContent = `${activeTourData.avgSpeed} km/h`;
+      
+      // Hide navigation card
+      document.getElementById('route-navigation').classList.add('hidden');
+      
+      // Show completed modal
+      document.getElementById('completed-tour-modal').classList.add('active');
+      
+      // Add to activities
+      activities.push({
+        id: activeRoute.id,
+        name: activeRoute.name,
+        distance: parseFloat(activeTourData.distance),
+        duration: activeTourData.duration,
+        avgSpeed: parseFloat(activeTourData.avgSpeed),
+        image: activeRoute.image,
+        date: new Date().getTime(),
+        saved: false,
+        completed: true
+      });
+      
+      // Update user stats
+      userStats.tours += 1;
+      userStats.distance += parseFloat(activeTourData.distance);
+      
+      // Check for achievements
+      checkAchievements();
+      
+      // Save data
+      saveActivities();
+      saveUserStats();
+      
+      // Reset navigation state
+      isNavigating = false;
+      activeRoute = null;
+      
+      // Update Telegram MainButton
+      if (tgApp) {
+        tgApp.MainButton.hide();
+      }
+      
+      triggerHapticFeedback('heavy');
+    }
+
+    // Check for achievements
+    function checkAchievements() {
+      let newAchievements = 0;
+      
+      // First Ride
+      if (!achievementsData[0].unlocked && userStats.tours >= 1) {
+        achievementsData[0].unlocked = true;
+        newAchievements++;
+      }
+      
+      // Explorer
+      if (!achievementsData[1].unlocked && userStats.tours >= 5) {
+        achievementsData[1].unlocked = true;
+        newAchievements++;
+      }
+      
+      // Distance Crusher
+      if (!achievementsData[2].unlocked && userStats.distance >= 50) {
+        achievementsData[2].unlocked = true;
+        newAchievements++;
+      }
+      
+      // Early Bird (simulate)
+      if (!achievementsData[3].unlocked && Math.random() > 0.7) {
+        achievementsData[3].unlocked = true;
+        newAchievements++;
+      }
+      
+      // Update achievements count
+      userStats.achievements += newAchievements;
+      
+      // Update UI
+      if (newAchievements > 0) {
+        updateAchievements();
+        showToast(`Unlocked ${newAchievements} new achievement${newAchievements > 1 ? 's' : ''}!`);
+      }
+    }
+
+    // View tour summary
+    function viewTourSummary() {
+      closeModal();
+      navigateTo('activity-page');
+    }
+
+    // Share tour results
+    function shareTourResults() {
+      if (tgApp && tgApp.switchInlineQuery) {
+        // Share to Telegram chat
+        tgApp.switchInlineQuery(`I just completed a ${activeTourData.distance} km cycling tour with an average speed of ${activeTourData.avgSpeed} km/h!`, ['users', 'groups', 'channels']);
+      } else {
+        // Show toast if sharing not available
+        showToast('Sharing not available in this context');
+      }
+      
+      closeModal();
+      triggerHapticFeedback('medium');
+    }
+
+    // Show activity details
+    function showActivityDetails(activity) {
+      // In a real app, this would show a detailed view of the activity
+      showToast('Activity details coming soon');
+    }
+
+    // Save activities to local storage
+    function saveActivities() {
+      localStorage.setItem('cycleAppActivities', JSON.stringify(activities));
+    }
+
+    // Save user stats to local storage
+    function saveUserStats() {
+      localStorage.setItem('cycleAppStats', JSON.stringify(userStats));
+    }
+
+    // Save settings to local storage
+    function saveSettings() {
+      localStorage.setItem('cycleAppSettings', JSON.stringify(settings));
+    }
+
+    // Show toast notification
+    function showToast(message) {
+      const toast = document.createElement('div');
+      toast.className = 'fixed bottom-20 left-0 right-0 mx-auto w-4/5 max-w-sm bg-bg text-text p-3 rounded-lg shadow-lg z-50 flex items-center opacity-0 transition-opacity';
+      toast.style.textAlign = 'center';
+      toast.innerHTML = message;
+      
+      document.body.appendChild(toast);
+      
+      // Fade in
+      setTimeout(() => {
+        toast.style.opacity = '1';
+      }, 10);
+      
+      // Fade out and remove
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => {
+          toast.remove();
+        }, 300);
+      }, 3000);
+    }
+
+    // Set up haptic feedback
+    function setupHapticFeedback() {
+      if (!tgApp || !tgApp.HapticFeedback) return;
+      
+      // Add haptic feedback to all buttons
+      document.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          triggerHapticFeedback('light');
+        });
+      });
+    }
+
+    // Trigger haptic feedback
+    function triggerHapticFeedback(type) {
+      if (!tgApp || !tgApp.HapticFeedback) return;
+      
+      switch (type) {
+        case 'light':
+          tgApp.HapticFeedback.impactOccurred('light');
+          break;
+        case 'medium':
+          tgApp.HapticFeedback.impactOccurred('medium');
+          break;
+        case 'heavy':
+          tgApp.HapticFeedback.impactOccurred('heavy');
+          break;
+        case 'rigid':
+          tgApp.HapticFeedback.impactOccurred('rigid');
+          break;
+        case 'soft':
+          tgApp.HapticFeedback.impactOccurred('soft');
+          break;
+      }
+    }
+
+    // Generate a random route for demonstration
+    function generateRandomRoute(points) {
+      const coords = [];
+      const baseLat = 51.505;
+      const baseLng = -0.09;
+      
+      for (let i = 0; i < points; i++) {
+        const lat = baseLat + (Math.random() - 0.5) * 0.05;
+        const lng = baseLng + (Math.random() - 0.5) * 0.05;
+        coords.push({ lat, lng });
+      }
+      
+      return coords;
+    }
+
+    // Generate a city image programmatically
+    function generateCityImage(type) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 300;
+      canvas.height = 200;
+      const ctx = canvas.getContext('2d');
+      
+      // Background
+      ctx.fillStyle = '#e0e0e0';
+      ctx.fillRect(0, 0, 300, 200);
+      
+      // Generate different image based on type
+      if (type === 'historical') {
+        // Old buildings
+        ctx.fillStyle = '#8b7355';
+        ctx.fillRect(50, 60, 70, 140);
+        ctx.fillRect(130, 80, 60, 120);
+        ctx.fillRect(200, 70, 80, 130);
+        
+        // Windows
+        ctx.fillStyle = '#ffd700';
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 4; j++) {
+            ctx.fillRect(60 + i * 15, 80 + j * 30, 10, 15);
+            ctx.fillRect(140 + i * 15, 90 + j * 25, 10, 15);
+            ctx.fillRect(210 + i * 20, 90 + j * 25, 15, 15);
+          }
         }
-
-        function renderProposals() {
-            const proposalList = document.querySelector('.proposal-list');
-            proposalList.innerHTML = '';
-            
-            if (mockData.proposals.length === 0) {
-                proposalList.innerHTML = `
-                    <div class="p-4 rounded" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color));">
-                        <p class="text-center">No proposals available. Be the first to create one!</p>
-                    </div>
-                `;
-                return;
+        
+        // Roofs
+        ctx.fillStyle = '#703030';
+        ctx.beginPath();
+        ctx.moveTo(40, 60);
+        ctx.lineTo(85, 30);
+        ctx.lineTo(130, 60);
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.moveTo(120, 80);
+        ctx.lineTo(160, 50);
+        ctx.lineTo(200, 80);
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.moveTo(190, 70);
+        ctx.lineTo(240, 40);
+        ctx.lineTo(290, 70);
+        ctx.fill();
+      } else if (type === 'riverside') {
+        // Sky
+        ctx.fillStyle = '#87ceeb';
+        ctx.fillRect(0, 0, 300, 100);
+        
+        // River
+        ctx.fillStyle = '#4682b4';
+        ctx.fillRect(0, 100, 300, 100);
+        
+        // Sun
+        ctx.fillStyle = '#ffd700';
+        ctx.beginPath();
+        ctx.arc(250, 40, 20, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Reflection
+        ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
+        ctx.beginPath();
+        ctx.moveTo(230, 100);
+        ctx.lineTo(270, 100);
+        ctx.lineTo(280, 180);
+        ctx.lineTo(220, 180);
+        ctx.fill();
+        
+        // Trees
+        ctx.fillStyle = '#556b2f';
+        ctx.beginPath();
+        ctx.arc(60, 90, 30, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(120, 95, 25, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(30, 100, 20, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Tree trunks
+        ctx.fillStyle = '#8b4513';
+        ctx.fillRect(55, 90, 10, 30);
+        ctx.fillRect(115, 95, 10, 25);
+        ctx.fillRect(25, 100, 10, 20);
+        
+        // Boat
+        ctx.fillStyle = '#a0522d';
+        ctx.beginPath();
+        ctx.moveTo(180, 140);
+        ctx.lineTo(220, 140);
+        ctx.lineTo(210, 160);
+        ctx.lineTo(190, 160);
+        ctx.fill();
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(200, 140);
+        ctx.lineTo(200, 110);
+        ctx.lineTo(220, 140);
+        ctx.fill();
+      } else if (type === 'arts') {
+        // Wall background
+        ctx.fillStyle = '#d3d3d3';
+        ctx.fillRect(0, 0, 300, 200);
+        
+        // Colorful murals
+        ctx.fillStyle = '#ff6347';
+        ctx.fillRect(20, 40, 80, 120);
+        
+        ctx.fillStyle = '#4169e1';
+        ctx.fillRect(110, 60, 70, 100);
+        
+        ctx.fillStyle = '#32cd32';
+        ctx.fillRect(190, 50, 90, 110);
+        
+        // Abstract patterns
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(60, 100, 25, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = '#ffff00';
+        ctx.beginPath();
+        ctx.moveTo(110, 60);
+        ctx.lineTo(145, 100);
+        ctx.lineTo(110, 140);
+        ctx.lineTo(180, 140);
+        ctx.lineTo(180, 60);
+        ctx.fill();
+        
+        ctx.fillStyle = '#ff69b4';
+        ctx.beginPath();
+        ctx.moveTo(190, 100);
+        ctx.lineTo(220, 50);
+        ctx.lineTo(280, 100);
+        ctx.lineTo(220, 150);
+        ctx.fill();
+      } else if (type === 'hills') {
+        // Sky
+        ctx.fillStyle = '#b0e0e6';
+        ctx.fillRect(0, 0, 300, 200);
+        
+        // Mountains
+        ctx.fillStyle = '#6b8e23';
+        ctx.beginPath();
+        ctx.moveTo(0, 200);
+        ctx.lineTo(0, 120);
+        ctx.lineTo(80, 60);
+        ctx.lineTo(140, 120);
+        ctx.lineTo(220, 80);
+        ctx.lineTo(300, 150);
+        ctx.lineTo(300, 200);
+        ctx.fill();
+        
+        // Mountain tops
+        ctx.fillStyle = '#808080';
+        ctx.beginPath();
+        ctx.moveTo(60, 70);
+        ctx.lineTo(80, 60);
+        ctx.lineTo(100, 70);
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.moveTo(200, 90);
+        ctx.lineTo(220, 80);
+        ctx.lineTo(240, 90);
+        ctx.fill();
+        
+        // Path
+        ctx.fillStyle = '#d2b48c';
+        ctx.beginPath();
+        ctx.moveTo(0, 200);
+        ctx.lineTo(20, 170);
+        ctx.lineTo(60, 160);
+        ctx.lineTo(100, 170);
+        ctx.lineTo(150, 150);
+        ctx.lineTo(200, 160);
+        ctx.lineTo(250, 150);
+        ctx.lineTo(300, 170);
+        ctx.lineTo(300, 200);
+        ctx.fill();
+        
+        // Trees
+        ctx.fillStyle = '#556b2f';
+        ctx.beginPath();
+        ctx.arc(40, 150, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(120, 160, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(220, 145, 10, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (type === 'park') {
+        // Grass background
+        ctx.fillStyle = '#90ee90';
+        ctx.fillRect(0, 0, 300, 200);
+        
+        // Sky
+        ctx.fillStyle = '#87ceeb';
+        ctx.fillRect(0, 0, 300, 60);
+        
+        // Sun
+        ctx.fillStyle = '#ffd700';
+        ctx.beginPath();
+        ctx.arc(50, 30, 15, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Path
+        ctx.fillStyle = '#d2b48c';
+        ctx.beginPath();
+        ctx.moveTo(0, 120);
+        ctx.lineTo(50, 130);
+        ctx.lineTo(100, 120);
+        ctx.lineTo(150, 130);
+        ctx.lineTo(200, 120);
+        ctx.lineTo(250, 130);
+        ctx.lineTo(300, 120);
+        ctx.lineTo(300, 150);
+        ctx.lineTo(250, 160);
+        ctx.lineTo(200, 150);
+        ctx.lineTo(150, 160);
+        ctx.lineTo(100, 150);
+        ctx.lineTo(50, 160);
+        ctx.lineTo(0, 150);
+        ctx.fill();
+        
+        // Trees
+        ctx.fillStyle = '#228b22';
+        ctx.beginPath();
+        ctx.arc(50, 90, 30, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(150, 80, 25, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(250, 90, 30, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Tree trunks
+        ctx.fillStyle = '#8b4513';
+        ctx.fillRect(45, 90, 10, 30);
+        ctx.fillRect(145, 80, 10, 40);
+        ctx.fillRect(245, 90, 10, 30);
+        
+        // Playground
+        ctx.fillStyle = '#cd5c5c';
+        ctx.fillRect(180, 180, 100, 20);
+        ctx.fillStyle = '#4682b4';
+        ctx.fillRect(200, 170, 20, 30);
+        ctx.fillStyle = '#ffff00';
+        ctx.beginPath();
+        ctx.arc(240, 180, 10, 0, Math.PI, true);
+        ctx.fill();
+      } else {
+        // Default city
+        // Sky
+        ctx.fillStyle = '#87ceeb';
+        ctx.fillRect(0, 0, 300, 100);
+        
+        // Ground
+        ctx.fillStyle = '#8b4513';
+        ctx.fillRect(0, 100, 300, 100);
+        
+        // Buildings
+        ctx.fillStyle = '#708090';
+        ctx.fillRect(20, 30, 40, 70);
+        ctx.fillRect(70, 10, 30, 90);
+        ctx.fillRect(110, 40, 50, 60);
+        ctx.fillRect(170, 20, 35, 80);
+        ctx.fillRect(215, 5, 25, 95);
+        ctx.fillRect(250, 30, 40, 70);
+        
+        // Windows
+        ctx.fillStyle = '#ffff00';
+        for (let i = 0; i < 4; i++) {
+          for (let j = 0; j < 5; j++) {
+            if (Math.random() > 0.3) { // Some windows are dark
+              ctx.fillRect(25 + i * 10, 35 + j * 12, 5, 7);
+              ctx.fillRect(75 + i * 5, 15 + j * 15, 4, 10);
+              ctx.fillRect(115 + i * 10, 45 + j * 10, 6, 5);
+              ctx.fillRect(175 + i * 7, 25 + j * 12, 5, 7);
+              ctx.fillRect(218 + i * 5, 10 + j * 15, 4, 5);
+              ctx.fillRect(255 + i * 10, 35 + j * 12, 5, 7);
             }
-            
-            mockData.proposals.forEach(proposal => {
-                const card = document.createElement('div');
-                card.className = 'p-4 rounded shadow-sm';
-                card.style.backgroundColor = 'var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color))';
-                
-                // Calculate progress percentage
-                const progressPercent = Math.min(100, Math.round((proposal.supporters / proposal.requiredSupporters) * 100));
-                
-                card.innerHTML = `
-                    <div class="flex justify-between items-start mb-2">
-                        <h3 class="font-medium">${proposal.title}</h3>
-                        <span class="text-xs px-2 py-1 rounded-full" style="background-color: var(--tg-theme-bg-color, var(--default-bg-color)); color: var(--tg-theme-hint-color, var(--default-hint-color));">
-                            ${proposal.category}
-                        </span>
-                    </div>
-                    <p class="text-sm mb-3" style="color: var(--tg-theme-hint-color, var(--default-hint-color));">
-                        By ${proposal.author} • ${timeAgo(new Date(proposal.timestamp))}
-                    </p>
-                    <p class="text-sm mb-3 line-clamp-2">${proposal.content}</p>
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="text-xs" style="color: var(--tg-theme-hint-color, var(--default-hint-color));">
-                            ${proposal.supporters} of ${proposal.requiredSupporters} supporters
-                        </span>
-                        <span class="text-xs font-bold" style="color: var(--tg-theme-button-color, var(--default-button-color));">
-                            ${progressPercent}%
-                        </span>
-                    </div>
-                    <div class="w-full h-1.5 rounded-full overflow-hidden" style="background-color: var(--tg-theme-bg-color, var(--default-bg-color));">
-                        <div class="h-full" style="background-color: var(--tg-theme-button-color, var(--default-button-color)); width: ${progressPercent}%;"></div>
-                    </div>
-                `;
-                
-                card.addEventListener('click', () => {
-                    showProposalDetails(proposal.id);
-                });
-                
-                proposalList.appendChild(card);
-            });
+          }
         }
+        
+        // Road
+        ctx.fillStyle = '#696969';
+        ctx.fillRect(0, 130, 300, 40);
+        
+        // Road markings
+        ctx.fillStyle = '#ffffff';
+        for (let i = 0; i < 6; i++) {
+          ctx.fillRect(10 + i * 50, 148, 30, 4);
+        }
+      }
+      
+      return canvas.toDataURL();
+    }
 
-        function renderActiveVotes() {
-            const votesList = document.querySelector('.active-votes-list');
-            votesList.innerHTML = '';
-            
-            if (mockData.activeVotes.length === 0) {
-                votesList.innerHTML = `
-                    <div class="p-4 rounded" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color));">
-                        <p class="text-center">No active votes at the moment.</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            mockData.activeVotes.forEach(vote => {
-                const card = document.createElement('div');
-                card.className = 'p-4 rounded shadow-sm';
-                card.style.backgroundColor = 'var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color))';
-                
-                // Calculate percentages
-                const yesPercent = vote.totalVotes > 0 ? Math.round((vote.yesVotes / vote.totalVotes) * 100) : 0;
-                const noPercent = vote.totalVotes > 0 ? Math.round((vote.noVotes / vote.totalVotes) * 100) : 0;
-                const abstainPercent = vote.totalVotes > 0 ? Math.round((vote.abstainVotes / vote.totalVotes) * 100) : 0;
-                
-                // Calculate time remaining
-                const endDate = new Date(vote.endTime);
-                const now = new Date();
-                const timeRemaining = timeRemaining_(endDate, now);
-                
-                card.innerHTML = `
-                    <div class="flex justify-between items-start mb-2">
-                        <h3 class="font-medium">${vote.title}</h3>
-                        <span class="text-xs px-2 py-1 rounded-full" style="background-color: var(--tg-theme-bg-color, var(--default-bg-color)); color: var(--tg-theme-hint-color, var(--default-hint-color));">
-                            ${vote.category}
-                        </span>
-                    </div>
-                    <p class="text-sm mb-3 line-clamp-2">${vote.content}</p>
-                    <div class="mb-3">
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="text-xs">Yes</span>
-                            <span class="text-xs">${yesPercent}% (${vote.yesVotes})</span>
-                        </div>
-                        <div class="w-full h-1.5 rounded-full overflow-hidden mb-2" style="background-color: var(--tg-theme-bg-color, var(--default-bg-color));">
-                            <div class="h-full" style="background-color: #4CAF50; width: ${yesPercent}%;"></div>
-                        </div>
-                        
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="text-xs">No</span>
-                            <span class="text-xs">${noPercent}% (${vote.noVotes})</span>
-                        </div>
-                        <div class="w-full h-1.5 rounded-full overflow-hidden mb-2" style="background-color: var(--tg-theme-bg-color, var(--default-bg-color));">
-                            <div class="h-full" style="background-color: #F44336; width: ${noPercent}%;"></div>
-                        </div>
-                    </div>
-                    <p class="text-xs" style="color: var(--tg-theme-hint-color, var(--default-hint-color));">
-                        ${vote.totalVotes} votes • ${timeRemaining} remaining
-                    </p>
-                `;
-                
-                card.addEventListener('click', () => {
-                    showVoteDetails(vote.id);
-                });
-                
-                votesList.appendChild(card);
-            });
-        }
-
-        function renderPassedLegislation() {
-            const passedList = document.querySelector('.passed-list');
-            passedList.innerHTML = '';
-            
-            if (mockData.passedLegislation.length === 0) {
-                passedList.innerHTML = `
-                    <div class="p-4 rounded" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color));">
-                        <p class="text-center">No passed legislation yet.</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            mockData.passedLegislation.forEach(legislation => {
-                const card = document.createElement('div');
-                card.className = 'p-4 rounded shadow-sm';
-                card.style.backgroundColor = 'var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color))';
-                
-                // Calculate percentages
-                const yesPercent = legislation.totalVotes > 0 ? Math.round((legislation.yesVotes / legislation.totalVotes) * 100) : 0;
-                
-                card.innerHTML = `
-                    <div class="flex justify-between items-start mb-2">
-                        <h3 class="font-medium">${legislation.title}</h3>
-                        <span class="text-xs px-2 py-1 rounded-full" style="background-color: var(--tg-theme-bg-color, var(--default-bg-color)); color: var(--tg-theme-hint-color, var(--default-hint-color));">
-                            ${legislation.category}
-                        </span>
-                    </div>
-                    <p class="text-sm mb-3 line-clamp-2">${legislation.content}</p>
-                    <div class="flex items-center gap-2 mb-2">
-                        <div class="px-2 py-1 rounded text-xs" style="background-color: #4CAF50; color: white;">
-                            Passed with ${yesPercent}%
-                        </div>
-                        <span class="text-xs" style="color: var(--tg-theme-hint-color, var(--default-hint-color));">
-                            ${legislation.totalVotes} votes
-                        </span>
-                    </div>
-                    <p class="text-xs" style="color: var(--tg-theme-hint-color, var(--default-hint-color));">
-                        Passed ${timeAgo(new Date(legislation.passedDate))} • Implementation: ${formatDate(new Date(legislation.implementationDate))}
-                    </p>
-                `;
-                
-                passedList.appendChild(card);
-            });
-        }
-
-        function renderUserActivities() {
-            const activitiesList = document.querySelector('.activities-list');
-            activitiesList.innerHTML = '';
-            
-            if (mockData.userActivities.length === 0) {
-                activitiesList.innerHTML = `
-                    <div class="p-4 rounded" style="background-color: var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color));">
-                        <p class="text-center">No activities yet. Start participating!</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            // Sort activities by timestamp (newest first)
-            const sortedActivities = [...mockData.userActivities].sort((a, b) => 
-                new Date(b.timestamp) - new Date(a.timestamp)
-            );
-            
-            sortedActivities.forEach(activity => {
-                const card = document.createElement('div');
-                card.className = 'p-4 rounded shadow-sm';
-                card.style.backgroundColor = 'var(--tg-theme-secondary-bg-color, var(--default-secondary-bg-color))';
-                
-                let icon, activityText;
-                
-                switch(activity.type) {
-                    case 'proposal':
-                        icon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
-                        activityText = `You created a proposal: "${activity.title}"`;
-                        break;
-                    case 'support':
-                        icon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>';
-                        activityText = `You supported: "${activity.title}"`;
-                        break;
-                    case 'vote':
-                        icon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>';
-                        activityText = `You voted ${activity.vote} on: "${activity.title}"`;
-                        break;
-                    case 'comment':
-                        icon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>';
-                        activityText = `You commented on: "${activity.title}"`;
-                        break;
-                }
-                
-                card.innerHTML = `
-                    <div class="flex gap-3">
-                        <div class="mt-1" style="color: var(--tg-theme-button-color, var(--default-button-color));">
-                            ${icon}
-                        </div>
-                        <div class="flex-1">
-                            <p class="text-sm mb-1">${activityText}</p>
-                            ${activity.comment ? `<p class="text-sm mb-2 italic">"${activity.comment}"</p>` : ''}
-                            <p class="text-xs" style="color: var(--tg-theme-hint-color, var(--default-hint-color));">
-                                ${timeAgo(new Date(activity.timestamp))}
-                            </p>
-                        </div>
-                    </div>
-                `;
-                
-                // Add click handler to navigate to the related item
-                if (activity.relatedId) {
-                    card.addEventListener('click', () => {
-                        // Find what type of item this is
-                        const proposal = mockData.proposals.find(p => p.id === activity.relatedId);
-                        if (proposal) {
-                            showProposalDetails(proposal.id);
-                            return;
-                        }
-                        
-                        const vote = mockData.activeVotes.find(v => v.id === activity.relatedId);
-                        if (vote) {
-                            showVoteDetails(vote.id);
-                            return;
-                        }
-                    });
-                }
-                
-                activitiesList.appendChild(card);
-            });
-        }
-
-        function showProposalDetails(proposalId) {
-            const proposal = mockData.proposals.find(p => p.id === proposalId);
-            if (!proposal) return;
-            
-            document.getElementById('proposal-title').textContent = proposal.title;
-            document.getElementById('proposal-author').textContent = `Proposed by ${proposal.author} • ${timeAgo(new Date(proposal.timestamp))}`;
-            document.getElementById('proposal-content').textContent = proposal.content;
-            document.getElementById('support-count').textContent = `${proposal.supporters} of ${proposal.requiredSupporters} supporters`;
-            
-            // Calculate progress percentage
-            const progressPercent = Math.min(100, Math.round((proposal.supporters / proposal.requiredSupporters) * 100));
-            document.getElementById('support-bar').style.width = `${progressPercent}%`;
-            
-            // Set support button data
-            const supportButton = document.getElementById('support-button');
-            supportButton.dataset.proposalId = proposalId;
-            
-            // Check if user already supported
-            const alreadySupported = mockData.userActivities.some(activity => 
-                activity.type === 'support' && activity.relatedId === proposalId
-            );
-            
-            if (alreadySupported) {
-                supportButton.textContent = 'Supported';
-                supportButton.disabled = true;
-                supportButton.style.opacity = '0.7';
-            } else {
-                supportButton.textContent = 'Support';
-                supportButton.disabled = false;
-                supportButton.style.opacity = '1';
-            }
-            
-            // Render discussion
-            renderDiscussion(proposal.discussion, 'discussion-list');
-            
-            // Show proposal detail view
-            document.querySelectorAll('.view-content').forEach(content => {
-                content.classList.add('hidden');
-            });
-            document.getElementById('proposal-detail-view').classList.remove('hidden');
-            document.getElementById('header-title').textContent = 'Proposal Details';
-        }
-
-        function updateProposalDetails(proposalId) {
-            const proposal = mockData.proposals.find(p => p.id === proposalId);
-            if (!proposal) return;
-            
-            document.getElementById('support-count').textContent = `${proposal.supporters} of ${proposal.requiredSupporters} supporters`;
-            
-            // Calculate progress percentage
-            const progressPercent = Math.min(100, Math.round((proposal.supporters / proposal.requiredSupporters) * 100));
-            document.getElementById('support-bar').style.width = `${progressPercent}%`;
-            
-            // Check if user already supported
-            const alreadySupported = mockData.userActivities.some(activity => 
-                activity.type === 'support' && activity.relatedId === proposalId
-            );
-            
-            const supportButton = document.getElementById('support-button');
-            if (alreadySupported) {
-                supportButton.textContent = 'Supported';
-                supportButton.disabled = true;
-                supportButton.style.opacity = '0.7';
-            }
-        }
-
-        function showVoteDetails(voteId) {
-            const vote = mockData.activeVotes.find(v => v.id === voteId);
-            if (!vote) return;
-            
-            document.getElementById('vote-title').textContent = vote.title;
-            
-            // Calculate time remaining
-            const endDate = new Date(vote.endTime);
-            const now = new Date();
-            const timeRemaining = timeRemaining_(endDate, now);
-            
-            document.getElementById('vote-status').textContent = `Voting ends in ${timeRemaining} • ${vote.totalVotes} votes cast`;
-            document.getElementById('vote-content').textContent = vote.content;
-            document.getElementById('vote-time-remaining').textContent = `Voting ends ${formatDate(endDate)}`;
-            
-            // Calculate percentages
-            const yesPercent = vote.totalVotes > 0 ? Math.round((vote.yesVotes / vote.totalVotes) * 100) : 0;
-            const noPercent = vote.totalVotes > 0 ? Math.round((vote.noVotes / vote.totalVotes) * 100) : 0;
-            const abstainPercent = vote.totalVotes > 0 ? Math.round((vote.abstainVotes / vote.totalVotes) * 100) : 0;
-            
-            document.getElementById('yes-percentage').textContent = `${yesPercent}% (${vote.yesVotes})`;
-            document.getElementById('no-percentage').textContent = `${noPercent}% (${vote.noVotes})`;
-            document.getElementById('abstain-percentage').textContent = `${abstainPercent}% (${vote.abstainVotes})`;
-            
-            document.getElementById('yes-bar').style.width = `${yesPercent}%`;
-            document.getElementById('no-bar').style.width = `${noPercent}%`;
-            document.getElementById('abstain-bar').style.width = `${abstainPercent}%`;
-            
-            // Set vote buttons data
-            document.getElementById('vote-yes').dataset.voteId = voteId;
-            document.getElementById('vote-no').dataset.voteId = voteId;
-            document.getElementById('vote-abstain').dataset.voteId = voteId;
-            
-            // Check if user already voted
-            const alreadyVoted = mockData.userActivities.some(activity => 
-                activity.type === 'vote' && activity.relatedId === voteId
-            );
-            
-            if (alreadyVoted) {
-                const userVote = mockData.userActivities.find(activity => 
-                    activity.type === 'vote' && activity.relatedId === voteId
-                );
-                
-                // Disable all vote buttons
-                document.getElementById('vote-yes').disabled = true;
-                document.getElementById('vote-no').disabled = true;
-                document.getElementById('vote-abstain').disabled = true;
-                
-                document.getElementById('vote-yes').style.opacity = '0.7';
-                document.getElementById('vote-no').style.opacity = '0.7';
-                document.getElementById('vote-abstain').style.opacity = '0.7';
-                
-                // Highlight the user's vote
-                if (userVote) {
-                    document.getElementById(`vote-${userVote.vote}`).style.opacity = '1';
-                }
-            } else {
-                document.getElementById('vote-yes').disabled = false;
-                document.getElementById('vote-no').disabled = false;
-                document.getElementById('vote-abstain').disabled = false;
-                
-                document.getElementById('vote-yes').style.opacity = '1';
-                document.getElementById('vote-no').style.opacity = '1';
-                document.getElementById('vote-abstain').style.opacity = '1';
-            }
-            
-            // Render discussion
-            renderDiscussion(vote.discussion, 'vote-discussion-list');
-            
-            // Show vote detail view
-            document.querySelectorAll('.view-content').forEach(content => {
-                content.classList.add('hidden');
-            });
-            document.getElementById('vote-detail-view').classList.remove('hidden');
-            document.getElementById('header-title').textContent = 'Vote Details';
-        }
-
-        function updateVoteDetails(voteId) {
-            const vote = mockData.activeVotes.find(v => v.id === voteId);
-            if (!vote) return;
-            
-            // Calculate time remaining
-            const endDate = new Date(vote.endTime);
-            const now = new Date();
-            const timeRemaining = timeRemaining_(endDate, now);
-            
-            document.getElementById('vote-status').textContent = `Voting ends in ${timeRemaining} • ${vote.totalVotes} votes cast`;
-            
-            // Calculate percentages
-            const yesPercent = vote.totalVotes > 0 ? Math.round((vote.yesVotes / vote.totalVotes) * 100) : 0;
-            const noPercent = vote.totalVotes > 0 ? Math.round((vote.noVotes / vote.totalVotes) * 100) : 0;
-            const abstainPercent = vote.totalVotes > 0 ? Math.round((vote.abstainVotes / vote.totalVotes) * 100) : 0;
-            
-            document.getElementById('yes-percentage').textContent = `${yesPercent}% (${vote.yesVotes})`;
-            document.getElementById('no-percentage').textContent = `${noPercent}% (${vote.noVotes})`;
-            document.getElementById('abstain-percentage').textContent = `${abstainPercent}% (${vote.abstainVotes})`;
-            
-            document.getElementById('yes-bar').style.width = `${yesPercent}%`;
-            document.getElementById('no-bar').style.width = `${noPercent}%`;
-            document.getElementById('abstain-bar').style.width = `${abstainPercent}%`;
-            
-            // Check if user already voted
-            const alreadyVoted = mockData.userActivities.some(activity => 
-                activity.type === 'vote' && activity.relatedId === voteId
-            );
-            
-            if (alreadyVoted) {
-                const userVote = mockData.userActivities.find(activity => 
-                    activity.type === 'vote' && activity.relatedId === voteId
-                );
-                
-                // Disable all vote buttons
-                document.getElementById('vote-yes').disabled = true;
-                document.getElementById('vote-no').disabled = true;
-                document.getElementById('vote-abstain').disabled = true;
-                
-                document.getElementById('vote-yes').style.opacity = '0.7';
-                document.getElementById('vote-no').style.opacity = '0.7';
-                document.getElementById('vote-abstain').style.opacity = '0.7';
-                
-                // Highlight the user's vote
-                if (userVote) {
-                    document.getElementById(`vote-${userVote.vote}`).style.opacity = '1';
-                }
-            }
-        }
-
-        function renderDiscussion(discussion, containerId) {
-            const discussionList = document.getElementById(containerId);
-            discussionList.innerHTML = '';
-            
-            if (discussion.length === 0) {
-                discussionList.innerHTML = `
-                    <p class="text-center text-sm italic" style="color: var(--tg-theme-hint-color, var(--default-hint-color));">
-                        No comments yet. Be the first to start the discussion!
-                    </p>
-                `;
-                return;
-            }
-            
-            // Sort discussion by timestamp (oldest first)
-            const sortedDiscussion = [...discussion].sort((a, b) => 
-                new Date(a.timestamp) - new Date(b.timestamp)
-            );
-            
-            sortedDiscussion.forEach(message => {
-                const isCurrentUser = message.authorId === user.id;
-                const messageEl = document.createElement('div');
-                
-                messageEl.innerHTML = `
-                    <div class="flex ${isCurrentUser ? 'justify-end' : 'justify-start'}">
-                        <div class="message-bubble ${isCurrentUser ? 'outgoing' : 'incoming'} max-w-[80%]">
-                            ${!isCurrentUser ? `<p class="text-xs font-bold mb-1">${message.author}</p>` : ''}
-                            <p class="text-sm">${message.content}</p>
-                            <p class="text-xs text-right mt-1" style="opacity: 0.7;">
-                                ${timeAgo(new Date(message.timestamp))}
-                            </p>
-                        </div>
-                    </div>
-                `;
-                
-                discussionList.appendChild(messageEl);
-            });
-            
-            // Scroll to bottom
-            discussionList.scrollTop = discussionList.scrollHeight;
-        }
-
-        function sendDiscussion(type) {
-            let input, discussionList, targetArray, targetId;
-            
-            if (type === 'proposal') {
-                input = document.getElementById('discussion-input');
-                discussionList = document.getElementById('discussion-list');
-                targetId = parseInt(document.getElementById('support-button').dataset.proposalId);
-                targetArray = mockData.proposals.find(p => p.id === targetId)?.discussion;
-            } else {
-                input = document.getElementById('vote-discussion-input');
-                discussionList = document.getElementById('vote-discussion-list');
-                targetId = parseInt(document.getElementById('vote-yes').dataset.voteId);
-                targetArray = mockData.activeVotes.find(v => v.id === targetId)?.discussion;
-            }
-            
-            if (!input || !targetArray) return;
-            
-            const content = input.value.trim();
-            if (!content) return;
-            
-            // Create new message
-            const newMessage = {
-                id: targetArray.length + 1,
-                author: user.first_name + (user.last_name ? ' ' + user.last_name : ''),
-                authorId: user.id,
-                content: content,
-                timestamp: new Date().toISOString()
-            };
-            
-            // Add to array
-            targetArray.push(newMessage);
-            
-            // Add to user activities
-            mockData.userActivities.push({
-                id: mockData.userActivities.length + 1 + 1000,
-                type: "comment",
-                title: type === 'proposal' 
-                    ? mockData.proposals.find(p => p.id === targetId)?.title
-                    : mockData.activeVotes.find(v => v.id === targetId)?.title,
-                comment: content,
-                timestamp: new Date().toISOString(),
-                relatedId: targetId
-            });
-            
-            // Re-render discussion
-            renderDiscussion(targetArray, discussionList.id);
-            
-            // Clear input
-            input.value = '';
-            
-            // Update user activities
-            renderUserActivities();
-        }
-
-        // Helper functions
-        function timeAgo(date) {
-            const seconds = Math.floor((new Date() - date) / 1000);
-            
-            let interval = Math.floor(seconds / 31536000);
-            if (interval > 1) return interval + ' years ago';
-            if (interval === 1) return '1 year ago';
-            
-            interval = Math.floor(seconds / 2592000);
-            if (interval > 1) return interval + ' months ago';
-            if (interval === 1) return '1 month ago';
-            
-            interval = Math.floor(seconds / 86400);
-            if (interval > 1) return interval + ' days ago';
-            if (interval === 1) return '1 day ago';
-            
-            interval = Math.floor(seconds / 3600);
-            if (interval > 1) return interval + ' hours ago';
-            if (interval === 1) return '1 hour ago';
-            
-            interval = Math.floor(seconds / 60);
-            if (interval > 1) return interval + ' minutes ago';
-            if (interval === 1) return '1 minute ago';
-            
-            if (seconds < 10) return 'just now';
-            
-            return Math.floor(seconds) + ' seconds ago';
-        }
-
-        function timeRemaining_(endDate, now) {
-            const diffTime = endDate - now;
-            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-            const diffHours = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            
-            if (diffDays > 1) return diffDays + ' days';
-            if (diffDays === 1) return '1 day and ' + diffHours + ' hours';
-            if (diffHours > 1) return diffHours + ' hours';
-            if (diffHours === 1) return '1 hour';
-            
-            const diffMinutes = Math.floor((diffTime % (1000 * 60 * 60)) / (1000 * 60));
-            return diffMinutes + ' minutes';
-        }
-
-        function formatDate(date) {
-            const options = { year: 'numeric', month: 'short', day: 'numeric' };
-            return date.toLocaleDateString(undefined, options);
-        }
-    </script>
+    // Generate avatar for user
+    function generateAvatar(name) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 100;
+      canvas.height = 100;
+      const ctx = canvas.getContext('2d');
+      
+      // Generate background color based on name
+      const hue = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360;
+      ctx.fillStyle = `hsl(${hue}, 70%, 60%)`;
+      ctx.fillRect(0, 0, 100, 100);
+      
+      // Add initials
+      const initials = name.split(' ').map(part => part[0]).join('').toUpperCase().substring(0, 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 40px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(initials, 50, 50);
+      
+      return canvas.toDataURL();
+    }
+  </script>
 </body>
 </html>
