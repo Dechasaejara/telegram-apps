@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Activity Explorer</title>
+    <title>FoodHub - Order Nearby</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -22,6 +22,9 @@
                         'tg-section-bg': 'var(--tg-color-section-bg)',
                         'tg-section-separator': 'var(--tg-color-section-separator)',
                         'primary': '#5D5CDE',
+                        'success': '#4CAF50',
+                        'warning': '#FF9800',
+                        'error': '#F44336',
                     },
                     fontFamily: {
                         'system': ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif']
@@ -29,8 +32,10 @@
                     animation: {
                         'fade-in': 'fadeIn 0.2s ease-out',
                         'slide-up': 'slideUp 0.3s ease-out',
+                        'slide-down': 'slideDown 0.3s ease-out',
                         'pulse-soft': 'pulseSoft 2s ease-in-out infinite',
                         'bounce-soft': 'bounceSoft 0.5s ease-out',
+                        'cart-bounce': 'cartBounce 0.6s ease-out',
                     },
                     keyframes: {
                         fadeIn: {
@@ -41,6 +46,10 @@
                             '0%': { transform: 'translateY(100%)', opacity: '0' },
                             '100%': { transform: 'translateY(0)', opacity: '1' }
                         },
+                        slideDown: {
+                            '0%': { transform: 'translateY(-100%)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' }
+                        },
                         pulseSoft: {
                             '0%, 100%': { opacity: '1' },
                             '50%': { opacity: '0.7' }
@@ -48,6 +57,13 @@
                         bounceSoft: {
                             '0%, 100%': { transform: 'scale(1)' },
                             '50%': { transform: 'scale(1.05)' }
+                        },
+                        cartBounce: {
+                            '0%': { transform: 'scale(1)' },
+                            '25%': { transform: 'scale(1.2)' },
+                            '50%': { transform: 'scale(0.9)' },
+                            '75%': { transform: 'scale(1.1)' },
+                            '100%': { transform: 'scale(1)' }
                         }
                     }
                 }
@@ -131,28 +147,28 @@
             border: 1px solid var(--tg-color-section-separator);
         }
 
-        .activity-card {
+        .restaurant-card {
             background: var(--tg-color-section-bg);
             border-radius: 16px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             transition: all 0.2s ease;
         }
 
-        .dark .activity-card {
+        .dark .restaurant-card {
             box-shadow: 0 2px 8px rgba(255,255,255,0.05);
         }
 
-        .activity-card:active {
+        .restaurant-card:active {
             transform: scale(0.98);
         }
 
-        .floating-button {
+        .floating-cart {
             background: var(--tg-color-button);
             box-shadow: 0 4px 16px rgba(93, 92, 222, 0.3);
             transition: all 0.2s ease;
         }
 
-        .floating-button:active {
+        .floating-cart:active {
             transform: scale(0.95);
         }
 
@@ -185,12 +201,98 @@
             font-size: 0.8rem;
             font-weight: 500;
             border: 1px solid var(--tg-color-section-separator);
+            transition: all 0.2s ease;
         }
 
         .category-chip.active {
             background: var(--tg-color-button);
             color: var(--tg-color-button-text);
             border-color: var(--tg-color-button);
+        }
+
+        .menu-item {
+            transition: all 0.2s ease;
+        }
+
+        .menu-item:hover {
+            background: var(--tg-color-secondary-bg);
+        }
+
+        .quantity-btn {
+            background: var(--tg-color-button);
+            color: var(--tg-color-button-text);
+            border-radius: 8px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .quantity-btn:active {
+            transform: scale(0.9);
+        }
+
+        .cart-badge {
+            background: #ff4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            animation: cart-bounce 0.6s ease-out;
+        }
+
+        .delivery-status {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border-radius: 12px;
+            padding: 8px 16px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .order-timeline {
+            position: relative;
+        }
+
+        .order-timeline::before {
+            content: '';
+            position: absolute;
+            left: 12px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--tg-color-section-separator);
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-left: 40px;
+            margin-bottom: 20px;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: 8px;
+            top: 8px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--tg-color-button);
+        }
+
+        .timeline-dot.completed {
+            background: #4CAF50;
         }
 
         @media (prefers-color-scheme: dark) {
@@ -207,6 +309,25 @@
                 --tg-color-section-separator: #3a3a3a;
             }
         }
+
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .line-clamp-3 {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
     </style>
 </head>
 <body class="bg-tg-bg text-tg-text">
@@ -219,13 +340,22 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                     </svg>
                 </button>
-                <h1 id="headerTitle" class="text-lg font-semibold text-tg-text">Activity Explorer</h1>
+                <div>
+                    <h1 id="headerTitle" class="text-lg font-semibold text-tg-text">FoodHub</h1>
+                    <p id="headerSubtitle" class="text-xs text-tg-hint hidden"></p>
+                </div>
             </div>
             <div class="flex items-center space-x-2">
-                <button id="scanQRButton" class="w-8 h-8 flex items-center justify-center rounded-full haptic-feedback">
+                <button id="searchButton" class="w-8 h-8 flex items-center justify-center rounded-full haptic-feedback">
                     <svg class="w-5 h-5 text-tg-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
+                </button>
+                <button id="notificationButton" class="w-8 h-8 flex items-center justify-center rounded-full haptic-feedback relative">
+                    <svg class="w-5 h-5 text-tg-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM11 18h1.09c.07-.3.2-.58.4-.82L16 13.5V10a6 6 0 10-12 0v3.5l3.51 3.68c.2.24.33.52.4.82H9c.5 0 1 .5 1 1z"/>
+                    </svg>
+                    <div id="notificationBadge" class="cart-badge hidden">1</div>
                 </button>
                 <button id="profileButton" class="w-8 h-8 rounded-full bg-primary flex items-center justify-center haptic-feedback">
                     <span id="profileInitial" class="text-white text-sm font-medium">?</span>
@@ -249,7 +379,7 @@
                             </svg>
                         </div>
                         <div>
-                            <p class="text-sm font-medium text-tg-text">Current Location</p>
+                            <p class="text-sm font-medium text-tg-text">Deliver to</p>
                             <p id="locationText" class="text-xs text-tg-hint">Detecting location...</p>
                         </div>
                     </div>
@@ -261,40 +391,54 @@
                 </div>
             </div>
 
-            <!-- Search Bar -->
+            <!-- Quick Actions -->
             <div class="mx-4 mt-4">
-                <div class="relative">
-                    <input type="text" id="searchInput" 
-                           class="w-full px-4 py-3 pl-10 bg-tg-secondary-bg text-tg-text rounded-xl border border-tg-section-separator focus:outline-none focus:ring-2 focus:ring-primary/30 text-base"
-                           placeholder="Search activities...">
-                    <svg class="w-5 h-5 text-tg-hint absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                    </svg>
+                <div class="grid grid-cols-4 gap-3">
+                    <button class="quick-action-btn section-card p-3 text-center haptic-feedback" data-category="fast-food">
+                        <div class="w-8 h-8 mx-auto mb-1 text-2xl">🍔</div>
+                        <span class="text-xs text-tg-text">Fast Food</span>
+                    </button>
+                    <button class="quick-action-btn section-card p-3 text-center haptic-feedback" data-category="pizza">
+                        <div class="w-8 h-8 mx-auto mb-1 text-2xl">🍕</div>
+                        <span class="text-xs text-tg-text">Pizza</span>
+                    </button>
+                    <button class="quick-action-btn section-card p-3 text-center haptic-feedback" data-category="asian">
+                        <div class="w-8 h-8 mx-auto mb-1 text-2xl">🍜</div>
+                        <span class="text-xs text-tg-text">Asian</span>
+                    </button>
+                    <button class="quick-action-btn section-card p-3 text-center haptic-feedback" data-category="dessert">
+                        <div class="w-8 h-8 mx-auto mb-1 text-2xl">🍰</div>
+                        <span class="text-xs text-tg-text">Dessert</span>
+                    </button>
                 </div>
             </div>
 
             <!-- Category Filter -->
-            <div class="mt-4 px-4">
+            <div class="mt-6 px-4">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-lg font-semibold text-tg-text">Nearby Restaurants</h2>
+                    <button id="filterButton" class="text-sm text-primary haptic-feedback">Filter</button>
+                </div>
                 <div id="categoryFilter" class="flex space-x-2 overflow-x-auto pb-2">
                     <button class="category-chip active haptic-feedback" data-category="all">All</button>
-                    <button class="category-chip haptic-feedback" data-category="outdoor">Outdoor</button>
-                    <button class="category-chip haptic-feedback" data-category="indoor">Indoor</button>
-                    <button class="category-chip haptic-feedback" data-category="sports">Sports</button>
-                    <button class="category-chip haptic-feedback" data-category="cultural">Cultural</button>
-                    <button class="category-chip haptic-feedback" data-category="food">Food</button>
+                    <button class="category-chip haptic-feedback" data-category="fast-food">Fast Food</button>
+                    <button class="category-chip haptic-feedback" data-category="pizza">Pizza</button>
+                    <button class="category-chip haptic-feedback" data-category="asian">Asian</button>
+                    <button class="category-chip haptic-feedback" data-category="italian">Italian</button>
+                    <button class="category-chip haptic-feedback" data-category="dessert">Dessert</button>
                 </div>
             </div>
 
-            <!-- Activity Feed -->
-            <div id="activityFeed" class="mt-6 px-4 space-y-4">
-                <!-- Activities will be dynamically loaded here -->
+            <!-- Restaurant Feed -->
+            <div id="restaurantFeed" class="mt-4 px-4 space-y-4">
+                <!-- Restaurants will be dynamically loaded here -->
             </div>
 
             <!-- Loading State -->
-            <div id="loadingState" class="mt-6 px-4 space-y-4">
-                <div class="activity-card p-4">
+            <div id="loadingState" class="mt-4 px-4 space-y-4">
+                <div class="restaurant-card p-4">
                     <div class="flex space-x-3">
-                        <div class="w-16 h-16 bg-gray-300 rounded-xl skeleton"></div>
+                        <div class="w-20 h-20 bg-gray-300 rounded-xl skeleton"></div>
                         <div class="flex-1 space-y-2">
                             <div class="h-4 bg-gray-300 rounded skeleton"></div>
                             <div class="h-3 bg-gray-300 rounded w-3/4 skeleton"></div>
@@ -305,42 +449,52 @@
             </div>
         </div>
 
-        <!-- My Activities Tab -->
-        <div id="myActivitiesTab" class="tab-content hidden">
+        <!-- Orders Tab -->
+        <div id="ordersTab" class="tab-content hidden">
             <div class="px-4 py-6">
-                <div class="text-center mb-6">
-                    <h2 class="text-xl font-bold text-tg-text mb-2">My Activities</h2>
-                    <p class="text-tg-hint">Share your experiences with the community</p>
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-bold text-tg-text">My Orders</h2>
+                    <button id="trackOrderButton" class="bg-primary text-white px-4 py-2 rounded-lg text-sm haptic-feedback">Track Live</button>
                 </div>
 
-                <!-- Stats Cards -->
-                <div class="grid grid-cols-2 gap-4 mb-6">
-                    <div class="section-card p-4 text-center">
-                        <div class="text-2xl font-bold text-primary" id="userActivitiesCount">0</div>
-                        <div class="text-sm text-tg-hint">Activities</div>
+                <!-- Active Order -->
+                <div id="activeOrderCard" class="section-card p-4 mb-6 hidden">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-semibold text-tg-text">Active Order</h3>
+                        <span class="delivery-status">Preparing</span>
                     </div>
-                    <div class="section-card p-4 text-center">
-                        <div class="text-2xl font-bold text-primary" id="userRating">0.0</div>
-                        <div class="text-sm text-tg-hint">Avg Rating</div>
+                    <div class="flex items-center space-x-3 mb-3">
+                        <div class="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden">
+                            <img id="activeOrderImage" src="" alt="" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1">
+                            <p id="activeOrderRestaurant" class="font-medium text-tg-text"></p>
+                            <p id="activeOrderItems" class="text-sm text-tg-hint"></p>
+                        </div>
+                        <div class="text-right">
+                            <p id="activeOrderTotal" class="font-semibold text-tg-text"></p>
+                            <p id="activeOrderEta" class="text-xs text-tg-hint"></p>
+                        </div>
                     </div>
+                    <button class="w-full bg-tg-secondary-bg text-tg-text py-2 rounded-lg haptic-feedback">View Details</button>
                 </div>
 
-                <!-- User Activities List -->
-                <div id="userActivitiesList" class="space-y-4">
-                    <!-- User activities will be loaded here -->
+                <!-- Order History -->
+                <div id="orderHistory" class="space-y-4">
+                    <!-- Order history will be loaded here -->
                 </div>
 
                 <!-- Empty State -->
-                <div id="emptyActivitiesState" class="text-center py-12">
+                <div id="emptyOrdersState" class="text-center py-12">
                     <div class="w-20 h-20 bg-tg-secondary-bg rounded-full flex items-center justify-center mx-auto mb-4">
                         <svg class="w-10 h-10 text-tg-hint" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
                         </svg>
                     </div>
-                    <h3 class="text-lg font-medium text-tg-text mb-2">No Activities Yet</h3>
-                    <p class="text-tg-hint mb-6">Start by adding your first activity experience!</p>
-                    <button id="addFirstActivityButton" class="bg-primary text-white px-6 py-3 rounded-xl haptic-feedback">
-                        Add Activity
+                    <h3 class="text-lg font-medium text-tg-text mb-2">No Orders Yet</h3>
+                    <p class="text-tg-hint mb-6">Start by ordering your first meal!</p>
+                    <button id="browseRestaurantsButton" class="bg-primary text-white px-6 py-3 rounded-xl haptic-feedback">
+                        Browse Restaurants
                     </button>
                 </div>
             </div>
@@ -356,33 +510,47 @@
                     </div>
                     <h2 id="profileName" class="text-xl font-bold text-tg-text mb-1">Loading...</h2>
                     <p id="profileUsername" class="text-tg-hint">@username</p>
-                </div>
-
-                <!-- Profile Stats -->
-                <div class="grid grid-cols-3 gap-4 mb-6">
-                    <div class="section-card p-4 text-center">
-                        <div class="text-lg font-bold text-primary" id="profileActivitiesCount">0</div>
-                        <div class="text-xs text-tg-hint">Activities</div>
-                    </div>
-                    <div class="section-card p-4 text-center">
-                        <div class="text-lg font-bold text-primary" id="profileReviewsCount">0</div>
-                        <div class="text-xs text-tg-hint">Reviews</div>
-                    </div>
-                    <div class="section-card p-4 text-center">
-                        <div class="text-lg font-bold text-primary" id="profileRating">0.0</div>
-                        <div class="text-xs text-tg-hint">Rating</div>
+                    <div class="flex items-center justify-center space-x-4 mt-4">
+                        <div class="text-center">
+                            <div id="profileOrderCount" class="text-lg font-bold text-primary">0</div>
+                            <div class="text-xs text-tg-hint">Orders</div>
+                        </div>
+                        <div class="text-center">
+                            <div id="profileReviewCount" class="text-lg font-bold text-primary">0</div>
+                            <div class="text-xs text-tg-hint">Reviews</div>
+                        </div>
+                        <div class="text-center">
+                            <div id="profilePoints" class="text-lg font-bold text-primary">0</div>
+                            <div class="text-xs text-tg-hint">Points</div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Settings -->
+                <!-- Quick Actions -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <button id="editProfileButton" class="section-card p-4 flex items-center space-x-3 haptic-feedback">
+                        <svg class="w-5 h-5 text-tg-hint" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                        <span class="text-sm text-tg-text">Edit Profile</span>
+                    </button>
+                    <button id="addressesButton" class="section-card p-4 flex items-center space-x-3 haptic-feedback">
+                        <svg class="w-5 h-5 text-tg-hint" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                        </svg>
+                        <span class="text-sm text-tg-text">Addresses</span>
+                    </button>
+                </div>
+
+                <!-- Menu Options -->
                 <div class="space-y-4">
                     <div class="section-card">
-                        <button class="w-full px-4 py-3 flex items-center justify-between haptic-feedback" id="editProfileButton">
+                        <button class="w-full px-4 py-3 flex items-center justify-between haptic-feedback" id="paymentsButton">
                             <div class="flex items-center space-x-3">
                                 <svg class="w-5 h-5 text-tg-hint" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
                                 </svg>
-                                <span class="text-tg-text">Edit Profile</span>
+                                <span class="text-tg-text">Payment Methods</span>
                             </div>
                             <svg class="w-5 h-5 text-tg-hint" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
@@ -391,19 +559,30 @@
                     </div>
 
                     <div class="section-card">
-                        <button class="w-full px-4 py-3 flex items-center justify-between haptic-feedback" id="notificationButton">
+                        <button class="w-full px-4 py-3 flex items-center justify-between haptic-feedback" id="favoritesButton">
                             <div class="flex items-center space-x-3">
                                 <svg class="w-5 h-5 text-tg-hint" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM11 18h1.09c.07-.3.2-.58.4-.82L16 13.5V10a6 6 0 10-12 0v3.5l3.51 3.68c.2.24.33.52.4.82H9c.5 0 1 .5 1 1z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
                                 </svg>
-                                <span class="text-tg-text">Notifications</span>
+                                <span class="text-tg-text">Favorites</span>
                             </div>
-                            <div class="flex items-center space-x-2">
-                                <span class="text-xs text-primary">On</span>
+                            <svg class="w-5 h-5 text-tg-hint" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="section-card">
+                        <button class="w-full px-4 py-3 flex items-center justify-between haptic-feedback" id="helpButton">
+                            <div class="flex items-center space-x-3">
                                 <svg class="w-5 h-5 text-tg-hint" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                 </svg>
+                                <span class="text-tg-text">Help & Support</span>
                             </div>
+                            <svg class="w-5 h-5 text-tg-hint" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
                         </button>
                     </div>
 
@@ -414,20 +593,6 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"/>
                                 </svg>
                                 <span class="text-tg-text">Share App</span>
-                            </div>
-                            <svg class="w-5 h-5 text-tg-hint" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                            </svg>
-                        </button>
-                    </div>
-
-                    <div class="section-card">
-                        <button class="w-full px-4 py-3 flex items-center justify-between haptic-feedback" id="aboutButton">
-                            <div class="flex items-center space-x-3">
-                                <svg class="w-5 h-5 text-tg-hint" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                                <span class="text-tg-text">About</span>
                             </div>
                             <svg class="w-5 h-5 text-tg-hint" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
@@ -445,16 +610,15 @@
             <button class="tab-button flex-1 py-2 px-4 flex flex-col items-center space-y-1 haptic-feedback" data-tab="home">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v0a2 2 0 002 2h0a2 2 0 002 2v0a2 2 0 00-2 2h0a2 2 0 00-2 2v0a2 2 0 01-2 2h-4a2 2 0 01-2-2v0a2 2 0 00-2-2h0a2 2 0 00-2-2v0a2 2 0 002-2h0a2 2 0 002-2z"/>
                 </svg>
-                <span class="text-xs">Discover</span>
+                <span class="text-xs">Home</span>
                 <div class="tab-indicator w-12 opacity-100"></div>
             </button>
-            <button class="tab-button flex-1 py-2 px-4 flex flex-col items-center space-y-1 haptic-feedback" data-tab="myActivities">
+            <button class="tab-button flex-1 py-2 px-4 flex flex-col items-center space-y-1 haptic-feedback" data-tab="orders">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
                 </svg>
-                <span class="text-xs">My Activities</span>
+                <span class="text-xs">Orders</span>
                 <div class="tab-indicator w-12 opacity-0"></div>
             </button>
             <button class="tab-button flex-1 py-2 px-4 flex flex-col items-center space-y-1 haptic-feedback" data-tab="profile">
@@ -467,68 +631,125 @@
         </div>
     </nav>
 
-    <!-- Floating Action Button -->
-    <button id="fabButton" class="floating-button fixed bottom-24 right-4 w-14 h-14 rounded-full flex items-center justify-center haptic-feedback z-40">
+    <!-- Floating Cart Button -->
+    <button id="cartButton" class="floating-cart fixed bottom-24 right-4 w-14 h-14 rounded-full flex items-center justify-center haptic-feedback z-40 hidden">
         <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
         </svg>
+        <div id="cartBadge" class="cart-badge">0</div>
     </button>
 
-    <!-- Modals and Overlays -->
-    <div id="addActivityModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50 hidden">
-        <div class="bg-tg-bg rounded-t-3xl w-full max-w-md animate-slide-up safe-area-bottom">
-            <div class="p-6">
-                <div class="w-12 h-1 bg-tg-hint rounded-full mx-auto mb-6"></div>
-                <h3 class="text-xl font-bold text-tg-text mb-6">Add New Activity</h3>
-                
-                <form id="addActivityForm" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-tg-text mb-2">Activity Name</label>
-                        <input type="text" id="activityName" class="w-full px-4 py-3 bg-tg-secondary-bg text-tg-text rounded-xl border border-tg-section-separator focus:outline-none focus:ring-2 focus:ring-primary/30 text-base" placeholder="What did you do?">
+    <!-- Modals -->
+    <!-- Restaurant Menu Modal -->
+    <div id="restaurantModal" class="fixed inset-0 modal-overlay flex items-end justify-center z-50 hidden">
+        <div class="bg-tg-bg rounded-t-3xl w-full h-5/6 animate-slide-up safe-area-bottom overflow-hidden">
+            <div class="flex flex-col h-full">
+                <!-- Restaurant Header -->
+                <div class="relative">
+                    <div class="h-32 bg-gray-200 overflow-hidden">
+                        <img id="restaurantImage" src="" alt="" class="w-full h-full object-cover">
                     </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-tg-text mb-2">Category</label>
-                        <select id="activityCategory" class="w-full px-4 py-3 bg-tg-secondary-bg text-tg-text rounded-xl border border-tg-section-separator focus:outline-none focus:ring-2 focus:ring-primary/30 text-base">
-                            <option value="outdoor">Outdoor</option>
-                            <option value="indoor">Indoor</option>
-                            <option value="sports">Sports</option>
-                            <option value="cultural">Cultural</option>
-                            <option value="food">Food</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-tg-text mb-2">Rating</label>
-                        <div class="flex space-x-2">
-                            <button type="button" class="rating-btn w-10 h-10 rounded-full border-2 border-tg-section-separator flex items-center justify-center haptic-feedback" data-rating="1">
-                                <span class="rating-star">★</span>
-                            </button>
-                            <button type="button" class="rating-btn w-10 h-10 rounded-full border-2 border-tg-section-separator flex items-center justify-center haptic-feedback" data-rating="2">
-                                <span class="rating-star">★</span>
-                            </button>
-                            <button type="button" class="rating-btn w-10 h-10 rounded-full border-2 border-tg-section-separator flex items-center justify-center haptic-feedback" data-rating="3">
-                                <span class="rating-star">★</span>
-                            </button>
-                            <button type="button" class="rating-btn w-10 h-10 rounded-full border-2 border-tg-section-separator flex items-center justify-center haptic-feedback" data-rating="4">
-                                <span class="rating-star">★</span>
-                            </button>
-                            <button type="button" class="rating-btn w-10 h-10 rounded-full border-2 border-tg-section-separator flex items-center justify-center haptic-feedback" data-rating="5">
-                                <span class="rating-star">★</span>
-                            </button>
+                    <button id="closeRestaurantModal" class="absolute top-4 right-4 w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center haptic-feedback">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                    <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4">
+                        <h3 id="restaurantName" class="text-xl font-bold text-white mb-1"></h3>
+                        <div class="flex items-center space-x-2">
+                            <span id="restaurantRating" class="text-yellow-400">★ 0.0</span>
+                            <span class="text-white text-sm">•</span>
+                            <span id="restaurantDeliveryTime" class="text-white text-sm">0-0 min</span>
+                            <span class="text-white text-sm">•</span>
+                            <span id="restaurantDistance" class="text-white text-sm">0 km</span>
                         </div>
                     </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-tg-text mb-2">Description</label>
-                        <textarea id="activityDescription" rows="3" class="w-full px-4 py-3 bg-tg-secondary-bg text-tg-text rounded-xl border border-tg-section-separator focus:outline-none focus:ring-2 focus:ring-primary/30 text-base resize-none" placeholder="Tell us about your experience..."></textarea>
+                </div>
+
+                <!-- Menu Categories -->
+                <div class="px-4 py-3 border-b border-tg-section-separator">
+                    <div id="menuCategories" class="flex space-x-2 overflow-x-auto">
+                        <!-- Categories will be loaded here -->
                     </div>
-                    
-                    <div class="flex space-x-3 pt-4">
-                        <button type="button" id="cancelAddActivity" class="flex-1 py-3 px-4 bg-tg-secondary-bg text-tg-text rounded-xl haptic-feedback">Cancel</button>
-                        <button type="submit" class="flex-1 py-3 px-4 bg-primary text-white rounded-xl haptic-feedback">Add Activity</button>
+                </div>
+
+                <!-- Menu Items -->
+                <div class="flex-1 overflow-y-auto">
+                    <div id="menuItems" class="p-4 space-y-4">
+                        <!-- Menu items will be loaded here -->
                     </div>
-                </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cart Modal -->
+    <div id="cartModal" class="fixed inset-0 modal-overlay flex items-end justify-center z-50 hidden">
+        <div class="bg-tg-bg rounded-t-3xl w-full max-h-5/6 animate-slide-up safe-area-bottom">
+            <div class="p-6">
+                <div class="w-12 h-1 bg-tg-hint rounded-full mx-auto mb-6"></div>
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-tg-text">Your Order</h3>
+                    <button id="clearCartButton" class="text-sm text-error haptic-feedback">Clear All</button>
+                </div>
+                
+                <!-- Cart Items -->
+                <div id="cartItems" class="space-y-4 mb-6 max-h-60 overflow-y-auto">
+                    <!-- Cart items will be loaded here -->
+                </div>
+
+                <!-- Order Summary -->
+                <div class="border-t border-tg-section-separator pt-4 mb-6">
+                    <div class="space-y-2">
+                        <div class="flex justify-between">
+                            <span class="text-tg-hint">Subtotal</span>
+                            <span id="cartSubtotal" class="text-tg-text">$0.00</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-tg-hint">Delivery Fee</span>
+                            <span id="cartDeliveryFee" class="text-tg-text">$2.99</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-tg-hint">Tax</span>
+                            <span id="cartTax" class="text-tg-text">$0.00</span>
+                        </div>
+                        <div class="flex justify-between font-bold text-lg border-t border-tg-section-separator pt-2">
+                            <span class="text-tg-text">Total</span>
+                            <span id="cartTotal" class="text-tg-text">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex space-x-3">
+                    <button id="closeCartModal" class="flex-1 py-3 px-4 bg-tg-secondary-bg text-tg-text rounded-xl haptic-feedback">Continue Shopping</button>
+                    <button id="checkoutButton" class="flex-1 py-3 px-4 bg-primary text-white rounded-xl haptic-feedback">Checkout</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Modal -->
+    <div id="searchModal" class="fixed inset-0 bg-tg-bg z-50 hidden">
+        <div class="p-4 safe-area-top">
+            <div class="flex items-center space-x-3 mb-4">
+                <button id="closeSearchModal" class="haptic-feedback">
+                    <svg class="w-6 h-6 text-tg-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </button>
+                <div class="flex-1 relative">
+                    <input type="text" id="searchInput" 
+                           class="w-full px-4 py-3 pl-10 bg-tg-secondary-bg text-tg-text rounded-xl border border-tg-section-separator focus:outline-none focus:ring-2 focus:ring-primary/30 text-base"
+                           placeholder="Search restaurants or dishes...">
+                    <svg class="w-5 h-5 text-tg-hint absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
+            </div>
+            
+            <!-- Search Results -->
+            <div id="searchResults" class="space-y-4">
+                <!-- Search results will be loaded here -->
             </div>
         </div>
     </div>
@@ -540,15 +761,16 @@
         tg.expand();
 
         // App State Management
-        class AppState {
+        class FoodHubApp {
             constructor() {
                 this.currentUser = null;
                 this.userLocation = null;
-                this.activities = [];
-                this.userActivities = [];
+                this.restaurants = [];
+                this.cart = [];
+                this.orders = [];
                 this.currentTab = 'home';
                 this.selectedCategory = 'all';
-                this.searchQuery = '';
+                this.selectedRestaurant = null;
                 this.navigationStack = [];
                 this.init();
             }
@@ -560,6 +782,7 @@
                 this.setupTheme();
                 this.requestLocation();
                 this.loadUserData();
+                this.loadCartFromStorage();
             }
 
             setupTelegramIntegration() {
@@ -579,7 +802,7 @@
                 });
 
                 // MainButton configuration
-                tg.MainButton.text = "Share Experience";
+                tg.MainButton.text = "Place Order";
                 tg.MainButton.color = "#5D5CDE";
 
                 // Haptic feedback setup
@@ -613,91 +836,205 @@
             }
 
             loadSampleData() {
-                // Sample activities data
-                this.activities = [
+                // Sample restaurants data
+                this.restaurants = [
                     {
                         id: 1,
-                        name: "Sunset Hike at Eagle Peak",
-                        category: "outdoor",
-                        description: "Amazing 360° views of the city. Perfect spot for photography and meditation. Trail is moderate difficulty.",
+                        name: "Mario's Pizzeria",
+                        category: "pizza",
+                        description: "Authentic Italian pizza made with fresh ingredients",
                         rating: 4.8,
-                        reviewCount: 127,
-                        location: { lat: 37.7749, lng: -122.4194, name: "Eagle Peak Trail" },
-                        distance: 2.3,
-                        userId: 12345,
-                        userName: "AdventureSeeker",
-                        createdAt: new Date('2024-01-15'),
-                        images: ["https://picsum.photos/400/300?random=1"],
-                        tags: ["hiking", "sunset", "photography", "nature"]
+                        reviewCount: 342,
+                        location: { lat: 37.7749, lng: -122.4194, address: "123 Main St" },
+                        distance: 0.8,
+                        deliveryTime: "20-30",
+                        deliveryFee: 2.99,
+                        minimumOrder: 15.00,
+                        image: "https://picsum.photos/400/300?random=1",
+                        isOpen: true,
+                        categories: ["Pizza", "Italian", "Desserts"],
+                        menu: [
+                            {
+                                id: 101,
+                                name: "Margherita Pizza",
+                                description: "Fresh mozzarella, tomato sauce, basil",
+                                price: 16.99,
+                                category: "Pizza",
+                                image: "https://picsum.photos/300/200?random=11",
+                                rating: 4.9,
+                                popular: true
+                            },
+                            {
+                                id: 102,
+                                name: "Pepperoni Pizza",
+                                description: "Classic pepperoni with mozzarella cheese",
+                                price: 18.99,
+                                category: "Pizza",
+                                image: "https://picsum.photos/300/200?random=12",
+                                rating: 4.7
+                            },
+                            {
+                                id: 103,
+                                name: "Caesar Salad",
+                                description: "Romaine lettuce, parmesan, croutons, caesar dressing",
+                                price: 12.99,
+                                category: "Salads",
+                                image: "https://picsum.photos/300/200?random=13",
+                                rating: 4.5
+                            },
+                            {
+                                id: 104,
+                                name: "Tiramisu",
+                                description: "Classic Italian dessert with coffee and mascarpone",
+                                price: 8.99,
+                                category: "Desserts",
+                                image: "https://picsum.photos/300/200?random=14",
+                                rating: 4.8
+                            }
+                        ]
                     },
                     {
                         id: 2,
-                        name: "Underground Jazz Club",
-                        category: "cultural",
-                        description: "Hidden gem with live jazz every Friday. Intimate setting with craft cocktails and amazing acoustics.",
+                        name: "Burger Palace",
+                        category: "fast-food",
+                        description: "Gourmet burgers made with premium beef",
                         rating: 4.6,
-                        reviewCount: 89,
-                        location: { lat: 37.7849, lng: -122.4094, name: "The Blue Note" },
-                        distance: 1.8,
-                        userId: 67890,
-                        userName: "MusicLover",
-                        createdAt: new Date('2024-01-14'),
-                        images: ["https://picsum.photos/400/300?random=2"],
-                        tags: ["jazz", "music", "nightlife", "cocktails"]
+                        reviewCount: 218,
+                        location: { lat: 37.7849, lng: -122.4094, address: "456 Oak Ave" },
+                        distance: 1.2,
+                        deliveryTime: "15-25",
+                        deliveryFee: 1.99,
+                        minimumOrder: 12.00,
+                        image: "https://picsum.photos/400/300?random=2",
+                        isOpen: true,
+                        categories: ["Burgers", "Fries", "Drinks"],
+                        menu: [
+                            {
+                                id: 201,
+                                name: "Classic Cheeseburger",
+                                description: "Beef patty, cheese, lettuce, tomato, onion",
+                                price: 12.99,
+                                category: "Burgers",
+                                image: "https://picsum.photos/300/200?random=21",
+                                rating: 4.7,
+                                popular: true
+                            },
+                            {
+                                id: 202,
+                                name: "Bacon Deluxe",
+                                description: "Double beef, bacon, cheese, special sauce",
+                                price: 15.99,
+                                category: "Burgers",
+                                image: "https://picsum.photos/300/200?random=22",
+                                rating: 4.8
+                            },
+                            {
+                                id: 203,
+                                name: "Crispy Fries",
+                                description: "Golden crispy potato fries with sea salt",
+                                price: 4.99,
+                                category: "Fries",
+                                image: "https://picsum.photos/300/200?random=23",
+                                rating: 4.4
+                            }
+                        ]
                     },
                     {
                         id: 3,
-                        name: "Rooftop Rock Climbing",
-                        category: "sports",
-                        description: "Urban climbing gym with outdoor walls and city views. Great for beginners and experienced climbers.",
-                        rating: 4.5,
+                        name: "Dragon Noodles",
+                        category: "asian",
+                        description: "Authentic Asian cuisine with fresh ingredients",
+                        rating: 4.7,
                         reviewCount: 156,
-                        location: { lat: 37.7649, lng: -122.4294, name: "Vertical Adventures" },
-                        distance: 3.1,
-                        userId: 54321,
-                        userName: "ClimbMaster",
-                        createdAt: new Date('2024-01-13'),
-                        images: ["https://picsum.photos/400/300?random=3"],
-                        tags: ["climbing", "fitness", "urban", "outdoor"]
+                        location: { lat: 37.7649, lng: -122.4294, address: "789 Pine St" },
+                        distance: 2.1,
+                        deliveryTime: "25-35",
+                        deliveryFee: 3.99,
+                        minimumOrder: 20.00,
+                        image: "https://picsum.photos/400/300?random=3",
+                        isOpen: true,
+                        categories: ["Noodles", "Rice", "Appetizers"],
+                        menu: [
+                            {
+                                id: 301,
+                                name: "Pad Thai",
+                                description: "Stir-fried rice noodles with shrimp, tofu, and peanuts",
+                                price: 14.99,
+                                category: "Noodles",
+                                image: "https://picsum.photos/300/200?random=31",
+                                rating: 4.9,
+                                popular: true
+                            },
+                            {
+                                id: 302,
+                                name: "Chicken Fried Rice",
+                                description: "Wok-fried rice with chicken, vegetables, and soy sauce",
+                                price: 13.99,
+                                category: "Rice",
+                                image: "https://picsum.photos/300/200?random=32",
+                                rating: 4.6
+                            }
+                        ]
                     },
                     {
                         id: 4,
-                        name: "Artisanal Coffee Tasting",
-                        category: "food",
-                        description: "Cozy café offering cupping sessions every Saturday. Learn about different bean origins and brewing methods.",
-                        rating: 4.7,
-                        reviewCount: 203,
-                        location: { lat: 37.7549, lng: -122.4394, name: "Bean & Brew" },
-                        distance: 0.9,
-                        userId: 98765,
-                        userName: "CoffeeConnoisseur",
-                        createdAt: new Date('2024-01-12'),
-                        images: ["https://picsum.photos/400/300?random=4"],
-                        tags: ["coffee", "tasting", "education", "cozy"]
-                    },
-                    {
-                        id: 5,
-                        name: "Indoor Skydiving Experience",
-                        category: "indoor",
-                        description: "Thrilling wind tunnel experience. Perfect for first-time flyers and adrenaline junkies alike.",
+                        name: "Sweet Treats",
+                        category: "dessert",
+                        description: "Delicious desserts and sweet treats",
                         rating: 4.9,
-                        reviewCount: 312,
-                        location: { lat: 37.7449, lng: -122.4494, name: "SkyFly Center" },
-                        distance: 4.2,
-                        userId: 11111,
-                        userName: "ThrillSeeker",
-                        createdAt: new Date('2024-01-11'),
-                        images: ["https://picsum.photos/400/300?random=5"],
-                        tags: ["extreme", "indoor", "flying", "adrenaline"]
+                        reviewCount: 89,
+                        location: { lat: 37.7549, lng: -122.4394, address: "321 Sugar Lane" },
+                        distance: 1.5,
+                        deliveryTime: "10-20",
+                        deliveryFee: 2.49,
+                        minimumOrder: 8.00,
+                        image: "https://picsum.photos/400/300?random=4",
+                        isOpen: true,
+                        categories: ["Cakes", "Ice Cream", "Cookies"],
+                        menu: [
+                            {
+                                id: 401,
+                                name: "Chocolate Cake",
+                                description: "Rich chocolate layer cake with chocolate frosting",
+                                price: 6.99,
+                                category: "Cakes",
+                                image: "https://picsum.photos/300/200?random=41",
+                                rating: 4.8,
+                                popular: true
+                            },
+                            {
+                                id: 402,
+                                name: "Vanilla Ice Cream",
+                                description: "Premium vanilla ice cream made with real vanilla beans",
+                                price: 4.99,
+                                category: "Ice Cream",
+                                image: "https://picsum.photos/300/200?random=42",
+                                rating: 4.7
+                            }
+                        ]
                     }
                 ];
 
-                // User's activities (if user is logged in)
-                if (this.currentUser) {
-                    this.userActivities = this.activities.filter(activity => 
-                        activity.userId === this.currentUser.id
-                    );
-                }
+                // Sample order history
+                this.orders = [
+                    {
+                        id: 'ORD001',
+                        restaurantId: 1,
+                        restaurantName: "Mario's Pizzeria",
+                        items: [
+                            { id: 101, name: "Margherita Pizza", price: 16.99, quantity: 1 },
+                            { id: 104, name: "Tiramisu", price: 8.99, quantity: 1 }
+                        ],
+                        subtotal: 25.98,
+                        deliveryFee: 2.99,
+                        tax: 2.34,
+                        total: 31.31,
+                        status: 'delivered',
+                        orderTime: new Date('2024-01-10T18:30:00'),
+                        deliveryTime: new Date('2024-01-10T19:15:00'),
+                        rating: 5
+                    }
+                ];
             }
 
             setupEventListeners() {
@@ -710,10 +1047,13 @@
                     });
                 });
 
-                // Search functionality
-                document.getElementById('searchInput').addEventListener('input', (e) => {
-                    this.searchQuery = e.target.value.toLowerCase();
-                    this.filterAndRenderActivities();
+                // Quick action buttons
+                document.querySelectorAll('.quick-action-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        this.triggerHaptic('impact', 'light');
+                        const category = e.currentTarget.dataset.category;
+                        this.filterByCategory(category);
+                    });
                 });
 
                 // Category filtering
@@ -723,14 +1063,8 @@
                         document.querySelectorAll('.category-chip').forEach(chip => chip.classList.remove('active'));
                         e.target.classList.add('active');
                         this.selectedCategory = e.target.dataset.category;
-                        this.filterAndRenderActivities();
+                        this.filterAndRenderRestaurants();
                     }
-                });
-
-                // FAB button
-                document.getElementById('fabButton').addEventListener('click', () => {
-                    this.triggerHaptic('impact', 'medium');
-                    this.showAddActivityModal();
                 });
 
                 // Location refresh
@@ -739,22 +1073,30 @@
                     this.requestLocation();
                 });
 
-                // Profile button
+                // Header buttons
                 document.getElementById('profileButton').addEventListener('click', () => {
                     this.triggerHaptic('impact', 'light');
                     this.switchTab('profile');
                 });
 
-                // QR Scanner
-                document.getElementById('scanQRButton').addEventListener('click', () => {
+                document.getElementById('searchButton').addEventListener('click', () => {
                     this.triggerHaptic('impact', 'light');
-                    this.scanQRCode();
+                    this.showSearchModal();
+                });
+
+                document.getElementById('notificationButton').addEventListener('click', () => {
+                    this.triggerHaptic('impact', 'light');
+                    this.showNotifications();
+                });
+
+                // Cart button
+                document.getElementById('cartButton').addEventListener('click', () => {
+                    this.triggerHaptic('impact', 'medium');
+                    this.showCartModal();
                 });
 
                 // Modal handlers
                 this.setupModalHandlers();
-
-                // Profile actions
                 this.setupProfileActions();
 
                 // Back button
@@ -767,33 +1109,43 @@
             }
 
             setupModalHandlers() {
-                const modal = document.getElementById('addActivityModal');
-                const form = document.getElementById('addActivityForm');
-                const cancelBtn = document.getElementById('cancelAddActivity');
-
-                cancelBtn.addEventListener('click', () => {
-                    this.hideAddActivityModal();
+                // Restaurant modal
+                document.getElementById('closeRestaurantModal').addEventListener('click', () => {
+                    this.hideRestaurantModal();
                 });
 
-                // Rating buttons
-                document.querySelectorAll('.rating-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        this.triggerHaptic('impact', 'light');
-                        const rating = parseInt(e.currentTarget.dataset.rating);
-                        this.selectRating(rating);
-                    });
+                // Cart modal
+                document.getElementById('closeCartModal').addEventListener('click', () => {
+                    this.hideCartModal();
                 });
 
-                // Form submission
-                form.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    this.submitActivity();
+                document.getElementById('clearCartButton').addEventListener('click', () => {
+                    this.clearCart();
                 });
 
-                // Click outside to close
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        this.hideAddActivityModal();
+                document.getElementById('checkoutButton').addEventListener('click', () => {
+                    this.checkout();
+                });
+
+                // Search modal
+                document.getElementById('closeSearchModal').addEventListener('click', () => {
+                    this.hideSearchModal();
+                });
+
+                document.getElementById('searchInput').addEventListener('input', (e) => {
+                    this.performSearch(e.target.value);
+                });
+
+                // Click outside to close modals
+                document.getElementById('restaurantModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'restaurantModal') {
+                        this.hideRestaurantModal();
+                    }
+                });
+
+                document.getElementById('cartModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'cartModal') {
+                        this.hideCartModal();
                     }
                 });
             }
@@ -804,19 +1156,39 @@
                     this.showEditProfile();
                 });
 
+                document.getElementById('addressesButton').addEventListener('click', () => {
+                    this.triggerHaptic('impact', 'light');
+                    this.showAddresses();
+                });
+
+                document.getElementById('paymentsButton').addEventListener('click', () => {
+                    this.triggerHaptic('impact', 'light');
+                    this.showPaymentMethods();
+                });
+
+                document.getElementById('favoritesButton').addEventListener('click', () => {
+                    this.triggerHaptic('impact', 'light');
+                    this.showFavorites();
+                });
+
+                document.getElementById('helpButton').addEventListener('click', () => {
+                    this.triggerHaptic('impact', 'light');
+                    this.showHelp();
+                });
+
                 document.getElementById('shareAppButton').addEventListener('click', () => {
                     this.triggerHaptic('impact', 'light');
                     this.shareApp();
                 });
 
-                document.getElementById('aboutButton').addEventListener('click', () => {
+                document.getElementById('browseRestaurantsButton').addEventListener('click', () => {
                     this.triggerHaptic('impact', 'light');
-                    this.showAbout();
+                    this.switchTab('home');
                 });
 
-                document.getElementById('notificationButton').addEventListener('click', () => {
+                document.getElementById('trackOrderButton').addEventListener('click', () => {
                     this.triggerHaptic('impact', 'light');
-                    this.toggleNotifications();
+                    this.showOrderTracking();
                 });
             }
 
@@ -834,15 +1206,15 @@
                             };
                             this.updateLocationDisplay();
                             this.calculateDistances();
-                            this.filterAndRenderActivities();
+                            this.filterAndRenderRestaurants();
                         },
                         (error) => {
                             console.error('Geolocation error:', error);
                             locationText.textContent = 'Location unavailable';
-                            // Use default location (San Francisco)
+                            // Use default location
                             this.userLocation = { lat: 37.7749, lng: -122.4194 };
                             this.calculateDistances();
-                            this.filterAndRenderActivities();
+                            this.filterAndRenderRestaurants();
                         },
                         {
                             enableHighAccuracy: true,
@@ -858,29 +1230,27 @@
             updateLocationDisplay() {
                 const locationText = document.getElementById('locationText');
                 if (this.userLocation) {
-                    // Reverse geocoding would typically happen here
-                    locationText.textContent = `${this.userLocation.lat.toFixed(4)}, ${this.userLocation.lng.toFixed(4)}`;
+                    locationText.textContent = 'Current Location';
                 }
             }
 
             calculateDistances() {
                 if (!this.userLocation) return;
 
-                this.activities.forEach(activity => {
-                    activity.distance = this.calculateDistance(
+                this.restaurants.forEach(restaurant => {
+                    restaurant.distance = this.calculateDistance(
                         this.userLocation.lat,
                         this.userLocation.lng,
-                        activity.location.lat,
-                        activity.location.lng
+                        restaurant.location.lat,
+                        restaurant.location.lng
                     );
                 });
 
-                // Sort by distance
-                this.activities.sort((a, b) => a.distance - b.distance);
+                this.restaurants.sort((a, b) => a.distance - b.distance);
             }
 
             calculateDistance(lat1, lon1, lat2, lon2) {
-                const R = 6371; // Radius of the Earth in kilometers
+                const R = 6371;
                 const dLat = this.degToRad(lat2 - lat1);
                 const dLon = this.degToRad(lon2 - lon1);
                 const a = 
@@ -897,7 +1267,6 @@
 
             loadUserData() {
                 if (this.currentUser) {
-                    // Update profile display
                     const profileName = document.getElementById('profileName');
                     const profileUsername = document.getElementById('profileUsername');
                     const profileInitial = document.getElementById('profileInitial');
@@ -911,35 +1280,40 @@
                     profileInitial.textContent = initial;
                     profileAvatarText.textContent = initial;
 
-                    // Update stats
                     this.updateUserStats();
                 }
             }
 
             updateUserStats() {
-                const userActivitiesCount = this.userActivities.length;
-                const userReviewsCount = this.userActivities.reduce((sum, activity) => sum + activity.reviewCount, 0);
-                const userRating = userActivitiesCount > 0 ? 
-                    (this.userActivities.reduce((sum, activity) => sum + activity.rating, 0) / userActivitiesCount).toFixed(1) : 
-                    '0.0';
+                const orderCount = this.orders.length;
+                const reviewCount = this.orders.filter(order => order.rating).length;
+                const points = orderCount * 10;
 
-                document.getElementById('userActivitiesCount').textContent = userActivitiesCount;
-                document.getElementById('profileActivitiesCount').textContent = userActivitiesCount;
-                document.getElementById('profileReviewsCount').textContent = userReviewsCount;
-                document.getElementById('profileRating').textContent = userRating;
-                document.getElementById('userRating').textContent = userRating;
+                document.getElementById('profileOrderCount').textContent = orderCount;
+                document.getElementById('profileReviewCount').textContent = reviewCount;
+                document.getElementById('profilePoints').textContent = points;
+            }
+
+            loadCartFromStorage() {
+                // In a real app, this would load from Telegram Cloud Storage
+                const savedCart = localStorage.getItem('foodhub_cart');
+                if (savedCart) {
+                    this.cart = JSON.parse(savedCart);
+                    this.updateCartUI();
+                }
+            }
+
+            saveCartToStorage() {
+                localStorage.setItem('foodhub_cart', JSON.stringify(this.cart));
             }
 
             switchTab(tabName) {
-                // Hide all tabs
                 document.querySelectorAll('.tab-content').forEach(tab => {
                     tab.classList.add('hidden');
                 });
 
-                // Show selected tab
                 document.getElementById(`${tabName}Tab`).classList.remove('hidden');
 
-                // Update tab indicators
                 document.querySelectorAll('.tab-button').forEach(button => {
                     const indicator = button.querySelector('.tab-indicator');
                     if (button.dataset.tab === tabName) {
@@ -954,33 +1328,34 @@
                 });
 
                 this.currentTab = tabName;
-
-                // Update header and navigation
                 this.updateHeader(tabName);
 
-                // Load tab-specific content
                 if (tabName === 'home') {
-                    this.filterAndRenderActivities();
-                } else if (tabName === 'myActivities') {
-                    this.renderUserActivities();
+                    this.filterAndRenderRestaurants();
+                } else if (tabName === 'orders') {
+                    this.renderOrders();
                 }
             }
 
             updateHeader(tabName) {
                 const headerTitle = document.getElementById('headerTitle');
+                const headerSubtitle = document.getElementById('headerSubtitle');
                 const backButton = document.getElementById('backButton');
 
                 switch (tabName) {
                     case 'home':
-                        headerTitle.textContent = 'Activity Explorer';
+                        headerTitle.textContent = 'FoodHub';
+                        headerSubtitle.classList.add('hidden');
                         this.hideBackButton();
                         break;
-                    case 'myActivities':
-                        headerTitle.textContent = 'My Activities';
+                    case 'orders':
+                        headerTitle.textContent = 'My Orders';
+                        headerSubtitle.classList.add('hidden');
                         this.hideBackButton();
                         break;
                     case 'profile':
                         headerTitle.textContent = 'Profile';
+                        headerSubtitle.classList.add('hidden');
                         this.hideBackButton();
                         break;
                 }
@@ -1000,286 +1375,604 @@
                 tg.BackButton.hide();
             }
 
-            filterAndRenderActivities() {
-                let filteredActivities = [...this.activities];
-
-                // Filter by category
-                if (this.selectedCategory !== 'all') {
-                    filteredActivities = filteredActivities.filter(activity => 
-                        activity.category === this.selectedCategory
-                    );
-                }
-
-                // Filter by search query
-                if (this.searchQuery) {
-                    filteredActivities = filteredActivities.filter(activity =>
-                        activity.name.toLowerCase().includes(this.searchQuery) ||
-                        activity.description.toLowerCase().includes(this.searchQuery) ||
-                        activity.tags.some(tag => tag.toLowerCase().includes(this.searchQuery))
-                    );
-                }
-
-                this.renderActivities(filteredActivities);
+            filterByCategory(category) {
+                this.selectedCategory = category;
+                document.querySelectorAll('.category-chip').forEach(chip => chip.classList.remove('active'));
+                document.querySelector(`[data-category="${category}"]`).classList.add('active');
+                this.filterAndRenderRestaurants();
             }
 
-            renderActivities(activities) {
-                const feed = document.getElementById('activityFeed');
+            filterAndRenderRestaurants() {
+                let filteredRestaurants = [...this.restaurants];
+
+                if (this.selectedCategory !== 'all') {
+                    filteredRestaurants = filteredRestaurants.filter(restaurant => 
+                        restaurant.category === this.selectedCategory
+                    );
+                }
+
+                this.renderRestaurants(filteredRestaurants);
+            }
+
+            renderRestaurants(restaurants) {
+                const feed = document.getElementById('restaurantFeed');
                 const loadingState = document.getElementById('loadingState');
 
                 loadingState.classList.add('hidden');
                 feed.innerHTML = '';
 
-                if (activities.length === 0) {
+                if (restaurants.length === 0) {
                     feed.innerHTML = `
                         <div class="text-center py-12">
                             <div class="w-20 h-20 bg-tg-secondary-bg rounded-full flex items-center justify-center mx-auto mb-4">
                                 <svg class="w-10 h-10 text-tg-hint" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47.901-6.06 2.379l-.179.192C4.889 17.343 4 16.596 4 15.601V4a1 1 0 011-1h14a1 1 0 011 1v11.601c0 .995-.889 1.742-1.761 1.97l-.179-.192z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                                 </svg>
                             </div>
-                            <h3 class="text-lg font-medium text-tg-text mb-2">No Activities Found</h3>
-                            <p class="text-tg-hint">Try adjusting your search or filters</p>
+                            <h3 class="text-lg font-medium text-tg-text mb-2">No Restaurants Found</h3>
+                            <p class="text-tg-hint">Try a different category or location</p>
                         </div>
                     `;
                     return;
                 }
 
-                activities.forEach(activity => {
-                    const activityCard = this.createActivityCard(activity);
-                    feed.appendChild(activityCard);
+                restaurants.forEach(restaurant => {
+                    const restaurantCard = this.createRestaurantCard(restaurant);
+                    feed.appendChild(restaurantCard);
                 });
             }
 
-            createActivityCard(activity) {
+            createRestaurantCard(restaurant) {
                 const card = document.createElement('div');
-                card.className = 'activity-card p-4 haptic-feedback';
-                card.setAttribute('data-activity-id', activity.id);
+                card.className = 'restaurant-card p-4 haptic-feedback cursor-pointer';
 
-                const stars = '★'.repeat(Math.floor(activity.rating)) + '☆'.repeat(5 - Math.floor(activity.rating));
-                const timeAgo = this.getTimeAgo(activity.createdAt);
+                const stars = '★'.repeat(Math.floor(restaurant.rating));
+                const deliveryFeeText = restaurant.deliveryFee > 0 ? `$${restaurant.deliveryFee.toFixed(2)}` : 'Free';
 
                 card.innerHTML = `
                     <div class="flex space-x-3 mb-3">
-                        <div class="w-16 h-16 bg-gray-200 rounded-xl overflow-hidden flex-shrink-0">
-                            <img src="${activity.images[0]}" alt="${activity.name}" class="w-full h-full object-cover">
+                        <div class="w-20 h-20 bg-gray-200 rounded-xl overflow-hidden flex-shrink-0">
+                            <img src="${restaurant.image}" alt="${restaurant.name}" class="w-full h-full object-cover">
                         </div>
                         <div class="flex-1 min-w-0">
-                            <h3 class="font-semibold text-tg-text mb-1 truncate">${activity.name}</h3>
+                            <div class="flex items-start justify-between mb-1">
+                                <h3 class="font-semibold text-tg-text truncate">${restaurant.name}</h3>
+                                <span class="distance-badge ml-2">${restaurant.distance.toFixed(1)} km</span>
+                            </div>
                             <div class="flex items-center space-x-2 mb-1">
                                 <span class="text-yellow-500 text-sm">${stars}</span>
-                                <span class="text-xs text-tg-hint">${activity.rating} (${activity.reviewCount})</span>
+                                <span class="text-xs text-tg-hint">${restaurant.rating} (${restaurant.reviewCount})</span>
                             </div>
-                            <div class="flex items-center space-x-2">
-                                <span class="distance-badge">${activity.distance.toFixed(1)} km</span>
-                                <span class="category-chip text-xs">${activity.category}</span>
+                            <p class="text-xs text-tg-hint line-clamp-2 mb-2">${restaurant.description}</p>
+                            <div class="flex items-center space-x-3 text-xs text-tg-hint">
+                                <span>🕒 ${restaurant.deliveryTime} min</span>
+                                <span>🚚 ${deliveryFeeText}</span>
+                                <span class="category-chip text-xs px-2 py-1">${restaurant.category}</span>
                             </div>
                         </div>
-                    </div>
-                    <p class="text-sm text-tg-hint mb-3 line-clamp-2">${activity.description}</p>
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                                <span class="text-white text-xs font-medium">${activity.userName[0]}</span>
-                            </div>
-                            <span class="text-xs text-tg-hint">${activity.userName} • ${timeAgo}</span>
-                        </div>
-                        <button class="share-btn text-tg-hint hover:text-primary">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"/>
-                            </svg>
-                        </button>
                     </div>
                 `;
 
-                // Add click handlers
-                card.addEventListener('click', (e) => {
-                    if (!e.target.closest('.share-btn')) {
-                        this.triggerHaptic('impact', 'light');
-                        this.showActivityDetail(activity);
-                    }
-                });
-
-                card.querySelector('.share-btn').addEventListener('click', (e) => {
-                    e.stopPropagation();
+                card.addEventListener('click', () => {
                     this.triggerHaptic('impact', 'light');
-                    this.shareActivity(activity);
+                    this.showRestaurantMenu(restaurant);
                 });
 
                 return card;
             }
 
-            renderUserActivities() {
-                const list = document.getElementById('userActivitiesList');
-                const emptyState = document.getElementById('emptyActivitiesState');
+            showRestaurantMenu(restaurant) {
+                this.selectedRestaurant = restaurant;
+                const modal = document.getElementById('restaurantModal');
+                
+                // Update restaurant info
+                document.getElementById('restaurantImage').src = restaurant.image;
+                document.getElementById('restaurantName').textContent = restaurant.name;
+                document.getElementById('restaurantRating').textContent = `★ ${restaurant.rating}`;
+                document.getElementById('restaurantDeliveryTime').textContent = `${restaurant.deliveryTime} min`;
+                document.getElementById('restaurantDistance').textContent = `${restaurant.distance.toFixed(1)} km`;
 
-                if (this.userActivities.length === 0) {
-                    list.classList.add('hidden');
-                    emptyState.classList.remove('hidden');
-                    return;
-                }
+                // Render menu categories
+                this.renderMenuCategories(restaurant.categories);
+                
+                // Render menu items
+                this.renderMenuItems(restaurant.menu);
 
-                list.classList.remove('hidden');
-                emptyState.classList.add('hidden');
-                list.innerHTML = '';
-
-                this.userActivities.forEach(activity => {
-                    const card = this.createUserActivityCard(activity);
-                    list.appendChild(card);
-                });
-            }
-
-            createUserActivityCard(activity) {
-                const card = document.createElement('div');
-                card.className = 'activity-card p-4 haptic-feedback';
-
-                const stars = '★'.repeat(Math.floor(activity.rating)) + '☆'.repeat(5 - Math.floor(activity.rating));
-
-                card.innerHTML = `
-                    <div class="flex space-x-3 mb-3">
-                        <div class="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden">
-                            <img src="${activity.images[0]}" alt="${activity.name}" class="w-full h-full object-cover">
-                        </div>
-                        <div class="flex-1">
-                            <h3 class="font-semibold text-tg-text mb-1">${activity.name}</h3>
-                            <div class="flex items-center space-x-2">
-                                <span class="text-yellow-500 text-sm">${stars}</span>
-                                <span class="text-xs text-tg-hint">${activity.reviewCount} reviews</span>
-                            </div>
-                        </div>
-                        <button class="edit-activity-btn text-tg-hint hover:text-primary">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <p class="text-sm text-tg-hint mb-3">${activity.description}</p>
-                    <div class="flex items-center justify-between">
-                        <span class="category-chip text-xs">${activity.category}</span>
-                        <span class="text-xs text-tg-hint">${this.getTimeAgo(activity.createdAt)}</span>
-                    </div>
-                `;
-
-                return card;
-            }
-
-            showAddActivityModal() {
-                const modal = document.getElementById('addActivityModal');
                 modal.classList.remove('hidden');
                 document.body.style.overflow = 'hidden';
-                
-                // Reset form
-                document.getElementById('addActivityForm').reset();
-                this.selectRating(0);
+
+                this.navigationStack.push({ tab: this.currentTab });
+                this.showBackButton();
             }
 
-            hideAddActivityModal() {
-                const modal = document.getElementById('addActivityModal');
+            hideRestaurantModal() {
+                const modal = document.getElementById('restaurantModal');
+                modal.classList.add('hidden');
+                document.body.style.overflow = '';
+                
+                if (this.navigationStack.length > 0) {
+                    this.navigationStack.pop();
+                }
+                this.hideBackButton();
+            }
+
+            renderMenuCategories(categories) {
+                const container = document.getElementById('menuCategories');
+                container.innerHTML = '';
+
+                categories.forEach(category => {
+                    const chip = document.createElement('button');
+                    chip.className = 'category-chip haptic-feedback';
+                    chip.textContent = category;
+                    container.appendChild(chip);
+                });
+            }
+
+            renderMenuItems(menuItems) {
+                const container = document.getElementById('menuItems');
+                container.innerHTML = '';
+
+                menuItems.forEach(item => {
+                    const itemCard = this.createMenuItemCard(item);
+                    container.appendChild(itemCard);
+                });
+            }
+
+            createMenuItemCard(item) {
+                const card = document.createElement('div');
+                card.className = 'menu-item section-card p-4 rounded-xl';
+
+                const stars = '★'.repeat(Math.floor(item.rating));
+                const popularBadge = item.popular ? '<span class="bg-primary text-white text-xs px-2 py-1 rounded-full">Popular</span>' : '';
+
+                card.innerHTML = `
+                    <div class="flex space-x-3">
+                        <div class="flex-1">
+                            <div class="flex items-start justify-between mb-2">
+                                <h4 class="font-semibold text-tg-text">${item.name}</h4>
+                                ${popularBadge}
+                            </div>
+                            <p class="text-sm text-tg-hint line-clamp-2 mb-2">${item.description}</p>
+                            <div class="flex items-center space-x-2 mb-3">
+                                <span class="text-yellow-500 text-sm">${stars}</span>
+                                <span class="text-xs text-tg-hint">${item.rating}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-lg font-bold text-tg-text">$${item.price.toFixed(2)}</span>
+                                <div class="flex items-center space-x-2">
+                                    <button class="quantity-btn haptic-feedback" onclick="app.removeFromCart(${item.id})">-</button>
+                                    <span class="item-quantity-${item.id} w-8 text-center">${this.getItemQuantity(item.id)}</span>
+                                    <button class="quantity-btn haptic-feedback" onclick="app.addToCart(${item.id})">+</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="w-20 h-20 bg-gray-200 rounded-xl overflow-hidden flex-shrink-0">
+                            <img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover">
+                        </div>
+                    </div>
+                `;
+
+                return card;
+            }
+
+            addToCart(itemId) {
+                this.triggerHaptic('impact', 'light');
+                
+                const restaurant = this.selectedRestaurant;
+                const item = restaurant.menu.find(i => i.id === itemId);
+                
+                const existingItem = this.cart.find(cartItem => cartItem.id === itemId);
+                
+                if (existingItem) {
+                    existingItem.quantity += 1;
+                } else {
+                    this.cart.push({
+                        ...item,
+                        restaurantId: restaurant.id,
+                        restaurantName: restaurant.name,
+                        quantity: 1
+                    });
+                }
+
+                this.updateCartUI();
+                this.updateMenuItemQuantity(itemId);
+                this.saveCartToStorage();
+            }
+
+            removeFromCart(itemId) {
+                this.triggerHaptic('impact', 'light');
+                
+                const existingItem = this.cart.find(cartItem => cartItem.id === itemId);
+                
+                if (existingItem && existingItem.quantity > 1) {
+                    existingItem.quantity -= 1;
+                } else {
+                    this.cart = this.cart.filter(cartItem => cartItem.id !== itemId);
+                }
+
+                this.updateCartUI();
+                this.updateMenuItemQuantity(itemId);
+                this.saveCartToStorage();
+            }
+
+            getItemQuantity(itemId) {
+                const item = this.cart.find(cartItem => cartItem.id === itemId);
+                return item ? item.quantity : 0;
+            }
+
+            updateMenuItemQuantity(itemId) {
+                const quantityElement = document.querySelector(`.item-quantity-${itemId}`);
+                if (quantityElement) {
+                    quantityElement.textContent = this.getItemQuantity(itemId);
+                }
+            }
+
+            updateCartUI() {
+                const cartButton = document.getElementById('cartButton');
+                const cartBadge = document.getElementById('cartBadge');
+                
+                const totalItems = this.cart.reduce((sum, item) => sum + item.quantity, 0);
+                
+                if (totalItems > 0) {
+                    cartButton.classList.remove('hidden');
+                    cartBadge.textContent = totalItems;
+                    cartBadge.classList.remove('hidden');
+                } else {
+                    cartButton.classList.add('hidden');
+                }
+            }
+
+            showCartModal() {
+                const modal = document.getElementById('cartModal');
+                this.renderCartItems();
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+
+            hideCartModal() {
+                const modal = document.getElementById('cartModal');
                 modal.classList.add('hidden');
                 document.body.style.overflow = '';
             }
 
-            selectRating(rating) {
-                document.querySelectorAll('.rating-btn').forEach((btn, index) => {
-                    if (index < rating) {
-                        btn.classList.add('border-yellow-500', 'bg-yellow-50');
-                        btn.classList.remove('border-tg-section-separator');
-                    } else {
-                        btn.classList.remove('border-yellow-500', 'bg-yellow-50');
-                        btn.classList.add('border-tg-section-separator');
+            renderCartItems() {
+                const container = document.getElementById('cartItems');
+                container.innerHTML = '';
+
+                this.cart.forEach(item => {
+                    const itemCard = this.createCartItemCard(item);
+                    container.appendChild(itemCard);
+                });
+
+                this.updateCartSummary();
+            }
+
+            createCartItemCard(item) {
+                const card = document.createElement('div');
+                card.className = 'flex items-center space-x-3 p-3 bg-tg-secondary-bg rounded-xl';
+
+                card.innerHTML = `
+                    <div class="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                        <img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover">
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="font-medium text-tg-text">${item.name}</h4>
+                        <p class="text-sm text-tg-hint">${item.restaurantName}</p>
+                        <p class="text-sm font-semibold text-tg-text">$${item.price.toFixed(2)}</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button class="quantity-btn haptic-feedback" onclick="app.removeFromCart(${item.id})">-</button>
+                        <span class="w-8 text-center">${item.quantity}</span>
+                        <button class="quantity-btn haptic-feedback" onclick="app.addToCart(${item.id})">+</button>
+                    </div>
+                `;
+
+                return card;
+            }
+
+            updateCartSummary() {
+                const subtotal = this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                const deliveryFee = 2.99;
+                const tax = subtotal * 0.08875;
+                const total = subtotal + deliveryFee + tax;
+
+                document.getElementById('cartSubtotal').textContent = `$${subtotal.toFixed(2)}`;
+                document.getElementById('cartDeliveryFee').textContent = `$${deliveryFee.toFixed(2)}`;
+                document.getElementById('cartTax').textContent = `$${tax.toFixed(2)}`;
+                document.getElementById('cartTotal').textContent = `$${total.toFixed(2)}`;
+            }
+
+            clearCart() {
+                this.triggerHaptic('impact', 'medium');
+                this.cart = [];
+                this.updateCartUI();
+                this.renderCartItems();
+                this.saveCartToStorage();
+                
+                // Update menu item quantities if restaurant modal is open
+                if (!document.getElementById('restaurantModal').classList.contains('hidden')) {
+                    document.querySelectorAll('[class*="item-quantity-"]').forEach(el => {
+                        el.textContent = '0';
+                    });
+                }
+            }
+
+            checkout() {
+                if (this.cart.length === 0) {
+                    this.showToast('Your cart is empty');
+                    return;
+                }
+
+                this.triggerHaptic('notification', 'success');
+                
+                // Create order
+                const order = {
+                    id: `ORD${Date.now()}`,
+                    restaurantId: this.cart[0].restaurantId,
+                    restaurantName: this.cart[0].restaurantName,
+                    items: [...this.cart],
+                    subtotal: this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+                    deliveryFee: 2.99,
+                    tax: this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0) * 0.08875,
+                    total: 0,
+                    status: 'confirmed',
+                    orderTime: new Date(),
+                    estimatedDelivery: new Date(Date.now() + 30 * 60 * 1000) // 30 minutes
+                };
+                
+                order.total = order.subtotal + order.deliveryFee + order.tax;
+                
+                this.orders.unshift(order);
+                this.cart = [];
+                this.updateCartUI();
+                this.hideCartModal();
+                this.hideRestaurantModal();
+                this.saveCartToStorage();
+                
+                this.showToast('Order placed successfully! 🎉');
+                this.switchTab('orders');
+            }
+
+            renderOrders() {
+                const container = document.getElementById('orderHistory');
+                const emptyState = document.getElementById('emptyOrdersState');
+                const activeOrderCard = document.getElementById('activeOrderCard');
+
+                if (this.orders.length === 0) {
+                    container.classList.add('hidden');
+                    emptyState.classList.remove('hidden');
+                    activeOrderCard.classList.add('hidden');
+                    return;
+                }
+
+                container.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+
+                // Show active order if exists
+                const activeOrder = this.orders.find(order => ['confirmed', 'preparing', 'on_way'].includes(order.status));
+                if (activeOrder) {
+                    this.renderActiveOrder(activeOrder);
+                    activeOrderCard.classList.remove('hidden');
+                } else {
+                    activeOrderCard.classList.add('hidden');
+                }
+
+                container.innerHTML = '';
+                this.orders.forEach(order => {
+                    if (!['confirmed', 'preparing', 'on_way'].includes(order.status)) {
+                        const orderCard = this.createOrderCard(order);
+                        container.appendChild(orderCard);
                     }
                 });
-                this.selectedRating = rating;
             }
 
-            submitActivity() {
-                const form = document.getElementById('addActivityForm');
-                const formData = new FormData(form);
+            renderActiveOrder(order) {
+                document.getElementById('activeOrderImage').src = `https://picsum.photos/100/100?random=${order.restaurantId}`;
+                document.getElementById('activeOrderRestaurant').textContent = order.restaurantName;
+                document.getElementById('activeOrderItems').textContent = `${order.items.length} items`;
+                document.getElementById('activeOrderTotal').textContent = `$${order.total.toFixed(2)}`;
+                document.getElementById('activeOrderEta').textContent = '25-30 min';
+            }
 
-                const activityData = {
-                    id: Date.now(),
-                    name: document.getElementById('activityName').value,
-                    category: document.getElementById('activityCategory').value,
-                    description: document.getElementById('activityDescription').value,
-                    rating: this.selectedRating || 5,
-                    reviewCount: 0,
-                    location: this.userLocation || { lat: 37.7749, lng: -122.4194, name: "Current Location" },
-                    distance: 0,
-                    userId: this.currentUser?.id || Date.now(),
-                    userName: this.currentUser ? `${this.currentUser.firstName} ${this.currentUser.lastName}`.trim() : 'Anonymous User',
-                    createdAt: new Date(),
-                    images: [`https://picsum.photos/400/300?random=${Date.now()}`],
-                    tags: [document.getElementById('activityCategory').value]
+            createOrderCard(order) {
+                const card = document.createElement('div');
+                card.className = 'section-card p-4 haptic-feedback cursor-pointer';
+
+                const timeAgo = this.getTimeAgo(order.orderTime);
+                const statusColors = {
+                    delivered: 'text-success',
+                    cancelled: 'text-error',
+                    confirmed: 'text-primary',
+                    preparing: 'text-warning',
+                    on_way: 'text-primary'
                 };
 
-                // Add to activities
-                this.activities.unshift(activityData);
-                this.userActivities.unshift(activityData);
+                card.innerHTML = `
+                    <div class="flex items-center space-x-3 mb-3">
+                        <div class="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden">
+                            <img src="https://picsum.photos/100/100?random=${order.restaurantId}" alt="${order.restaurantName}" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-tg-text">${order.restaurantName}</h4>
+                            <p class="text-sm text-tg-hint">${order.items.length} items • $${order.total.toFixed(2)}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs ${statusColors[order.status]} font-medium capitalize">${order.status}</span>
+                            <p class="text-xs text-tg-hint">${timeAgo}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-tg-hint">Order #${order.id}</span>
+                        <button class="text-sm text-primary">Reorder</button>
+                    </div>
+                `;
 
-                // Update stats
-                this.updateUserStats();
+                return card;
+            }
 
-                // Close modal and refresh view
-                this.hideAddActivityModal();
-                this.triggerHaptic('notification', 'success');
-                this.showToast('Activity added successfully!');
+            showSearchModal() {
+                const modal = document.getElementById('searchModal');
+                modal.classList.remove('hidden');
+                document.getElementById('searchInput').focus();
+            }
 
-                // Refresh current view
-                if (this.currentTab === 'home') {
-                    this.filterAndRenderActivities();
-                } else if (this.currentTab === 'myActivities') {
-                    this.renderUserActivities();
+            hideSearchModal() {
+                const modal = document.getElementById('searchModal');
+                modal.classList.add('hidden');
+                document.getElementById('searchInput').value = '';
+                document.getElementById('searchResults').innerHTML = '';
+            }
+
+            performSearch(query) {
+                const results = document.getElementById('searchResults');
+                
+                if (query.length < 2) {
+                    results.innerHTML = '';
+                    return;
                 }
-            }
 
-            showActivityDetail(activity) {
-                // Implementation for activity detail view
-                this.navigationStack.push({ tab: this.currentTab });
-                this.showBackButton();
-                
-                // Here you would typically show a detailed view
-                // For now, we'll show a Telegram popup
-                tg.showAlert(`${activity.name}\n\n${activity.description}\n\nRating: ${activity.rating}/5\nDistance: ${activity.distance.toFixed(1)} km`);
-            }
+                // Search restaurants and menu items
+                const restaurantResults = this.restaurants.filter(restaurant =>
+                    restaurant.name.toLowerCase().includes(query.toLowerCase()) ||
+                    restaurant.description.toLowerCase().includes(query.toLowerCase())
+                );
 
-            shareActivity(activity) {
-                const shareText = `🎯 ${activity.name}\n⭐ ${activity.rating}/5 (${activity.reviewCount} reviews)\n📍 ${activity.distance.toFixed(1)} km away\n\n${activity.description}\n\nDiscover more activities on Activity Explorer!`;
-                
-                if (tg.isVersionAtLeast('6.1')) {
-                    tg.shareToStory('https://t.me/your_bot_username', {
-                        text: shareText,
-                        widget_link: {
-                            url: 'https://t.me/your_bot_username/activity_explorer',
-                            name: 'Open Activity Explorer'
+                const menuResults = [];
+                this.restaurants.forEach(restaurant => {
+                    restaurant.menu.forEach(item => {
+                        if (item.name.toLowerCase().includes(query.toLowerCase()) ||
+                            item.description.toLowerCase().includes(query.toLowerCase())) {
+                            menuResults.push({ ...item, restaurantName: restaurant.name, restaurant });
                         }
                     });
-                } else {
-                    // Fallback for older versions
-                    navigator.clipboard?.writeText(shareText).then(() => {
-                        this.showToast('Activity details copied to clipboard!');
+                });
+
+                this.renderSearchResults(restaurantResults, menuResults);
+            }
+
+            renderSearchResults(restaurants, menuItems) {
+                const container = document.getElementById('searchResults');
+                container.innerHTML = '';
+
+                if (restaurants.length === 0 && menuItems.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-8">
+                            <p class="text-tg-hint">No results found</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                if (restaurants.length > 0) {
+                    const section = document.createElement('div');
+                    section.innerHTML = '<h3 class="text-lg font-semibold text-tg-text mb-3">Restaurants</h3>';
+                    restaurants.forEach(restaurant => {
+                        const card = this.createRestaurantCard(restaurant);
+                        section.appendChild(card);
                     });
+                    container.appendChild(section);
+                }
+
+                if (menuItems.length > 0) {
+                    const section = document.createElement('div');
+                    section.innerHTML = '<h3 class="text-lg font-semibold text-tg-text mb-3 mt-6">Menu Items</h3>';
+                    menuItems.forEach(item => {
+                        const card = this.createSearchMenuItemCard(item);
+                        section.appendChild(card);
+                    });
+                    container.appendChild(section);
                 }
             }
 
-            scanQRCode() {
-                if (tg.isVersionAtLeast('6.4')) {
-                    tg.showScanQrPopup({
-                        text: 'Scan QR code to discover activity'
-                    }, (data) => {
-                        if (data) {
-                            this.showToast(`QR Code scanned: ${data}`);
-                            // Handle QR code data here
-                        }
-                    });
-                } else {
-                    this.showToast('QR scanner not available');
-                }
+            createSearchMenuItemCard(item) {
+                const card = document.createElement('div');
+                card.className = 'section-card p-4 mb-3 haptic-feedback cursor-pointer';
+
+                card.innerHTML = `
+                    <div class="flex space-x-3">
+                        <div class="w-16 h-16 bg-gray-200 rounded-xl overflow-hidden">
+                            <img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-tg-text">${item.name}</h4>
+                            <p class="text-sm text-tg-hint">${item.restaurantName}</p>
+                            <p class="text-sm font-semibold text-tg-text">$${item.price.toFixed(2)}</p>
+                        </div>
+                    </div>
+                `;
+
+                card.addEventListener('click', () => {
+                    this.hideSearchModal();
+                    this.showRestaurantMenu(item.restaurant);
+                });
+
+                return card;
+            }
+
+            showNotifications() {
+                tg.showPopup({
+                    title: 'Notifications',
+                    message: 'Your order from Mario\'s Pizzeria is being prepared!\n\nEstimated delivery: 25-30 minutes',
+                    buttons: [
+                        { type: 'ok', text: 'OK' }
+                    ]
+                });
+            }
+
+            showOrderTracking() {
+                tg.showPopup({
+                    title: 'Order Tracking',
+                    message: '🍕 Order Confirmed\n👨‍🍳 Being Prepared\n🚚 Out for Delivery\n📍 Delivered\n\nETA: 25-30 minutes',
+                    buttons: [
+                        { type: 'ok', text: 'OK' }
+                    ]
+                });
             }
 
             showEditProfile() {
-                // Implementation for profile editing
                 tg.showPopup({
                     title: 'Edit Profile',
-                    message: 'This feature will allow you to edit your profile information.',
+                    message: 'Profile editing feature will be available soon. You can update your delivery preferences and payment methods.',
+                    buttons: [
+                        { type: 'ok', text: 'OK' }
+                    ]
+                });
+            }
+
+            showAddresses() {
+                tg.showPopup({
+                    title: 'Delivery Addresses',
+                    message: 'Manage your saved delivery addresses here. Add home, work, or other frequently used locations for faster checkout.',
+                    buttons: [
+                        { type: 'ok', text: 'OK' }
+                    ]
+                });
+            }
+
+            showPaymentMethods() {
+                tg.showPopup({
+                    title: 'Payment Methods',
+                    message: 'Add and manage your payment methods. We support credit cards, Telegram Payments, and digital wallets.',
+                    buttons: [
+                        { type: 'ok', text: 'OK' }
+                    ]
+                });
+            }
+
+            showFavorites() {
+                tg.showPopup({
+                    title: 'Favorites',
+                    message: 'Your favorite restaurants and dishes will appear here. Heart items to add them to your favorites!',
+                    buttons: [
+                        { type: 'ok', text: 'OK' }
+                    ]
+                });
+            }
+
+            showHelp() {
+                tg.showPopup({
+                    title: 'Help & Support',
+                    message: 'Need help? Contact our support team:\n\n📧 support@foodhub.com\n📞 1-800-FOODHUB\n💬 Live chat available 24/7',
                     buttons: [
                         { type: 'ok', text: 'OK' }
                     ]
@@ -1287,34 +1980,19 @@
             }
 
             shareApp() {
-                const shareText = '🎯 Discover amazing activities near you with Activity Explorer!\n\nJoin me and explore local experiences, share reviews, and find your next adventure!\n\nhttps://t.me/your_bot_username/activity_explorer';
+                const shareText = '🍔 Order delicious food with FoodHub!\n\nDiscover nearby restaurants, browse menus, and get food delivered right to your door. Join me and enjoy amazing meals!\n\nhttps://t.me/your_bot_username/foodhub';
                 
                 if (navigator.share) {
                     navigator.share({
-                        title: 'Activity Explorer',
+                        title: 'FoodHub - Order Food Nearby',
                         text: shareText,
-                        url: 'https://t.me/your_bot_username/activity_explorer'
+                        url: 'https://t.me/your_bot_username/foodhub'
                     });
                 } else {
                     navigator.clipboard?.writeText(shareText).then(() => {
                         this.showToast('Share link copied to clipboard!');
                     });
                 }
-            }
-
-            showAbout() {
-                tg.showPopup({
-                    title: 'About Activity Explorer',
-                    message: 'Version 1.0.0\n\nDiscover and share amazing activities in your area. Connect with fellow explorers and make every day an adventure!\n\nBuilt with ❤️ for Telegram',
-                    buttons: [
-                        { type: 'ok', text: 'OK' }
-                    ]
-                });
-            }
-
-            toggleNotifications() {
-                // Implementation for notification toggle
-                this.showToast('Notification settings updated');
             }
 
             navigateBack(state) {
@@ -1363,7 +2041,7 @@
         }
 
         // Initialize the app
-        const app = new AppState();
+        const app = new FoodHubApp();
 
         // Handle viewport changes
         function handleViewportChange() {
@@ -1373,19 +2051,6 @@
 
         window.addEventListener('resize', handleViewportChange);
         handleViewportChange();
-
-        // Service Worker Registration (for PWA features)
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then((registration) => {
-                        console.log('SW registered: ', registration);
-                    })
-                    .catch((registrationError) => {
-                        console.log('SW registration failed: ', registrationError);
-                    });
-            });
-        }
 
         // Handle online/offline status
         window.addEventListener('online', () => {
@@ -1400,11 +2065,6 @@
         document.addEventListener('gesturestart', (e) => {
             e.preventDefault();
         });
-
-        // Handle safe area insets
-        if (CSS.supports('padding-top: env(safe-area-inset-top)')) {
-            document.documentElement.classList.add('safe-area-supported');
-        }
     </script>
 </body>
 </html>
