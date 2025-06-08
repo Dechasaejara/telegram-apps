@@ -1,2440 +1,2330 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, user-scalable=no"
-    />
-    <title>NatureEats - Local Menu Ordering</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            colors: {
-              "tg-bg": "var(--tg-theme-bg-color, #ffffff)",
-              "tg-secondary-bg": "var(--tg-theme-secondary-bg-color, #f1f1f1)",
-              "tg-text": "var(--tg-theme-text-color, #000000)",
-              "tg-hint": "var(--tg-theme-hint-color, #999999)",
-              "tg-link": "var(--tg-theme-link-color, #2481cc)",
-              "tg-button": "var(--tg-theme-button-color, #2481cc)",
-              "tg-button-text": "var(--tg-theme-button-text-color, #ffffff)",
-              "nature-primary": "#22c55e",
-              "nature-secondary": "#16a34a",
-              "nature-accent": "#84cc16",
-              "nature-earth": "#a3a3a3",
-              "nature-water": "#06b6d4",
-              "nature-fire": "#f97316",
-            },
-            animation: {
-              "leaf-float": "leafFloat 3s ease-in-out infinite",
-              "pulse-gentle": "pulseGentle 2s ease-in-out infinite",
-              "slide-up": "slideUp 0.3s ease-out",
-              "fade-in": "fadeIn 0.3s ease-out",
-              "heart-beat": "heartBeat 0.5s ease-in-out",
-            },
-            keyframes: {
-              leafFloat: {
-                "0%, 100%": { transform: "translateY(0px) rotate(0deg)" },
-                "50%": { transform: "translateY(-10px) rotate(5deg)" },
-              },
-              pulseGentle: {
-                "0%, 100%": { transform: "scale(1)" },
-                "50%": { transform: "scale(1.05)" },
-              },
-              slideUp: {
-                "0%": { transform: "translateY(100%)", opacity: "0" },
-                "100%": { transform: "translateY(0)", opacity: "1" },
-              },
-              fadeIn: {
-                "0%": { opacity: "0" },
-                "100%": { opacity: "1" },
-              },
-              heartBeat: {
-                "0%": { transform: "scale(1)" },
-                "50%": { transform: "scale(1.2)" },
-                "100%": { transform: "scale(1)" },
-              },
-            },
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Connect & Grow</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: 'var(--tg-theme-button-color, #5D5CDE)',
+            'primary-text': 'var(--tg-theme-button-text-color, #ffffff)',
+            bg: 'var(--tg-theme-bg-color, #ffffff)',
+            text: 'var(--tg-theme-text-color, #222222)',
+            hint: 'var(--tg-theme-hint-color, #999999)',
+            link: 'var(--tg-theme-link-color, #2678b6)',
+            'section-bg': 'var(--tg-theme-secondary-bg-color, #f0f0f0)',
+            'section-header-bg': 'var(--tg-theme-header-bg-color, #ffffff)',
+            'section-header-text': 'var(--tg-theme-header-text-color, #222222)',
+          },
+          fontFamily: {
+            sans: ['system-ui', 'sans-serif'],
+          },
+          animation: {
+            'pulse-light': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'bounce-gentle': 'bounce 1s ease-in-out infinite',
           },
         },
-      };
-    </script>
-    <style>
-      /* Telegram CSS Variables Integration */
-      :root {
-        --tg-viewport-height: 100vh;
-        --tg-viewport-stable-height: 100vh;
-      }
+      },
+    };
+  </script>
+  <style>
+    :root {
+      --safe-area-inset-top: env(safe-area-inset-top, 0px);
+      --safe-area-inset-right: env(safe-area-inset-right, 0px);
+      --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-area-inset-left: env(safe-area-inset-left, 0px);
+    }
 
-      .tg-safe-area {
-        padding-top: env(safe-area-inset-top);
-        padding-bottom: env(safe-area-inset-bottom);
-      }
+    body {
+      padding-top: var(--safe-area-inset-top);
+      padding-right: var(--safe-area-inset-right);
+      padding-bottom: calc(var(--safe-area-inset-bottom) + 64px);
+      padding-left: var(--safe-area-inset-left);
+      background-color: var(--tg-theme-bg-color, #ffffff);
+      color: var(--tg-theme-text-color, #222222);
+      font-family: system-ui, sans-serif;
+      touch-action: manipulation;
+      overscroll-behavior: none;
+      -webkit-tap-highlight-color: transparent;
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
 
-      /* Custom scrollbar for webkit browsers */
-      .custom-scrollbar::-webkit-scrollbar {
-        width: 4px;
-      }
+    .hidden {
+      display: none !important;
+    }
 
-      .custom-scrollbar::-webkit-scrollbar-track {
-        background: transparent;
-      }
+    .page {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      transform: translateX(100%);
+      opacity: 0;
+      z-index: 10;
+      padding-top: calc(var(--safe-area-inset-top) + 56px);
+      padding-bottom: 64px;
+      overflow-y: auto;
+      background-color: var(--tg-theme-bg-color, #ffffff);
+    }
 
-      .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: var(--tg-theme-hint-color, #ccc);
-        border-radius: 2px;
-      }
+    .page.active {
+      transform: translateX(0);
+      opacity: 1;
+      z-index: 20;
+    }
 
-      /* Nature-inspired elements */
-      .leaf-pattern::before {
-        content: "🍃";
-        position: absolute;
-        top: -5px;
-        right: -5px;
-        font-size: 12px;
-        opacity: 0.7;
-      }
+    .page-content {
+      padding-bottom: 80px;
+    }
 
-      .gradient-nature {
-        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-      }
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 64px;
+      background-color: var(--tg-theme-bg-color, #ffffff);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+      z-index: 50;
+      padding-bottom: var(--safe-area-inset-bottom);
+    }
 
-      .glass-effect {
-        backdrop-filter: blur(10px);
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-      }
+    .skeleton {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      background-color: var(--tg-theme-hint-color, #999999);
+      opacity: 0.2;
+    }
 
-      .skeleton {
-        background: linear-gradient(
-          90deg,
-          #f0f0f0 25%,
-          #e0e0e0 50%,
-          #f0f0f0 75%
-        );
-        background-size: 200% 100%;
-        animation: loading 1.5s infinite;
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 0.2;
       }
+      50% {
+        opacity: 0.5;
+      }
+    }
 
-      @keyframes loading {
-        0% {
-          background-position: 200% 0;
-        }
-        100% {
-          background-position: -200% 0;
-        }
-      }
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
 
-      .dark .skeleton {
-        background: linear-gradient(
-          90deg,
-          #2a2a2a 25%,
-          #3a3a3a 50%,
-          #2a2a2a 75%
-        );
-        background-size: 200% 100%;
-      }
+    .modal.active {
+      opacity: 1;
+      visibility: visible;
+    }
 
-      .favorite-btn {
-        transition: all 0.3s ease;
-      }
+    .modal-content {
+      width: 90%;
+      max-width: 400px;
+      background-color: var(--tg-theme-bg-color, #ffffff);
+      border-radius: 12px;
+      padding: 20px;
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
 
-      .favorite-btn.active {
-        color: #f97316;
-        animation: heartBeat 0.5s ease-in-out;
-      }
+    .modal.active .modal-content {
+      transform: scale(1);
+    }
 
-      .error-state {
-        border: 1px solid #ef4444;
-        background: rgba(239, 68, 68, 0.1);
-      }
-    </style>
-  </head>
-  <body class="bg-tg-bg text-tg-text overflow-hidden">
-    <!-- App Container -->
-    <div id="app" class="h-screen flex flex-col tg-safe-area">
-      <!-- Header -->
-      <header
-        id="app-header"
-        class="bg-tg-secondary-bg border-b border-tg-hint/20 px-4 py-3 flex items-center justify-between shadow-sm"
-      >
-        <div class="flex items-center">
-          <button
-            id="back-btn"
-            class="hidden mr-3 p-1 rounded-full hover:bg-tg-hint/10 transition-colors"
-          >
-            <svg
-              class="w-6 h-6 text-tg-text"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 19l-7-7 7-7"
-              ></path>
-            </svg>
-          </button>
-          <div class="flex items-center">
-            <div class="relative">
-              <span class="text-2xl">🌿</span>
-              <div
-                class="absolute -top-1 -right-1 w-3 h-3 bg-nature-primary rounded-full animate-pulse-gentle"
-              ></div>
-            </div>
-            <h1
-              id="header-title"
-              class="ml-2 text-lg font-semibold text-tg-text"
-            >
-              NatureEats
-            </h1>
+    /* Chat bubbles */
+    .chat-bubble {
+      position: relative;
+      max-width: 80%;
+      padding: 10px 15px;
+      border-radius: 18px;
+      margin-bottom: 8px;
+    }
+
+    .chat-bubble.sent {
+      background-color: var(--tg-theme-button-color, #5D5CDE);
+      color: var(--tg-theme-button-text-color, #ffffff);
+      margin-left: auto;
+      border-bottom-right-radius: 4px;
+    }
+
+    .chat-bubble.received {
+      background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
+      color: var(--tg-theme-text-color, #222222);
+      margin-right: auto;
+      border-bottom-left-radius: 4px;
+    }
+
+    .chat-bubble .time {
+      font-size: 0.7rem;
+      opacity: 0.7;
+      position: absolute;
+      bottom: 5px;
+      right: 10px;
+    }
+
+    /* Badge styles */
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: 12px;
+      background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
+    }
+
+    .badge-primary {
+      background-color: var(--tg-theme-button-color, #5D5CDE);
+      color: var(--tg-theme-button-text-color, #ffffff);
+    }
+
+    /* Achievement badges */
+    .achievement-badge {
+      transition: transform 0.2s ease;
+    }
+
+    .achievement-badge:hover {
+      transform: scale(1.05);
+    }
+
+    .achievement-badge.unlocked {
+      background: linear-gradient(135deg, #FFD700, #FFA500);
+      color: #000;
+      border: 2px solid #FFD700;
+    }
+
+    .achievement-badge.locked {
+      background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
+      color: var(--tg-theme-hint-color, #999999);
+      border: 2px solid var(--tg-theme-hint-color, #999999);
+      opacity: 0.6;
+    }
+
+    /* Progress bars */
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--tg-theme-button-color, #5D5CDE), #7C4DFF);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    /* Activity cards */
+    .activity-card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .activity-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .activity-card.completed {
+      background: linear-gradient(135deg, #E8F5E8, #C8E6C9);
+      border: 2px solid #4CAF50;
+    }
+
+    .activity-card.in-progress {
+      background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
+      border: 2px solid #FF9800;
+    }
+
+    /* Score display */
+    .score-circle {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: conic-gradient(var(--tg-theme-button-color, #5D5CDE) var(--progress, 0deg), var(--tg-theme-secondary-bg-color, #f0f0f0) 0deg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .score-circle::before {
+      content: '';
+      position: absolute;
+      inset: 8px;
+      border-radius: 50%;
+      background-color: var(--tg-theme-bg-color, #ffffff);
+    }
+
+    .score-text {
+      position: relative;
+      z-index: 1;
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+
+    /* Random match animation */
+    .match-spinner {
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: conic-gradient(from 0deg, #FF6B6B, #4ECDC4, #45B7D1, #96CEB4, #FFEAA7, #DDA0DD, #FF6B6B);
+      animation: spin 2s linear infinite;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .match-spinner::before {
+      content: '';
+      position: absolute;
+      inset: 10px;
+      border-radius: 50%;
+      background-color: var(--tg-theme-bg-color, #ffffff);
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* Toggle switch */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--tg-theme-hint-color, #999999);
+      transition: .3s;
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: var(--tg-theme-bg-color, #ffffff);
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--tg-theme-button-color, #5D5CDE);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div id="loading-screen" class="fixed inset-0 flex items-center justify-center bg-bg z-50">
+    <div class="flex flex-col items-center">
+      <div class="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <p class="mt-4 text-text">Loading Connect & Grow...</p>
+    </div>
+  </div>
+
+  <!-- Header Component -->
+  <header class="fixed top-0 left-0 w-full bg-section-header-bg text-section-header-text z-40 border-b border-section-bg" style="padding-top: var(--safe-area-inset-top);">
+    <div class="px-4 py-3 flex items-center justify-between">
+      <div class="text-lg font-semibold" id="header-title">Connect & Grow</div>
+      <div class="flex items-center">
+        <div id="user-score-header" class="hidden bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium mr-2">
+          <i class="fas fa-star mr-1"></i>
+          <span id="header-score">0</span>
+        </div>
+        <button id="header-action" class="hidden p-2 rounded-full hover:bg-section-bg transition-colors">
+          <i class="fas fa-sliders-h"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Home Page -->
+  <div id="home-page" class="page active">
+    <div class="page-content px-4">
+      <!-- Welcome Section -->
+      <div id="user-greeting" class="flex items-center my-4">
+        <div id="user-avatar" class="w-12 h-12 rounded-full bg-section-bg overflow-hidden flex-shrink-0 skeleton"></div>
+        <div class="ml-3 flex-1">
+          <div id="user-name" class="font-medium text-lg skeleton h-6 w-32 rounded"></div>
+          <div id="user-status" class="text-hint text-sm skeleton h-4 w-48 mt-1 rounded"></div>
+        </div>
+      </div>
+
+      <!-- Social Score Overview -->
+      <div class="bg-section-bg rounded-xl p-4 mb-6">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-semibold text-lg">Your Social Score</h2>
+          <button id="view-achievements" class="text-primary text-sm">View Badges</button>
+        </div>
+        <div class="flex items-center justify-between">
+          <div class="score-circle" style="--progress: 0deg;">
+            <div class="score-text" id="current-score">0</div>
           </div>
+          <div class="flex-1 ml-4">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-sm">Progress to next level</span>
+              <span class="text-sm font-medium" id="next-level">Level 2</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="score-progress" style="width: 0%"></div>
+            </div>
+            <p class="text-hint text-xs mt-2" id="score-description">Complete activities to earn points and unlock badges!</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Match Section -->
+      <div class="bg-section-bg rounded-xl p-4 mb-6">
+        <h2 class="font-semibold text-lg mb-3">Find Your Connection</h2>
+        <p class="text-hint text-sm mb-4">Get matched with someone new and start a meaningful journey together through shared activities.</p>
+        <button id="find-random-match" class="w-full bg-primary text-primary-text py-3 rounded-lg font-medium flex items-center justify-center">
+          <i class="fas fa-dice mr-2"></i>
+          Find Random Match
+        </button>
+      </div>
+
+      <!-- Active Connections -->
+      <div class="mb-6">
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="font-semibold text-lg">Active Connections</h2>
+          <button id="view-all-connections" class="text-primary text-sm">See All</button>
+        </div>
+        <div id="active-connections" class="space-y-2">
+          <div class="skeleton h-16 rounded-lg"></div>
+          <div class="skeleton h-16 rounded-lg"></div>
+        </div>
+        <div id="no-connections" class="hidden py-6 text-center text-hint">
+          <i class="fas fa-user-friends text-3xl mb-2"></i>
+          <p>No active connections yet</p>
+          <p class="text-sm mt-1">Find a match to start growing together</p>
+        </div>
+      </div>
+
+      <!-- Recent Achievements -->
+      <div class="mb-6">
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="font-semibold text-lg">Recent Achievements</h2>
+          <button id="view-all-achievements" class="text-primary text-sm">See All</button>
+        </div>
+        <div id="recent-achievements" class="flex space-x-3 overflow-x-auto pb-2">
+          <div class="skeleton w-20 h-20 rounded-xl flex-shrink-0"></div>
+          <div class="skeleton w-20 h-20 rounded-xl flex-shrink-0"></div>
+          <div class="skeleton w-20 h-20 rounded-xl flex-shrink-0"></div>
+        </div>
+        <div id="no-achievements" class="hidden py-4 text-center text-hint">
+          <i class="fas fa-trophy text-2xl mb-1"></i>
+          <p class="text-sm">Complete activities to earn your first badge!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Discover Page -->
+  <div id="discover-page" class="page">
+    <div class="page-content px-4">
+      <!-- Random Match Interface -->
+      <div class="text-center mb-6">
+        <h2 class="font-semibold text-xl mb-2">Random Matching</h2>
+        <p class="text-hint text-sm mb-6">Connect with someone new and grow together through shared experiences</p>
+        
+        <div id="match-interface" class="flex flex-col items-center">
+          <div id="match-spinner-container" class="hidden mb-6">
+            <div class="match-spinner">
+              <div class="relative z-10 text-center">
+                <i class="fas fa-heart text-2xl text-primary"></i>
+              </div>
+            </div>
+            <p class="text-center mt-4 text-hint">Finding your perfect match...</p>
+          </div>
+          
+          <div id="match-button-container" class="w-full max-w-xs">
+            <button id="start-random-match" class="w-full bg-primary text-primary-text py-4 rounded-xl font-medium text-lg flex items-center justify-center mb-3">
+              <i class="fas fa-dice mr-2"></i>
+              Find Random Match
+            </button>
+            <p class="text-hint text-xs text-center">Matches are based on mutual interests and goals</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Matching Preferences -->
+      <div class="bg-section-bg rounded-xl p-4 mb-6">
+        <h3 class="font-medium mb-3">Matching Preferences</h3>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-medium text-sm">Looking for</div>
+              <div class="text-hint text-xs">What type of connection do you want?</div>
+            </div>
+            <select id="connection-type" class="bg-bg border border-hint text-text rounded px-2 py-1 text-sm">
+              <option value="all">All Types</option>
+              <option value="friendship">Friendship</option>
+              <option value="dating">Dating</option>
+              <option value="networking">Networking</option>
+            </select>
+          </div>
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-medium text-sm">Age Range</div>
+              <div class="text-hint text-xs">Preferred age range for matches</div>
+            </div>
+            <div class="text-sm" id="age-range-display">18-35</div>
+          </div>
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-medium text-sm">Activity Level</div>
+              <div class="text-hint text-xs">How active do you want to be?</div>
+            </div>
+            <select id="activity-level" class="bg-bg border border-hint text-text rounded px-2 py-1 text-sm">
+              <option value="casual">Casual</option>
+              <option value="regular">Regular</option>
+              <option value="intensive">Very Active</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Match History -->
+      <div class="mb-6">
+        <h3 class="font-medium mb-3">Recent Matches</h3>
+        <div id="match-history" class="space-y-2">
+          <div class="skeleton h-16 rounded-lg"></div>
+          <div class="skeleton h-16 rounded-lg"></div>
+        </div>
+        <div id="no-match-history" class="hidden py-4 text-center text-hint">
+          <i class="fas fa-history text-2xl mb-1"></i>
+          <p class="text-sm">No matches yet. Start discovering!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Activities Page -->
+  <div id="activities-page" class="page">
+    <div class="page-content px-4">
+      <!-- Activity Categories -->
+      <div class="mb-6">
+        <h2 class="font-semibold text-lg mb-3">Activity Categories</h2>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="activity-category bg-section-bg p-4 rounded-xl text-center" data-category="communication">
+            <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-2">
+              <i class="fas fa-comments"></i>
+            </div>
+            <div class="font-medium text-sm">Communication</div>
+            <div class="text-hint text-xs">Build deeper conversations</div>
+          </div>
+          <div class="activity-category bg-section-bg p-4 rounded-xl text-center" data-category="creativity">
+            <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mx-auto mb-2">
+              <i class="fas fa-palette"></i>
+            </div>
+            <div class="font-medium text-sm">Creativity</div>
+            <div class="text-hint text-xs">Explore artistic sides</div>
+          </div>
+          <div class="activity-category bg-section-bg p-4 rounded-xl text-center" data-category="adventure">
+            <div class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-2">
+              <i class="fas fa-mountain"></i>
+            </div>
+            <div class="font-medium text-sm">Adventure</div>
+            <div class="text-hint text-xs">Try new experiences</div>
+          </div>
+          <div class="activity-category bg-section-bg p-4 rounded-xl text-center" data-category="learning">
+            <div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-2">
+              <i class="fas fa-graduation-cap"></i>
+            </div>
+            <div class="font-medium text-sm">Learning</div>
+            <div class="text-hint text-xs">Grow together</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Activities -->
+      <div class="mb-6">
+        <h3 class="font-medium mb-3">Active Activities</h3>
+        <div id="active-activities" class="space-y-3">
+          <div class="skeleton h-24 rounded-lg"></div>
+          <div class="skeleton h-24 rounded-lg"></div>
+        </div>
+        <div id="no-active-activities" class="hidden py-6 text-center text-hint">
+          <i class="fas fa-clipboard-list text-3xl mb-2"></i>
+          <p>No active activities</p>
+          <p class="text-sm mt-1">Get matched to start activities together</p>
+        </div>
+      </div>
+
+      <!-- Completed Activities -->
+      <div class="mb-6">
+        <h3 class="font-medium mb-3">Completed Activities</h3>
+        <div id="completed-activities" class="space-y-3">
+          <div class="skeleton h-20 rounded-lg"></div>
+          <div class="skeleton h-20 rounded-lg"></div>
+        </div>
+        <div id="no-completed-activities" class="hidden py-4 text-center text-hint">
+          <i class="fas fa-check-circle text-2xl mb-1"></i>
+          <p class="text-sm">Complete your first activity to see it here!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Matches Page -->
+  <div id="matches-page" class="page">
+    <div class="page-content px-4">
+      <!-- Search Bar -->
+      <div class="relative mb-4">
+        <input type="text" id="search-connections" placeholder="Search connections..." class="w-full bg-section-bg text-text rounded-lg py-2 pl-10 pr-4 text-base">
+        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-hint"></i>
+      </div>
+
+      <!-- Connection Stats -->
+      <div class="grid grid-cols-3 gap-3 mb-6">
+        <div class="bg-section-bg rounded-lg p-3 text-center">
+          <div class="font-semibold text-lg" id="total-connections">0</div>
+          <div class="text-hint text-xs">Connections</div>
+        </div>
+        <div class="bg-section-bg rounded-lg p-3 text-center">
+          <div class="font-semibold text-lg" id="completed-activities-count">0</div>
+          <div class="text-hint text-xs">Activities Done</div>
+        </div>
+        <div class="bg-section-bg rounded-lg p-3 text-center">
+          <div class="font-semibold text-lg" id="avg-compatibility">0%</div>
+          <div class="text-hint text-xs">Avg Compatibility</div>
+        </div>
+      </div>
+
+      <!-- Connections List -->
+      <div class="mb-4">
+        <h3 class="font-medium mb-3">Your Connections</h3>
+        <div id="connections-list" class="space-y-3">
+          <div class="skeleton h-20 rounded-lg"></div>
+          <div class="skeleton h-20 rounded-lg"></div>
+          <div class="skeleton h-20 rounded-lg"></div>
+        </div>
+        <div id="no-connections-matches" class="hidden py-8 text-center text-hint">
+          <i class="fas fa-user-friends text-4xl mb-3"></i>
+          <p class="font-medium mb-1">No connections yet</p>
+          <p class="text-sm mb-4">Start discovering people to connect</p>
+          <button id="start-discovering-btn" class="bg-primary text-primary-text py-2 px-6 rounded-lg">Start Discovering</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Page -->
+  <div id="profile-page" class="page">
+    <div class="page-content">
+      <!-- Profile Header -->
+      <div class="flex flex-col items-center pt-4 pb-6 px-4 border-b border-section-bg">
+        <div id="profile-avatar" class="w-24 h-24 rounded-full bg-section-bg overflow-hidden mb-3 skeleton"></div>
+        <h2 id="profile-name" class="text-xl font-semibold skeleton h-7 w-40 rounded mb-1"></h2>
+        <p id="profile-username" class="text-hint skeleton h-5 w-32 rounded mb-3"></p>
+        <div class="flex items-center space-x-4 mb-3">
+          <div class="text-center">
+            <div class="text-lg font-semibold" id="profile-score">0</div>
+            <div class="text-hint text-xs">Social Score</div>
+          </div>
+          <div class="text-center">
+            <div class="text-lg font-semibold" id="profile-level">1</div>
+            <div class="text-hint text-xs">Level</div>
+          </div>
+          <div class="text-center">
+            <div class="text-lg font-semibold" id="profile-badges">0</div>
+            <div class="text-hint text-xs">Badges</div>
+          </div>
+        </div>
+        <button id="edit-profile-btn" class="bg-primary text-primary-text py-2 px-6 rounded-lg text-sm hidden">
+          Edit Profile
+        </button>
+      </div>
+
+      <!-- Achievements Section -->
+      <div class="px-4 py-4 border-b border-section-bg">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="font-medium">Achievement Badges</h3>
+          <span class="text-hint text-sm" id="badges-count">0/12 unlocked</span>
+        </div>
+        <div id="achievement-badges" class="grid grid-cols-4 gap-3">
+          <!-- Achievement badges will be populated here -->
+        </div>
+      </div>
+
+      <!-- Profile Info -->
+      <div class="px-4 py-4 border-b border-section-bg">
+        <h3 class="font-medium mb-3">About Me</h3>
+        <p id="profile-bio" class="text-sm text-hint mb-4 skeleton h-16 rounded"></p>
+        
+        <div class="grid grid-cols-2 gap-4 mb-2">
+          <div class="flex items-center">
+            <i class="fas fa-map-marker-alt text-primary mr-2"></i>
+            <span id="profile-location" class="text-sm skeleton h-4 w-20 rounded"></span>
+          </div>
+          <div class="flex items-center">
+            <i class="fas fa-calendar-alt text-primary mr-2"></i>
+            <span id="profile-age" class="text-sm skeleton h-4 w-16 rounded"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interests -->
+      <div class="px-4 py-4 border-b border-section-bg">
+        <h3 class="font-medium mb-3">Interests</h3>
+        <div id="profile-interests" class="flex flex-wrap gap-2">
+          <div class="skeleton h-8 w-16 rounded-full"></div>
+          <div class="skeleton h-8 w-20 rounded-full"></div>
+          <div class="skeleton h-8 w-16 rounded-full"></div>
+          <div class="skeleton h-8 w-24 rounded-full"></div>
+        </div>
+      </div>
+
+      <!-- Settings -->
+      <div class="px-4 py-4">
+        <h3 class="font-medium mb-3">Settings</h3>
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-medium">Activity Notifications</div>
+              <div class="text-hint text-sm">Get notified about new activities</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="activity-notifications-toggle" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-medium">Match Notifications</div>
+              <div class="text-hint text-sm">Get notified about new matches</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="match-notifications-toggle" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-medium">Profile Visibility</div>
+              <div class="text-hint text-sm">Show your profile in discovery</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="profile-visibility-toggle" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat Page -->
+  <div id="chat-page" class="page">
+    <div class="flex flex-col h-full">
+      <!-- Chat Header -->
+      <div class="flex items-center px-4 py-3 border-b border-section-bg">
+        <button id="back-to-matches" class="p-2 -ml-2">
+          <i class="fas fa-arrow-left"></i>
+        </button>
+        <div id="chat-avatar" class="w-10 h-10 rounded-full bg-section-bg overflow-hidden mx-2"></div>
+        <div class="flex-1">
+          <div id="chat-name" class="font-medium"></div>
+          <div id="chat-status" class="text-hint text-sm"></div>
         </div>
         <div class="flex items-center space-x-2">
-          <button
-            id="search-btn"
-            class="p-2 rounded-full hover:bg-tg-hint/10 transition-colors"
-          >
-            <svg
-              class="w-5 h-5 text-tg-text"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              ></path>
-            </svg>
-          </button>
-          <button
-            id="profile-btn"
-            class="w-8 h-8 rounded-full bg-nature-primary text-white flex items-center justify-center text-sm font-medium"
-          >
-            <span id="user-avatar">🌱</span>
-          </button>
-        </div>
-      </header>
-
-      <!-- Error Banner -->
-      <div
-        id="error-banner"
-        class="hidden bg-red-500 text-white px-4 py-2 text-sm"
-      >
-        <div class="flex items-center justify-between">
-          <span id="error-message">An error occurred</span>
-          <button
-            id="dismiss-error"
-            class="ml-2 text-white/80 hover:text-white"
-          >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              ></path>
-            </svg>
+          <div class="text-center">
+            <div class="text-xs font-medium" id="chat-compatibility">--</div>
+            <div class="text-hint text-xs">Compatibility</div>
+          </div>
+          <button id="chat-info-btn" class="p-2">
+            <i class="fas fa-info-circle"></i>
           </button>
         </div>
       </div>
 
-      <!-- Main Content -->
-      <main id="main-content" class="flex-1 overflow-hidden relative">
-        <!-- Home Screen -->
-        <div id="home-screen" class="screen active h-full flex flex-col">
-          <!-- Location Banner -->
-          <div
-            id="location-banner"
-            class="bg-gradient-to-r from-nature-primary to-nature-secondary text-white p-4"
-          >
-            <div class="flex items-center justify-between">
-              <div class="flex items-center">
-                <svg
-                  class="w-5 h-5 mr-2"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                    clip-rule="evenodd"
-                  ></path>
-                </svg>
-                <div>
-                  <p class="text-sm opacity-90">Current Location</p>
-                  <p id="current-location" class="font-medium">
-                    Getting location...
-                  </p>
-                </div>
-              </div>
-              <button
-                id="refresh-location"
-                class="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
-              >
-                <svg
-                  class="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  ></path>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <!-- Quick Filters -->
-          <div class="px-4 py-3 border-b border-tg-hint/10">
-            <div class="flex space-x-2 overflow-x-auto pb-1 custom-scrollbar">
-              <button
-                class="filter-btn active flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium bg-nature-primary text-white"
-                data-filter="all"
-              >
-                🌿 All
-              </button>
-              <button
-                class="filter-btn flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium bg-tg-secondary-bg text-tg-text border border-tg-hint/20"
-                data-filter="favorites"
-              >
-                ❤️ Favorites
-              </button>
-              <button
-                class="filter-btn flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium bg-tg-secondary-bg text-tg-text border border-tg-hint/20"
-                data-filter="organic"
-              >
-                🌱 Organic
-              </button>
-              <button
-                class="filter-btn flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium bg-tg-secondary-bg text-tg-text border border-tg-hint/20"
-                data-filter="vegan"
-              >
-                🥬 Vegan
-              </button>
-              <button
-                class="filter-btn flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium bg-tg-secondary-bg text-tg-text border border-tg-hint/20"
-                data-filter="fast"
-              >
-                ⚡ Fast
-              </button>
-              <button
-                class="filter-btn flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium bg-tg-secondary-bg text-tg-text border border-tg-hint/20"
-                data-filter="popular"
-              >
-                ⭐ Popular
-              </button>
-            </div>
-          </div>
-
-          <!-- Restaurant List -->
-          <div class="flex-1 overflow-y-auto custom-scrollbar">
-            <div id="restaurants-container" class="p-4 space-y-4">
-              <!-- Restaurant cards will be injected here -->
-            </div>
-          </div>
+      <!-- Chat Messages -->
+      <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-2">
+        <div class="text-center text-hint text-sm py-2">
+          <span id="chat-start-date">Today</span>
         </div>
+        <!-- Messages will be inserted here -->
+      </div>
 
-        <!-- Restaurant Detail Screen -->
-        <div
-          id="restaurant-screen"
-          class="screen h-full overflow-y-auto custom-scrollbar hidden"
-        >
-          <div id="restaurant-detail-content">
-            <!-- Restaurant detail content will be injected here -->
+      <!-- Activity Suggestions -->
+      <div id="activity-suggestions" class="hidden p-3 border-t border-section-bg bg-section-bg">
+        <div class="flex items-center justify-between mb-2">
+          <div class="font-medium text-sm">Suggested Activity</div>
+          <button id="dismiss-suggestion" class="text-hint text-xs">Dismiss</button>
+        </div>
+        <div id="suggested-activity" class="bg-bg rounded-lg p-3">
+          <div class="font-medium text-sm mb-1" id="suggestion-title">Activity Title</div>
+          <div class="text-hint text-xs mb-2" id="suggestion-description">Activity description</div>
+          <div class="flex space-x-2">
+            <button id="accept-activity" class="flex-1 bg-primary text-primary-text py-2 rounded text-sm">Accept</button>
+            <button id="decline-activity" class="flex-1 bg-section-bg text-text py-2 rounded text-sm">Maybe Later</button>
           </div>
-        </div>
-
-        <!-- Orders Screen -->
-        <div
-          id="orders-screen"
-          class="screen h-full overflow-y-auto custom-scrollbar hidden"
-        >
-          <div class="p-4">
-            <div class="flex items-center justify-between mb-6">
-              <h2 class="text-xl font-bold text-tg-text">Your Orders</h2>
-              <span
-                id="order-count"
-                class="bg-nature-primary text-white px-3 py-1 rounded-full text-sm"
-                >0</span
-              >
-            </div>
-
-            <!-- Current Orders -->
-            <div id="current-orders" class="mb-6">
-              <h3
-                class="text-lg font-semibold text-tg-text mb-3 flex items-center"
-              >
-                <span class="mr-2">🔥</span>Active Orders
-              </h3>
-              <div id="current-orders-list" class="space-y-3">
-                <!-- Current orders will be injected here -->
-              </div>
-            </div>
-
-            <!-- Order History -->
-            <div id="order-history">
-              <h3
-                class="text-lg font-semibold text-tg-text mb-3 flex items-center"
-              >
-                <span class="mr-2">📜</span>Order History
-              </h3>
-              <div id="order-history-list" class="space-y-3">
-                <!-- Order history will be injected here -->
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Profile Screen -->
-        <div
-          id="profile-screen"
-          class="screen h-full overflow-y-auto custom-scrollbar hidden"
-        >
-          <div class="p-4">
-            <!-- User Info -->
-            <div class="bg-tg-secondary-bg rounded-2xl p-6 mb-6 text-center">
-              <div
-                class="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-nature flex items-center justify-center text-2xl text-white"
-              >
-                <span id="profile-avatar">🌱</span>
-              </div>
-              <h2 id="user-name" class="text-xl font-bold text-tg-text mb-1">
-                Loading...
-              </h2>
-              <p id="user-username" class="text-tg-hint text-sm mb-4">
-                @username
-              </p>
-              <button
-                id="edit-profile-btn"
-                class="bg-nature-primary text-white px-6 py-2 rounded-full text-sm font-medium hover:bg-nature-secondary transition-colors"
-              >
-                Edit Profile
-              </button>
-            </div>
-
-            <!-- Stats -->
-            <div class="grid grid-cols-3 gap-4 mb-6">
-              <div class="bg-tg-secondary-bg rounded-xl p-4 text-center">
-                <div class="text-2xl mb-1">🌿</div>
-                <div id="total-orders" class="text-lg font-bold text-tg-text">
-                  0
-                </div>
-                <div class="text-xs text-tg-hint">Orders</div>
-              </div>
-              <div class="bg-tg-secondary-bg rounded-xl p-4 text-center">
-                <div class="text-2xl mb-1">⭐</div>
-                <div
-                  id="eco-score"
-                  class="text-lg font-bold text-nature-primary"
-                >
-                  0
-                </div>
-                <div class="text-xs text-tg-hint">Eco Score</div>
-              </div>
-              <div class="bg-tg-secondary-bg rounded-xl p-4 text-center">
-                <div class="text-2xl mb-1">💚</div>
-                <div
-                  id="saved-co2"
-                  class="text-lg font-bold text-nature-accent"
-                >
-                  0kg
-                </div>
-                <div class="text-xs text-tg-hint">CO₂ Saved</div>
-              </div>
-            </div>
-
-            <!-- Favorites Section -->
-            <div class="bg-tg-secondary-bg rounded-xl p-4 mb-6">
-              <div class="flex items-center justify-between mb-3">
-                <h3
-                  class="text-lg font-semibold text-tg-text flex items-center"
-                >
-                  <span class="mr-2">❤️</span>Favorite Restaurants
-                </h3>
-                <span
-                  id="favorites-count"
-                  class="bg-nature-primary text-white px-2 py-1 rounded-full text-xs"
-                  >0</span
-                >
-              </div>
-              <div id="favorites-list" class="space-y-2">
-                <!-- Favorites will be populated here -->
-              </div>
-            </div>
-
-            <!-- Settings -->
-            <div class="space-y-4">
-              <div class="bg-tg-secondary-bg rounded-xl overflow-hidden">
-                <button
-                  class="settings-item w-full p-4 flex items-center justify-between hover:bg-tg-hint/5 transition-colors"
-                  data-action="notifications"
-                >
-                  <div class="flex items-center">
-                    <span class="mr-3 text-xl">🔔</span>
-                    <span class="text-tg-text font-medium">Notifications</span>
-                  </div>
-                  <svg
-                    class="w-5 h-5 text-tg-hint"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 5l7 7-7 7"
-                    ></path>
-                  </svg>
-                </button>
-                <div class="border-t border-tg-hint/10"></div>
-                <button
-                  class="settings-item w-full p-4 flex items-center justify-between hover:bg-tg-hint/5 transition-colors"
-                  data-action="location"
-                >
-                  <div class="flex items-center">
-                    <span class="mr-3 text-xl">📍</span>
-                    <span class="text-tg-text font-medium"
-                      >Location Settings</span
-                    >
-                  </div>
-                  <svg
-                    class="w-5 h-5 text-tg-hint"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 5l7 7-7 7"
-                    ></path>
-                  </svg>
-                </button>
-                <div class="border-t border-tg-hint/10"></div>
-                <button
-                  class="settings-item w-full p-4 flex items-center justify-between hover:bg-tg-hint/5 transition-colors"
-                  data-action="preferences"
-                >
-                  <div class="flex items-center">
-                    <span class="mr-3 text-xl">🌱</span>
-                    <span class="text-tg-text font-medium"
-                      >Dietary Preferences</span
-                    >
-                  </div>
-                  <svg
-                    class="w-5 h-5 text-tg-hint"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 5l7 7-7 7"
-                    ></path>
-                  </svg>
-                </button>
-              </div>
-
-              <div class="bg-tg-secondary-bg rounded-xl overflow-hidden">
-                <button
-                  class="settings-item w-full p-4 flex items-center justify-between hover:bg-tg-hint/5 transition-colors"
-                  data-action="help"
-                >
-                  <div class="flex items-center">
-                    <span class="mr-3 text-xl">❓</span>
-                    <span class="text-tg-text font-medium">Help & Support</span>
-                  </div>
-                  <svg
-                    class="w-5 h-5 text-tg-hint"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 5l7 7-7 7"
-                    ></path>
-                  </svg>
-                </button>
-                <div class="border-t border-tg-hint/10"></div>
-                <button
-                  class="settings-item w-full p-4 flex items-center justify-between hover:bg-tg-hint/5 transition-colors"
-                  data-action="about"
-                >
-                  <div class="flex items-center">
-                    <span class="mr-3 text-xl">ℹ️</span>
-                    <span class="text-tg-text font-medium"
-                      >About NatureEats</span
-                    >
-                  </div>
-                  <svg
-                    class="w-5 h-5 text-tg-hint"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 5l7 7-7 7"
-                    ></path>
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
-
-      <!-- Bottom Navigation -->
-      <nav
-        class="bg-tg-secondary-bg border-t border-tg-hint/20 px-4 py-2 safe-area-bottom"
-      >
-        <div class="flex justify-around">
-          <button
-            class="nav-btn active flex flex-col items-center py-2 px-3 rounded-lg transition-colors"
-            data-screen="home"
-          >
-            <svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"
-              ></path>
-            </svg>
-            <span class="text-xs font-medium">Home</span>
-          </button>
-          <button
-            class="nav-btn flex flex-col items-center py-2 px-3 rounded-lg transition-colors"
-            data-screen="orders"
-          >
-            <svg
-              class="w-6 h-6 mb-1"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-              ></path>
-            </svg>
-            <span class="text-xs font-medium">Orders</span>
-            <div
-              id="orders-badge"
-              class="hidden absolute -top-1 -right-1 bg-nature-primary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
-            >
-              0
-            </div>
-          </button>
-          <button
-            class="nav-btn flex flex-col items-center py-2 px-3 rounded-lg transition-colors"
-            data-screen="profile"
-          >
-            <svg
-              class="w-6 h-6 mb-1"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-              ></path>
-            </svg>
-            <span class="text-xs font-medium">Profile</span>
-          </button>
-        </div>
-      </nav>
-    </div>
-
-    <!-- Modals and Overlays -->
-    <!-- Search Modal -->
-    <div
-      id="search-modal"
-      class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden"
-    >
-      <div class="bg-tg-bg rounded-t-2xl mt-12 h-full overflow-hidden">
-        <div class="p-4 border-b border-tg-hint/20">
-          <div class="flex items-center">
-            <button id="close-search" class="mr-3 p-1">
-              <svg
-                class="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
-                ></path>
-              </svg>
-            </button>
-            <input
-              id="search-input"
-              type="text"
-              placeholder="Search restaurants, dishes..."
-              class="flex-1 text-base bg-tg-secondary-bg text-tg-text border border-tg-hint/20 rounded-lg px-4 py-2"
-            />
-          </div>
-        </div>
-        <div
-          id="search-results"
-          class="p-4 overflow-y-auto custom-scrollbar h-full"
-        >
-          <!-- Search results will be populated here -->
         </div>
       </div>
-    </div>
 
-    <!-- Cart Modal -->
-    <div
-      id="cart-modal"
-      class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden"
-    >
-      <div
-        class="bg-tg-bg rounded-t-2xl mt-20 h-full overflow-hidden flex flex-col"
-      >
-        <div class="p-4 border-b border-tg-hint/20">
-          <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold">Your Order</h3>
-            <button
-              id="close-cart"
-              class="p-2 rounded-full hover:bg-tg-hint/10"
-            >
-              <svg
-                class="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
-                ></path>
-              </svg>
-            </button>
-          </div>
-        </div>
-        <div class="flex-1 overflow-y-auto custom-scrollbar">
-          <div id="cart-items" class="p-4">
-            <!-- Cart items will be populated here -->
-          </div>
-        </div>
-        <div class="p-4 border-t border-tg-hint/20 bg-tg-secondary-bg">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-lg font-semibold">Total</span>
-            <span id="cart-total" class="text-lg font-bold text-nature-primary"
-              >$0.00</span
-            >
-          </div>
-          <button
-            id="checkout-btn"
-            class="w-full bg-nature-primary text-white py-3 rounded-xl font-medium hover:bg-nature-secondary transition-colors"
-          >
-            Place Order 🌿
+      <!-- Chat Input -->
+      <div class="p-3 border-t border-section-bg">
+        <div class="flex items-center">
+          <button id="chat-activity-btn" class="p-2 text-hint">
+            <i class="fas fa-tasks"></i>
+          </button>
+          <input type="text" id="chat-input" placeholder="Type a message..." class="flex-1 bg-section-bg text-text rounded-lg py-2 px-4 mx-2 text-base">
+          <button id="chat-send-btn" class="p-2 text-primary">
+            <i class="fas fa-paper-plane"></i>
           </button>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- Loading Overlay -->
-    <div
-      id="loading-overlay"
-      class="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center hidden"
-    >
-      <div class="bg-tg-bg rounded-2xl p-6 flex flex-col items-center">
-        <div
-          class="w-12 h-12 border-4 border-nature-primary border-t-transparent rounded-full animate-spin mb-4"
-        ></div>
-        <p class="text-tg-text font-medium">Loading...</p>
+  <!-- Random Match Modal -->
+  <div id="random-match-modal" class="modal">
+    <div class="modal-content text-center">
+      <div class="mb-4">
+        <i class="fas fa-heart text-primary text-4xl mb-2"></i>
+        <h3 class="font-semibold text-lg">New Match Found!</h3>
+      </div>
+      
+      <div class="flex items-center justify-center space-x-4 mb-4">
+        <div class="text-center">
+          <div id="match-user-avatar" class="w-16 h-16 rounded-full overflow-hidden mx-auto mb-2"></div>
+          <p class="text-sm">You</p>
+        </div>
+        <div class="text-primary text-2xl">
+          <i class="fas fa-heart"></i>
+        </div>
+        <div class="text-center">
+          <div id="match-other-avatar" class="w-16 h-16 rounded-full overflow-hidden mx-auto mb-2"></div>
+          <p id="match-other-name" class="text-sm"></p>
+        </div>
+      </div>
+      
+      <div class="bg-section-bg rounded-lg p-3 mb-4">
+        <div class="text-sm font-medium mb-1">Compatibility Score</div>
+        <div class="text-2xl font-bold text-primary" id="match-compatibility">85%</div>
+      </div>
+      
+      <div class="flex space-x-3">
+        <button id="match-decline" class="flex-1 bg-section-bg text-text py-3 rounded-lg font-medium">Pass</button>
+        <button id="match-accept" class="flex-1 bg-primary text-primary-text py-3 rounded-lg font-medium">Connect</button>
       </div>
     </div>
+  </div>
 
-    <script>
-      // Telegram Web App initialization with error handling
-      let tg;
-      try {
-        tg = window.Telegram?.WebApp;
-        if (tg) {
-          tg.ready();
-          tg.expand();
-        } else {
-          console.warn("Telegram WebApp not available");
-          // Fallback for development or non-Telegram environments
-          tg = {
-            initDataUnsafe: { user: null },
-            colorScheme: "light",
-            BackButton: { show: () => {}, hide: () => {}, onClick: () => {} },
-            HapticFeedback: {
-              impactOccurred: () => {},
-              selectionChanged: () => {},
-              notificationOccurred: () => {},
-            },
-            showPopup: (params) => {
-              alert(params.message);
-            },
-            showAlert: (message) => {
-              alert(message);
-            },
-            openLink: (url) => {
-              window.open(url, "_blank");
-            },
-            enableClosingConfirmation: () => {},
-            onEvent: () => {},
-          };
-        }
-      } catch (error) {
-        console.error("Failed to initialize Telegram WebApp:", error);
-        // Provide minimal fallback
-        tg = {
-          initDataUnsafe: { user: null },
-          colorScheme: "light",
-          BackButton: { show: () => {}, hide: () => {}, onClick: () => {} },
-          HapticFeedback: {
-            impactOccurred: () => {},
-            selectionChanged: () => {},
-            notificationOccurred: () => {},
-          },
-          showPopup: (params) => {
-            alert(params.message);
-          },
-          showAlert: (message) => {
-            alert(message);
-          },
-          openLink: (url) => {
-            window.open(url, "_blank");
-          },
-          enableClosingConfirmation: () => {},
-          onEvent: () => {},
-        };
-      }
+  <!-- Activity Detail Modal -->
+  <div id="activity-detail-modal" class="modal">
+    <div class="modal-content">
+      <div class="flex justify-between items-start mb-4">
+        <h3 class="font-semibold text-lg" id="activity-modal-title">Activity Title</h3>
+        <button id="close-activity-modal" class="p-1">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="mb-4">
+        <div class="bg-section-bg rounded-lg p-3 mb-3">
+          <div class="text-sm font-medium mb-1">Category</div>
+          <div class="text-sm" id="activity-modal-category">Communication</div>
+        </div>
+        
+        <div class="mb-3">
+          <div class="text-sm font-medium mb-2">Description</div>
+          <p class="text-sm text-hint" id="activity-modal-description">Activity description goes here</p>
+        </div>
+        
+        <div class="mb-3">
+          <div class="text-sm font-medium mb-2">Steps to Complete</div>
+          <div id="activity-modal-steps" class="space-y-2">
+            <!-- Steps will be populated here -->
+          </div>
+        </div>
+        
+        <div class="mb-3">
+          <div class="text-sm font-medium mb-2">Rewards</div>
+          <div class="flex items-center space-x-3">
+            <div class="bg-primary/10 text-primary px-2 py-1 rounded text-sm">
+              <i class="fas fa-star mr-1"></i>
+              <span id="activity-modal-points">50 points</span>
+            </div>
+            <div class="bg-primary/10 text-primary px-2 py-1 rounded text-sm" id="activity-modal-badge">
+              <i class="fas fa-trophy mr-1"></i>
+              <span>Badge Name</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="flex space-x-3">
+        <button id="activity-modal-cancel" class="flex-1 bg-section-bg text-text py-3 rounded-lg font-medium">Cancel</button>
+        <button id="activity-modal-start" class="flex-1 bg-primary text-primary-text py-3 rounded-lg font-medium">Start Activity</button>
+      </div>
+    </div>
+  </div>
 
-      // Global App State
-      const AppState = {
-        currentScreen: "home",
-        user: null,
-        location: null,
-        restaurants: [],
-        cart: [],
-        orders: [],
-        favorites: [],
-        filters: { active: "all" },
-        searchQuery: "",
-        isLoading: false,
-        errors: {
-          location: null,
-          network: null,
-          general: null,
-        },
-      };
+  <!-- Achievement Detail Modal -->
+  <div id="achievement-detail-modal" class="modal">
+    <div class="modal-content text-center">
+      <div class="mb-4">
+        <div class="w-20 h-20 mx-auto mb-3 achievement-badge unlocked flex items-center justify-center text-3xl rounded-xl" id="achievement-modal-icon">
+          🏆
+        </div>
+        <h3 class="font-semibold text-lg" id="achievement-modal-title">Achievement Unlocked!</h3>
+      </div>
+      
+      <div class="mb-4">
+        <p class="text-sm text-hint mb-3" id="achievement-modal-description">Achievement description</p>
+        <div class="bg-section-bg rounded-lg p-3">
+          <div class="text-sm font-medium mb-1">Reward</div>
+          <div class="text-primary font-semibold" id="achievement-modal-reward">+100 points</div>
+        </div>
+      </div>
+      
+      <button id="close-achievement-modal" class="w-full bg-primary text-primary-text py-3 rounded-lg font-medium">
+        Awesome!
+      </button>
+    </div>
+  </div>
 
-      // Storage utilities (since localStorage is not available)
-      const Storage = {
-        save: (key, data) => {
-          try {
-            // Use a simple memory storage as fallback
-            if (!window.appStorage) window.appStorage = {};
-            window.appStorage[key] = JSON.stringify(data);
-          } catch (error) {
-            console.warn("Failed to save data:", error);
-          }
-        },
-        load: (key, defaultValue = null) => {
-          try {
-            if (!window.appStorage) window.appStorage = {};
-            const data = window.appStorage[key];
-            return data ? JSON.parse(data) : defaultValue;
-          } catch (error) {
-            console.warn("Failed to load data:", error);
-            return defaultValue;
-          }
-        },
-      };
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <button id="nav-home" class="nav-btn flex flex-col items-center justify-center w-1/4 h-full text-primary">
+      <i class="fas fa-home text-xl"></i>
+      <span class="text-xs mt-1">Home</span>
+    </button>
+    <button id="nav-discover" class="nav-btn flex flex-col items-center justify-center w-1/4 h-full text-hint">
+      <i class="fas fa-dice text-xl"></i>
+      <span class="text-xs mt-1">Discover</span>
+    </button>
+    <button id="nav-activities" class="nav-btn flex flex-col items-center justify-center w-1/4 h-full text-hint">
+      <i class="fas fa-tasks text-xl"></i>
+      <span class="text-xs mt-1">Activities</span>
+    </button>
+    <button id="nav-matches" class="nav-btn flex flex-col items-center justify-center w-1/4 h-full text-hint">
+      <i class="fas fa-heart text-xl"></i>
+      <span class="text-xs mt-1">Matches</span>
+    </button>
+    <button id="nav-profile" class="nav-btn flex flex-col items-center justify-center w-1/4 h-full text-hint">
+      <i class="fas fa-user text-xl"></i>
+      <span class="text-xs mt-1">Profile</span>
+    </button>
+  </nav>
 
-      // Sample Data
-      const SAMPLE_RESTAURANTS = [
+  <script>
+    // Main Application
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize Telegram Web App
+      const tgApp = window.Telegram?.WebApp;
+      
+      // App State
+      let currentUserProfile = null;
+      let userLocation = null;
+      let connections = [];
+      let activities = [];
+      let achievements = [];
+      let userScore = 0;
+      let userLevel = 1;
+      let isMatching = false;
+      let activeChat = null;
+
+      // Sample data for user profiles
+      const userProfiles = [
         {
           id: 1,
-          name: "Green Garden Bistro",
-          cuisine: "Organic Mediterranean",
-          rating: { leaves: 5, reviews: 234 },
-          distance: 0.3,
-          deliveryTime: "20-30 min",
-          image: "🥗",
-          tags: ["organic", "vegan", "popular"],
-          description: "Farm-to-table dining with locally sourced ingredients",
-          menu: [
-            {
-              id: 1,
-              name: "Mediterranean Bowl",
-              price: 12.99,
-              description: "Quinoa, roasted vegetables, feta, olive oil",
-              category: "bowls",
-              image: "🥙",
-            },
-            {
-              id: 2,
-              name: "Organic Salad",
-              price: 10.99,
-              description: "Mixed greens, seasonal vegetables, house dressing",
-              category: "salads",
-              image: "🥗",
-            },
-            {
-              id: 3,
-              name: "Herbal Tea",
-              price: 3.99,
-              description: "Organic chamomile and lavender blend",
-              category: "drinks",
-              image: "🍵",
-            },
-          ],
-          coordinates: { lat: 40.7128, lng: -74.006 },
+          name: 'Emma Johnson',
+          age: 28,
+          location: 'San Francisco',
+          bio: 'Coffee enthusiast and adventure seeker. Love meaningful conversations and trying new things!',
+          avatar: generateAvatar('Emma Johnson', '#FFB6C1'),
+          interests: ['Photography', 'Hiking', 'Coffee', 'Travel', 'Books'],
+          lookingFor: ['friendship', 'dating'],
+          score: 450,
+          level: 3,
+          compatibility: 85
         },
         {
           id: 2,
-          name: "Forest Fresh Kitchen",
-          cuisine: "Plant-Based American",
-          rating: { leaves: 4, reviews: 189 },
-          distance: 0.7,
-          deliveryTime: "25-35 min",
-          image: "🌲",
-          tags: ["vegan", "fast"],
-          description: "100% plant-based comfort food made with love",
-          menu: [
-            {
-              id: 4,
-              name: "Beyond Burger",
-              price: 14.99,
-              description: "Plant-based patty, lettuce, tomato, avocado",
-              category: "mains",
-              image: "🍔",
-            },
-            {
-              id: 5,
-              name: "Sweet Potato Fries",
-              price: 6.99,
-              description: "Crispy sweet potato fries with herbs",
-              category: "sides",
-              image: "🍟",
-            },
-            {
-              id: 6,
-              name: "Green Smoothie",
-              price: 7.99,
-              description: "Spinach, banana, mango, coconut milk",
-              category: "drinks",
-              image: "🥤",
-            },
-          ],
-          coordinates: { lat: 40.7589, lng: -73.9851 },
+          name: 'James Wilson',
+          age: 32,
+          location: 'San Francisco',
+          bio: 'Software engineer who believes in growing through shared experiences. Always up for a good challenge!',
+          avatar: generateAvatar('James Wilson', '#87CEEB'),
+          interests: ['Technology', 'Climbing', 'Music', 'Cooking', 'Gaming'],
+          lookingFor: ['friendship', 'networking'],
+          score: 620,
+          level: 4,
+          compatibility: 92
         },
         {
           id: 3,
-          name: "Sunrise Café",
-          cuisine: "Healthy Breakfast & Brunch",
-          rating: { leaves: 4, reviews: 156 },
-          distance: 1.2,
-          deliveryTime: "15-25 min",
-          image: "🌅",
-          tags: ["organic", "fast", "popular"],
-          description:
-            "Start your day right with our nutritious breakfast options",
-          menu: [
-            {
-              id: 7,
-              name: "Acai Bowl",
-              price: 11.99,
-              description: "Acai base, granola, fresh berries, coconut",
-              category: "bowls",
-              image: "🍓",
-            },
-            {
-              id: 8,
-              name: "Avocado Toast",
-              price: 9.99,
-              description: "Sourdough, avocado, cherry tomatoes, hemp seeds",
-              category: "mains",
-              image: "🥑",
-            },
-            {
-              id: 9,
-              name: "Cold Press Juice",
-              price: 5.99,
-              description: "Apple, celery, cucumber, lemon, ginger",
-              category: "drinks",
-              image: "🧃",
-            },
-          ],
-          coordinates: { lat: 40.7488, lng: -73.9857 },
-        },
+          name: 'Sophia Chen',
+          age: 26,
+          location: 'Oakland',
+          bio: 'Artist and yoga instructor. Looking for someone to explore creativity and mindfulness together.',
+          avatar: generateAvatar('Sophia Chen', '#98FB98'),
+          interests: ['Art', 'Yoga', 'Meditation', 'Nature', 'Design'],
+          lookingFor: ['friendship', 'dating'],
+          score: 380,
+          level: 2,
+          compatibility: 78
+        }
       ];
 
-      const SAMPLE_ORDERS = [
+      // Sample activities database
+      const activitiesDatabase = [
         {
           id: 1,
-          restaurantId: 1,
-          restaurantName: "Green Garden Bistro",
-          items: [
-            { id: 1, name: "Mediterranean Bowl", price: 12.99, quantity: 1 },
-            { id: 3, name: "Herbal Tea", price: 3.99, quantity: 1 },
-          ],
-          total: 16.98,
-          status: "delivered",
-          orderTime: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-          deliveryTime: new Date(Date.now() - 1.5 * 60 * 60 * 1000), // 1.5 hours ago
+          title: 'Share Your Dreams',
+          category: 'communication',
+          description: 'Take turns sharing your biggest dreams and goals for the future. Listen actively and ask thoughtful questions.',
+          duration: '30 min',
+          difficulty: 'Easy',
+          points: 50,
+          badge: 'Dream Sharer',
+          steps: [
+            'Find a quiet, comfortable place to talk',
+            'Take turns sharing one big dream each',
+            'Ask follow-up questions about each dream',
+            'Discuss how you might support each other\'s goals'
+          ]
         },
         {
           id: 2,
-          restaurantId: 2,
-          restaurantName: "Forest Fresh Kitchen",
-          items: [
-            { id: 4, name: "Beyond Burger", price: 14.99, quantity: 1 },
-            { id: 5, name: "Sweet Potato Fries", price: 6.99, quantity: 1 },
-          ],
-          total: 21.98,
-          status: "preparing",
-          orderTime: new Date(Date.now() - 0.5 * 60 * 60 * 1000), // 30 min ago
-          estimatedDelivery: new Date(Date.now() + 0.5 * 60 * 60 * 1000), // 30 min from now
+          title: 'Create Art Together',
+          category: 'creativity',
+          description: 'Collaborate on a creative project using whatever materials you have available.',
+          duration: '45 min',
+          difficulty: 'Medium',
+          points: 75,
+          badge: 'Creative Collaborator',
+          steps: [
+            'Gather available art supplies (paper, pencils, paint, etc.)',
+            'Choose a theme or subject together',
+            'Work on the same piece, taking turns adding elements',
+            'Discuss what the final piece means to both of you'
+          ]
         },
+        {
+          id: 3,
+          title: 'Memory Lane Walk',
+          category: 'adventure',
+          description: 'Take a walk while sharing childhood memories and stories that shaped who you are.',
+          duration: '60 min',
+          difficulty: 'Easy',
+          points: 60,
+          badge: 'Memory Keeper',
+          steps: [
+            'Choose a pleasant walking route',
+            'Take turns sharing childhood memories',
+            'Ask about pivotal moments in each other\'s lives',
+            'End by discussing how those experiences shaped you'
+          ]
+        },
+        {
+          id: 4,
+          title: 'Learn Something New',
+          category: 'learning',
+          description: 'Pick a topic neither of you knows much about and research it together.',
+          duration: '90 min',
+          difficulty: 'Medium',
+          points: 100,
+          badge: 'Knowledge Seeker',
+          steps: [
+            'Choose an interesting topic you both want to learn about',
+            'Find reliable sources and materials',
+            'Spend time researching together',
+            'Share what you found most interesting or surprising'
+          ]
+        },
+        {
+          id: 5,
+          title: 'Gratitude Exchange',
+          category: 'communication',
+          description: 'Share what you\'re grateful for and express appreciation for each other.',
+          duration: '20 min',
+          difficulty: 'Easy',
+          points: 40,
+          badge: 'Grateful Heart',
+          steps: [
+            'Sit facing each other in a comfortable space',
+            'Share 3 things you\'re grateful for in your life',
+            'Tell each other one thing you appreciate about them',
+            'Discuss how gratitude affects your daily life'
+          ]
+        },
+        {
+          id: 6,
+          title: 'Cook a Meal Together',
+          category: 'adventure',
+          description: 'Plan and prepare a meal together, trying a new recipe or cuisine.',
+          duration: '120 min',
+          difficulty: 'Hard',
+          points: 150,
+          badge: 'Master Chef',
+          steps: [
+            'Choose a recipe neither of you has tried before',
+            'Shop for ingredients together',
+            'Prepare the meal, dividing tasks',
+            'Enjoy the meal and discuss the experience'
+          ]
+        }
       ];
 
-      // Utility Functions
-      function showLoading(show = true) {
-        const overlay = document.getElementById("loading-overlay");
-        if (overlay) {
-          if (show) {
-            overlay.classList.remove("hidden");
-          } else {
-            overlay.classList.add("hidden");
-          }
-        }
-        AppState.isLoading = show;
+      // Achievement badges database
+      const achievementBadges = [
+        { id: 1, name: 'First Connection', icon: '🤝', description: 'Made your first meaningful connection', points: 50, unlocked: false },
+        { id: 2, name: 'Dream Sharer', icon: '💭', description: 'Shared your dreams with someone', points: 50, unlocked: false },
+        { id: 3, name: 'Creative Collaborator', icon: '🎨', description: 'Created something beautiful together', points: 75, unlocked: false },
+        { id: 4, name: 'Memory Keeper', icon: '📸', description: 'Shared precious memories', points: 60, unlocked: false },
+        { id: 5, name: 'Knowledge Seeker', icon: '📚', description: 'Learned something new together', points: 100, unlocked: false },
+        { id: 6, name: 'Grateful Heart', icon: '🙏', description: 'Expressed genuine gratitude', points: 40, unlocked: false },
+        { id: 7, name: 'Master Chef', icon: '👨‍🍳', description: 'Cooked a delicious meal together', points: 150, unlocked: false },
+        { id: 8, name: 'Deep Connector', icon: '💝', description: 'Completed 5 activities with one person', points: 200, unlocked: false },
+        { id: 9, name: 'Social Butterfly', icon: '🦋', description: 'Connected with 5 different people', points: 250, unlocked: false },
+        { id: 10, name: 'Activity Master', icon: '🏆', description: 'Completed 20 activities', points: 300, unlocked: false },
+        { id: 11, name: 'Level Up', icon: '⭐', description: 'Reached level 5', points: 500, unlocked: false },
+        { id: 12, name: 'Connection Guru', icon: '🧘', description: 'Achieved 90%+ compatibility with someone', points: 1000, unlocked: false }
+      ];
+
+      // Sample chat messages
+      const chatMessages = {
+        1: [
+          { id: 1, text: "Hi! I'm excited to start this journey of connection with you!", timestamp: Date.now() - 2 * 60 * 60 * 1000, sender: 1 },
+          { id: 2, text: "Me too! I love the idea of growing together through activities.", timestamp: Date.now() - 2 * 60 * 60 * 1000 + 5 * 60 * 1000, sender: "user" },
+          { id: 3, text: "Should we try the 'Share Your Dreams' activity first? It sounds like a great way to get to know each other.", timestamp: Date.now() - 1 * 60 * 60 * 1000, sender: 1 },
+          { id: 4, text: "That sounds perfect! I'm ready when you are.", timestamp: Date.now() - 30 * 60 * 1000, sender: "user" }
+        ]
+      };
+
+      // Initialize the app
+      if (tgApp) {
+        console.log("Telegram WebApp is available");
+        tgApp.ready();
+        initTelegramApp();
+      } else {
+        console.log("Telegram WebApp not available, running in standalone mode");
+        setTimeout(() => {
+          document.getElementById('loading-screen').classList.add('hidden');
+          initStandaloneApp();
+        }, 1500);
       }
 
-      function showError(message, type = "general") {
-        AppState.errors[type] = message;
-        const banner = document.getElementById("error-banner");
-        const messageEl = document.getElementById("error-message");
+      // Initialize Telegram Web App
+      function initTelegramApp() {
+        // Configure app theme
+        document.body.style.backgroundColor = tgApp.themeParams.bg_color || '#ffffff';
+        document.body.style.color = tgApp.themeParams.text_color || '#222222';
 
-        if (banner && messageEl) {
-          messageEl.textContent = message;
-          banner.classList.remove("hidden");
+        // Get user data
+        if (tgApp.initDataUnsafe && tgApp.initDataUnsafe.user) {
+          const user = tgApp.initDataUnsafe.user;
+          initUserProfile(user);
+        }
 
-          // Auto-hide after 5 seconds
+        // Initialize BackButton
+        tgApp.BackButton.onClick(() => {
+          handleBackNavigation();
+        });
+
+        // Initialize MainButton
+        tgApp.MainButton.setParams({
+          text: 'Find Random Match',
+          color: tgApp.themeParams.button_color || '#5D5CDE',
+          text_color: tgApp.themeParams.button_text_color || '#ffffff'
+        });
+
+        tgApp.MainButton.onClick(() => {
+          startRandomMatch();
+        });
+
+        // Hide loading screen
+        setTimeout(() => {
+          document.getElementById('loading-screen').classList.add('hidden');
+          initApp();
+        }, 1500);
+
+        // Enable haptic feedback
+        if (tgApp.HapticFeedback) {
+          setupHapticFeedback();
+        }
+      }
+
+      // Initialize standalone app
+      function initStandaloneApp() {
+        const mockUser = {
+          first_name: 'Alex',
+          last_name: 'Taylor',
+          username: 'alex_taylor',
+          photo_url: generateAvatar('Alex Taylor', '#5D5CDE')
+        };
+        initUserProfile(mockUser);
+        initApp();
+      }
+
+      // Initialize user profile
+      function initUserProfile(user) {
+        currentUserProfile = {
+          id: 'user',
+          name: user.first_name || 'Alex',
+          lastName: user.last_name || 'Taylor',
+          username: user.username || 'alex_taylor',
+          avatar: user.photo_url || generateAvatar(user.first_name || 'Alex', '#5D5CDE'),
+          age: 25,
+          location: 'San Francisco',
+          bio: 'Looking to make meaningful connections through shared experiences and growth.',
+          interests: ['Technology', 'Books', 'Travel', 'Food', 'Music'],
+          lookingFor: ['friendship', 'dating'],
+          score: userScore,
+          level: userLevel
+        };
+
+        updateUserProfileUI();
+      }
+
+      // Initialize the application
+      function initApp() {
+        setupEventListeners();
+        updateAllUI();
+        loadSampleData();
+      }
+
+      // Load sample data
+      function loadSampleData() {
+        // Add sample connections
+        connections = [
+          {
+            id: 1,
+            profile: userProfiles[0],
+            matchedAt: Date.now() - 24 * 60 * 60 * 1000,
+            compatibility: 85,
+            activitiesCompleted: 2,
+            totalActivities: 6,
+            lastMessage: { text: "That sounds perfect! I'm ready when you are.", timestamp: Date.now() - 30 * 60 * 1000, sender: "user" },
+            unreadCount: 0
+          }
+        ];
+
+        // Add sample activities
+        activities = [
+          {
+            id: 1,
+            activityId: 1,
+            partnerId: 1,
+            status: 'completed',
+            completedAt: Date.now() - 12 * 60 * 60 * 1000,
+            points: 50
+          },
+          {
+            id: 2,
+            activityId: 2,
+            partnerId: 1,
+            status: 'in-progress',
+            startedAt: Date.now() - 2 * 60 * 60 * 1000
+          }
+        ];
+
+        // Calculate initial score
+        userScore = activities.filter(a => a.status === 'completed').reduce((sum, a) => sum + (a.points || 0), 0);
+        userLevel = Math.floor(userScore / 200) + 1;
+
+        // Update achievements
+        achievements = [...achievementBadges];
+        if (connections.length > 0) {
+          achievements[0].unlocked = true; // First Connection
+          userScore += achievements[0].points;
+        }
+        if (activities.some(a => a.activityId === 1 && a.status === 'completed')) {
+          achievements[1].unlocked = true; // Dream Sharer
+        }
+
+        updateAllUI();
+      }
+
+      // Update all UI elements
+      function updateAllUI() {
+        updateUserProfileUI();
+        updateScoreDisplay();
+        updateConnectionsList();
+        updateActivitiesList();
+        updateAchievements();
+        updateRecentConnections();
+      }
+
+      // Update user profile UI
+      function updateUserProfileUI() {
+        if (!currentUserProfile) return;
+
+        // Update greeting
+        const userAvatar = document.getElementById('user-avatar');
+        const userName = document.getElementById('user-name');
+        const userStatus = document.getElementById('user-status');
+
+        userAvatar.style.backgroundImage = `url(${currentUserProfile.avatar})`;
+        userAvatar.classList.remove('skeleton');
+        userName.textContent = `Hi, ${currentUserProfile.name}!`;
+        userName.classList.remove('skeleton');
+        userStatus.textContent = `Ready to grow through meaningful connections`;
+        userStatus.classList.remove('skeleton');
+
+        // Update profile page
+        document.getElementById('profile-avatar').style.backgroundImage = `url(${currentUserProfile.avatar})`;
+        document.getElementById('profile-avatar').classList.remove('skeleton');
+        document.getElementById('profile-name').textContent = `${currentUserProfile.name} ${currentUserProfile.lastName}`;
+        document.getElementById('profile-name').classList.remove('skeleton');
+        document.getElementById('profile-username').textContent = `@${currentUserProfile.username}`;
+        document.getElementById('profile-username').classList.remove('skeleton');
+        document.getElementById('profile-bio').textContent = currentUserProfile.bio;
+        document.getElementById('profile-bio').classList.remove('skeleton');
+        document.getElementById('profile-location').textContent = currentUserProfile.location;
+        document.getElementById('profile-location').classList.remove('skeleton');
+        document.getElementById('profile-age').textContent = `${currentUserProfile.age} years old`;
+        document.getElementById('profile-age').classList.remove('skeleton');
+        document.getElementById('edit-profile-btn').classList.remove('hidden');
+
+        // Update interests
+        const interestsContainer = document.getElementById('profile-interests');
+        interestsContainer.innerHTML = '';
+        currentUserProfile.interests.forEach(interest => {
+          const badge = document.createElement('div');
+          badge.className = 'bg-primary/10 text-primary px-3 py-1 rounded-full text-sm';
+          badge.textContent = interest;
+          interestsContainer.appendChild(badge);
+        });
+      }
+
+      // Update score display
+      function updateScoreDisplay() {
+        const currentScoreEl = document.getElementById('current-score');
+        const headerScoreEl = document.getElementById('header-score');
+        const progressEl = document.getElementById('score-progress');
+        const nextLevelEl = document.getElementById('next-level');
+        const scoreDescEl = document.getElementById('score-description');
+        const scoreCircle = document.querySelector('.score-circle');
+
+        // Calculate progress
+        const currentLevelMin = (userLevel - 1) * 200;
+        const nextLevelMin = userLevel * 200;
+        const progress = ((userScore - currentLevelMin) / (nextLevelMin - currentLevelMin)) * 100;
+        const progressDegrees = (progress / 100) * 360;
+
+        currentScoreEl.textContent = userScore;
+        headerScoreEl.textContent = userScore;
+        progressEl.style.width = `${progress}%`;
+        nextLevelEl.textContent = `Level ${userLevel + 1}`;
+        scoreCircle.style.setProperty('--progress', `${progressDegrees}deg`);
+
+        if (progress >= 100) {
+          scoreDescEl.textContent = 'Congratulations! You\'ve reached the next level!';
+        } else {
+          scoreDescEl.textContent = `${Math.ceil(nextLevelMin - userScore)} more points to next level`;
+        }
+
+        // Update profile stats
+        document.getElementById('profile-score').textContent = userScore;
+        document.getElementById('profile-level').textContent = userLevel;
+        document.getElementById('profile-badges').textContent = achievements.filter(a => a.unlocked).length;
+
+        // Show header score
+        document.getElementById('user-score-header').classList.remove('hidden');
+      }
+
+      // Start random matching
+      function startRandomMatch() {
+        if (isMatching) return;
+
+        isMatching = true;
+        
+        // Show spinner
+        document.getElementById('match-button-container').classList.add('hidden');
+        document.getElementById('match-spinner-container').classList.remove('hidden');
+
+        // Simulate matching process
+        setTimeout(() => {
+          const availableProfiles = userProfiles.filter(p => !connections.some(c => c.profile.id === p.id));
+          
+          if (availableProfiles.length === 0) {
+            showToast('No new matches available right now. Try again later!');
+            resetMatchingUI();
+            return;
+          }
+
+          const randomProfile = availableProfiles[Math.floor(Math.random() * availableProfiles.length)];
+          showRandomMatch(randomProfile);
+          
+        }, 3000);
+
+        triggerHapticFeedback('medium');
+      }
+
+      // Show random match result
+      function showRandomMatch(profile) {
+        document.getElementById('match-other-name').textContent = profile.name;
+        document.getElementById('match-other-avatar').style.backgroundImage = `url(${profile.avatar})`;
+        document.getElementById('match-user-avatar').style.backgroundImage = `url(${currentUserProfile.avatar})`;
+        document.getElementById('match-compatibility').textContent = `${profile.compatibility}%`;
+
+        showModal('random-match-modal');
+        resetMatchingUI();
+        triggerHapticFeedback('heavy');
+      }
+
+      // Reset matching UI
+      function resetMatchingUI() {
+        isMatching = false;
+        document.getElementById('match-button-container').classList.remove('hidden');
+        document.getElementById('match-spinner-container').classList.add('hidden');
+      }
+
+      // Accept match
+      function acceptMatch() {
+        const matchName = document.getElementById('match-other-name').textContent;
+        const matchProfile = userProfiles.find(p => p.name === matchName);
+        
+        if (matchProfile) {
+          // Add to connections
+          connections.push({
+            id: matchProfile.id,
+            profile: matchProfile,
+            matchedAt: Date.now(),
+            compatibility: matchProfile.compatibility,
+            activitiesCompleted: 0,
+            totalActivities: activitiesDatabase.length,
+            lastMessage: null,
+            unreadCount: 0
+          });
+
+          // Unlock First Connection achievement if it's the first
+          if (connections.length === 1 && !achievements[0].unlocked) {
+            unlockAchievement(achievements[0]);
+          }
+
+          updateConnectionsList();
+          updateRecentConnections();
+          
+          showToast(`Connected with ${matchProfile.name}! Start a conversation to begin your journey together.`);
+          
+          // Suggest first activity
           setTimeout(() => {
-            hideError();
-          }, 5000);
+            suggestActivity(matchProfile.id);
+          }, 2000);
+        }
+
+        hideModal('random-match-modal');
+        triggerHapticFeedback('medium');
+      }
+
+      // Suggest activity
+      function suggestActivity(partnerId) {
+        const connection = connections.find(c => c.id === partnerId);
+        if (!connection) return;
+
+        const availableActivities = activitiesDatabase.filter(activity => 
+          !activities.some(a => a.activityId === activity.id && a.partnerId === partnerId)
+        );
+
+        if (availableActivities.length === 0) return;
+
+        const suggestedActivity = availableActivities[Math.floor(Math.random() * availableActivities.length)];
+        
+        // Show activity suggestion in chat
+        if (activeChat && activeChat.id === partnerId) {
+          document.getElementById('activity-suggestions').classList.remove('hidden');
+          document.getElementById('suggestion-title').textContent = suggestedActivity.title;
+          document.getElementById('suggestion-description').textContent = suggestedActivity.description;
+          
+          // Store suggested activity for acceptance
+          document.getElementById('accept-activity').dataset.activityId = suggestedActivity.id;
+          document.getElementById('accept-activity').dataset.partnerId = partnerId;
         }
       }
 
-      function hideError() {
-        const banner = document.getElementById("error-banner");
-        if (banner) {
-          banner.classList.add("hidden");
-        }
-        AppState.errors = { location: null, network: null, general: null };
+      // Accept activity
+      function acceptActivity() {
+        const activityId = parseInt(document.getElementById('accept-activity').dataset.activityId);
+        const partnerId = parseInt(document.getElementById('accept-activity').dataset.partnerId);
+        
+        const activity = activitiesDatabase.find(a => a.id === activityId);
+        if (!activity) return;
+
+        // Add to user's activities
+        activities.push({
+          id: Date.now(),
+          activityId: activityId,
+          partnerId: partnerId,
+          status: 'in-progress',
+          startedAt: Date.now()
+        });
+
+        // Hide suggestion
+        document.getElementById('activity-suggestions').classList.add('hidden');
+        
+        // Show activity detail modal
+        showActivityDetail(activity);
+        
+        updateActivitiesList();
+        showToast(`Started "${activity.title}" activity!`);
+        triggerHapticFeedback('medium');
       }
 
-      function formatTime(date) {
-        try {
-          return new Intl.DateTimeFormat("en-US", {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true,
-          }).format(date);
-        } catch (error) {
-          return date.toLocaleTimeString();
-        }
+      // Show activity detail
+      function showActivityDetail(activity) {
+        document.getElementById('activity-modal-title').textContent = activity.title;
+        document.getElementById('activity-modal-category').textContent = capitalizeFirst(activity.category);
+        document.getElementById('activity-modal-description').textContent = activity.description;
+        document.getElementById('activity-modal-points').textContent = `${activity.points} points`;
+        document.getElementById('activity-modal-badge').querySelector('span').textContent = activity.badge;
+
+        // Populate steps
+        const stepsContainer = document.getElementById('activity-modal-steps');
+        stepsContainer.innerHTML = '';
+        activity.steps.forEach((step, index) => {
+          const stepEl = document.createElement('div');
+          stepEl.className = 'flex items-start';
+          stepEl.innerHTML = `
+            <div class="w-6 h-6 bg-primary text-primary-text rounded-full flex items-center justify-center text-xs font-medium mr-2 flex-shrink-0">${index + 1}</div>
+            <div class="text-sm">${step}</div>
+          `;
+          stepsContainer.appendChild(stepEl);
+        });
+
+        showModal('activity-detail-modal');
       }
 
-      function formatRelativeTime(date) {
-        try {
-          const now = new Date();
-          const diffMs = now - date;
-          const diffMins = Math.floor(diffMs / (1000 * 60));
-          const diffHours = Math.floor(diffMins / 60);
+      // Complete activity
+      function completeActivity(activityId, partnerId) {
+        const activityIndex = activities.findIndex(a => a.activityId === activityId && a.partnerId === partnerId);
+        if (activityIndex === -1) return;
 
-          if (diffMins < 60) {
-            return `${diffMins} min ago`;
-          } else if (diffHours < 24) {
-            return `${diffHours}h ago`;
-          } else {
-            return formatTime(date);
+        const activity = activitiesDatabase.find(a => a.id === activityId);
+        if (!activity) return;
+
+        // Update activity status
+        activities[activityIndex].status = 'completed';
+        activities[activityIndex].completedAt = Date.now();
+        activities[activityIndex].points = activity.points;
+
+        // Add points to score
+        userScore += activity.points;
+        const newLevel = Math.floor(userScore / 200) + 1;
+        
+        if (newLevel > userLevel) {
+          userLevel = newLevel;
+          showToast(`Congratulations! You've reached Level ${userLevel}!`);
+        }
+
+        // Update connection stats
+        const connection = connections.find(c => c.id === partnerId);
+        if (connection) {
+          connection.activitiesCompleted++;
+        }
+
+        // Check for achievement unlocks
+        checkAchievementUnlocks();
+
+        // Update UI
+        updateScoreDisplay();
+        updateActivitiesList();
+        updateConnectionsList();
+
+        showToast(`Activity completed! +${activity.points} points earned!`);
+        triggerHapticFeedback('heavy');
+      }
+
+      // Check achievement unlocks
+      function checkAchievementUnlocks() {
+        const completedActivities = activities.filter(a => a.status === 'completed');
+        const totalPoints = completedActivities.reduce((sum, a) => sum + (a.points || 0), 0);
+        
+        // Check various achievements
+        achievements.forEach(achievement => {
+          if (achievement.unlocked) return;
+
+          let shouldUnlock = false;
+
+          switch (achievement.name) {
+            case 'First Connection':
+              shouldUnlock = connections.length > 0;
+              break;
+            case 'Dream Sharer':
+              shouldUnlock = completedActivities.some(a => a.activityId === 1);
+              break;
+            case 'Creative Collaborator':
+              shouldUnlock = completedActivities.some(a => a.activityId === 2);
+              break;
+            case 'Memory Keeper':
+              shouldUnlock = completedActivities.some(a => a.activityId === 3);
+              break;
+            case 'Knowledge Seeker':
+              shouldUnlock = completedActivities.some(a => a.activityId === 4);
+              break;
+            case 'Grateful Heart':
+              shouldUnlock = completedActivities.some(a => a.activityId === 5);
+              break;
+            case 'Master Chef':
+              shouldUnlock = completedActivities.some(a => a.activityId === 6);
+              break;
+            case 'Deep Connector':
+              shouldUnlock = Object.values(
+                completedActivities.reduce((acc, a) => {
+                  acc[a.partnerId] = (acc[a.partnerId] || 0) + 1;
+                  return acc;
+                }, {})
+              ).some(count => count >= 5);
+              break;
+            case 'Social Butterfly':
+              shouldUnlock = connections.length >= 5;
+              break;
+            case 'Activity Master':
+              shouldUnlock = completedActivities.length >= 20;
+              break;
+            case 'Level Up':
+              shouldUnlock = userLevel >= 5;
+              break;
+            case 'Connection Guru':
+              shouldUnlock = connections.some(c => c.compatibility >= 90);
+              break;
           }
-        } catch (error) {
-          return "Recently";
-        }
-      }
 
-      function generateNatureRating(leaves) {
-        const leafEmojis = ["🍃", "🌿", "🌱", "☘️", "🍀"];
-        return leafEmojis.slice(0, Math.min(leaves, 5)).join("");
-      }
-
-      function hapticFeedback(type = "impact") {
-        try {
-          if (tg?.HapticFeedback) {
-            switch (type) {
-              case "impact":
-                tg.HapticFeedback.impactOccurred("medium");
-                break;
-              case "selection":
-                tg.HapticFeedback.selectionChanged();
-                break;
-              case "notification":
-                tg.HapticFeedback.notificationOccurred("success");
-                break;
-            }
-          }
-        } catch (error) {
-          console.warn("Haptic feedback failed:", error);
-        }
-      }
-
-      // Theme Management
-      function applyTelegramTheme() {
-        try {
-          if (tg?.colorScheme === "dark") {
-            document.documentElement.classList.add("dark");
-          } else {
-            document.documentElement.classList.remove("dark");
-          }
-        } catch (error) {
-          console.warn("Theme application failed:", error);
-        }
-      }
-
-      // Favorites Management
-      function toggleFavorite(restaurantId) {
-        try {
-          const index = AppState.favorites.indexOf(restaurantId);
-          if (index > -1) {
-            AppState.favorites.splice(index, 1);
-          } else {
-            AppState.favorites.push(restaurantId);
-          }
-
-          Storage.save("favorites", AppState.favorites);
-          updateFavoriteButtons();
-          renderProfile();
-          hapticFeedback("selection");
-
-          const restaurant = SAMPLE_RESTAURANTS.find(
-            (r) => r.id === restaurantId
-          );
-          const action = index > -1 ? "removed from" : "added to";
-
-          if (restaurant && tg?.showPopup) {
-            tg.showPopup({
-              title: `${action === "added to" ? "❤️" : "💔"} Favorites Updated`,
-              message: `${restaurant.name} has been ${action} your favorites!`,
-              buttons: [{ type: "ok" }],
-            });
-          }
-        } catch (error) {
-          console.error("Failed to toggle favorite:", error);
-          showError("Failed to update favorites");
-        }
-      }
-
-      function updateFavoriteButtons() {
-        document.querySelectorAll(".favorite-btn").forEach((btn) => {
-          const restaurantId = parseInt(btn.dataset.restaurantId);
-          const isFavorite = AppState.favorites.includes(restaurantId);
-
-          if (isFavorite) {
-            btn.classList.add("active");
-            btn.innerHTML = "❤️";
-          } else {
-            btn.classList.remove("active");
-            btn.innerHTML = "🤍";
+          if (shouldUnlock) {
+            unlockAchievement(achievement);
           }
         });
       }
 
-      function renderFavoritesList() {
-        const favoritesList = document.getElementById("favorites-list");
-        const favoritesCount = document.getElementById("favorites-count");
+      // Unlock achievement
+      function unlockAchievement(achievement) {
+        achievement.unlocked = true;
+        userScore += achievement.points;
+        
+        // Show achievement modal
+        document.getElementById('achievement-modal-icon').textContent = achievement.icon;
+        document.getElementById('achievement-modal-title').textContent = `${achievement.name} Unlocked!`;
+        document.getElementById('achievement-modal-description').textContent = achievement.description;
+        document.getElementById('achievement-modal-reward').textContent = `+${achievement.points} points`;
+        
+        showModal('achievement-detail-modal');
+        updateAchievements();
+        updateScoreDisplay();
+        
+        triggerHapticFeedback('heavy');
+      }
 
-        if (!favoritesList || !favoritesCount) return;
+      // Update connections list
+      function updateConnectionsList() {
+        const connectionsContainer = document.getElementById('connections-list');
+        const noConnections = document.getElementById('no-connections-matches');
+        const totalConnectionsEl = document.getElementById('total-connections');
+        const completedActivitiesCountEl = document.getElementById('completed-activities-count');
+        const avgCompatibilityEl = document.getElementById('avg-compatibility');
 
-        favoritesCount.textContent = AppState.favorites.length;
-
-        if (AppState.favorites.length === 0) {
-          favoritesList.innerHTML = `
-                    <div class="text-center py-4">
-                        <div class="text-3xl mb-2">💔</div>
-                        <p class="text-tg-hint text-sm">No favorite restaurants yet</p>
-                    </div>
-                `;
+        if (connections.length === 0) {
+          connectionsContainer.classList.add('hidden');
+          noConnections.classList.remove('hidden');
+          totalConnectionsEl.textContent = '0';
+          completedActivitiesCountEl.textContent = '0';
+          avgCompatibilityEl.textContent = '0%';
           return;
         }
 
-        const favoriteRestaurants = SAMPLE_RESTAURANTS.filter((r) =>
-          AppState.favorites.includes(r.id)
-        );
+        connectionsContainer.classList.remove('hidden');
+        noConnections.classList.add('hidden');
 
-        favoritesList.innerHTML = favoriteRestaurants
-          .map(
-            (restaurant) => `
-                <div class="flex items-center justify-between p-2 bg-tg-bg rounded-lg">
-                    <div class="flex items-center">
-                        <span class="text-xl mr-3">${restaurant.image}</span>
-                        <div>
-                            <p class="text-sm font-medium text-tg-text">${restaurant.name}</p>
-                            <p class="text-xs text-tg-hint">${restaurant.cuisine}</p>
-                        </div>
-                    </div>
-                    <button class="favorite-btn text-lg" data-restaurant-id="${restaurant.id}">❤️</button>
+        // Update stats
+        totalConnectionsEl.textContent = connections.length;
+        completedActivitiesCountEl.textContent = activities.filter(a => a.status === 'completed').length;
+        const avgCompatibility = Math.round(connections.reduce((sum, c) => sum + c.compatibility, 0) / connections.length);
+        avgCompatibilityEl.textContent = `${avgCompatibility}%`;
+
+        // Populate connections
+        connectionsContainer.innerHTML = '';
+        connections.forEach(connection => {
+          const connectionEl = document.createElement('div');
+          connectionEl.className = 'bg-section-bg rounded-lg p-3 flex items-center cursor-pointer hover:bg-opacity-80 transition-colors';
+          
+          const lastMessageTime = connection.lastMessage ? formatTimestamp(connection.lastMessage.timestamp) : '';
+          const progressPercent = Math.round((connection.activitiesCompleted / connection.totalActivities) * 100);
+          
+          connectionEl.innerHTML = `
+            <div class="w-12 h-12 rounded-full overflow-hidden mr-3" style="background-image: url('${connection.profile.avatar}'); background-size: cover; background-position: center;"></div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between mb-1">
+                <div class="font-medium truncate">${connection.profile.name}</div>
+                <div class="text-xs text-hint">${lastMessageTime}</div>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="text-sm text-hint">
+                  ${connection.compatibility}% compatibility • ${connection.activitiesCompleted}/${connection.totalActivities} activities
                 </div>
-            `
-          )
-          .join("");
-      }
+                ${connection.unreadCount > 0 ? `<div class="w-5 h-5 bg-primary rounded-full text-primary-text text-xs flex items-center justify-center">${connection.unreadCount}</div>` : ''}
+              </div>
+              <div class="mt-1">
+                <div class="progress-bar h-1">
+                  <div class="progress-fill h-1" style="width: ${progressPercent}%"></div>
+                </div>
+              </div>
+            </div>
+          `;
 
-      // Location Services
-      async function getCurrentLocation() {
-        return new Promise((resolve, reject) => {
-          if (!navigator.geolocation) {
-            reject(new Error("Geolocation not supported"));
-            return;
-          }
+          connectionEl.addEventListener('click', () => {
+            openChat(connection);
+          });
 
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              const location = {
-                lat: position.coords.latitude,
-                lng: position.coords.longitude,
-                accuracy: position.coords.accuracy,
-              };
-              AppState.location = location;
-              AppState.errors.location = null;
-              resolve(location);
-            },
-            (error) => {
-              let message = "Location access denied";
-              switch (error.code) {
-                case error.PERMISSION_DENIED:
-                  message = "Location access denied";
-                  break;
-                case error.POSITION_UNAVAILABLE:
-                  message = "Location unavailable";
-                  break;
-                case error.TIMEOUT:
-                  message = "Location request timeout";
-                  break;
-              }
-              AppState.errors.location = message;
-              reject(new Error(message));
-            },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
-          );
+          connectionsContainer.appendChild(connectionEl);
         });
       }
 
-      async function reverseGeocode(lat, lng) {
-        // Simulate reverse geocoding - in production, use a real service
-        try {
-          const locations = [
-            "Downtown, New York",
-            "Midtown Manhattan, NY",
-            "Brooklyn Heights, NY",
-            "Central Park Area, NY",
-          ];
-          // Simulate network delay
-          await new Promise((resolve) => setTimeout(resolve, 500));
-          return locations[Math.floor(Math.random() * locations.length)];
-        } catch (error) {
-          throw new Error("Failed to get location name");
-        }
-      }
+      // Update recent connections on home page
+      function updateRecentConnections() {
+        const recentContainer = document.getElementById('active-connections');
+        const noConnections = document.getElementById('no-connections');
 
-      // Restaurant Functions
-      function filterRestaurants() {
-        try {
-          const { active } = AppState.filters;
-          const { searchQuery } = AppState;
-
-          let filtered = [...SAMPLE_RESTAURANTS];
-
-          if (active === "favorites") {
-            filtered = filtered.filter((restaurant) =>
-              AppState.favorites.includes(restaurant.id)
-            );
-          } else if (active !== "all") {
-            filtered = filtered.filter((restaurant) =>
-              restaurant.tags.includes(active)
-            );
-          }
-
-          if (searchQuery) {
-            filtered = filtered.filter(
-              (restaurant) =>
-                restaurant.name
-                  .toLowerCase()
-                  .includes(searchQuery.toLowerCase()) ||
-                restaurant.cuisine
-                  .toLowerCase()
-                  .includes(searchQuery.toLowerCase())
-            );
-          }
-
-          AppState.restaurants = filtered;
-          return filtered;
-        } catch (error) {
-          console.error("Failed to filter restaurants:", error);
-          showError("Failed to filter restaurants");
-          return [];
-        }
-      }
-
-      function renderRestaurants() {
-        try {
-          const container = document.getElementById("restaurants-container");
-          if (!container) return;
-
-          const restaurants = filterRestaurants();
-
-          if (restaurants.length === 0) {
-            const emptyMessage =
-              AppState.filters.active === "favorites"
-                ? "No favorite restaurants yet"
-                : "No restaurants found";
-            const emptyIcon =
-              AppState.filters.active === "favorites" ? "💔" : "🌱";
-
-            container.innerHTML = `
-                        <div class="text-center py-12">
-                            <div class="text-6xl mb-4">${emptyIcon}</div>
-                            <h3 class="text-lg font-semibold text-tg-text mb-2">${emptyMessage}</h3>
-                            <p class="text-tg-hint">
-                                ${
-                                  AppState.filters.active === "favorites"
-                                    ? "Add some restaurants to your favorites!"
-                                    : "Try adjusting your filters or search criteria"
-                                }
-                            </p>
-                        </div>
-                    `;
-            return;
-          }
-
-          container.innerHTML = restaurants
-            .map(
-              (restaurant) => `
-                    <div class="restaurant-card bg-tg-secondary-bg rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer" data-id="${
-                      restaurant.id
-                    }">
-                        <div class="p-4">
-                            <div class="flex items-start justify-between mb-3">
-                                <div class="flex items-center flex-1">
-                                    <div class="text-3xl mr-3">${
-                                      restaurant.image
-                                    }</div>
-                                    <div class="flex-1">
-                                        <h3 class="text-lg font-semibold text-tg-text">${
-                                          restaurant.name
-                                        }</h3>
-                                        <p class="text-sm text-tg-hint">${
-                                          restaurant.cuisine
-                                        }</p>
-                                    </div>
-                                </div>
-                                <div class="flex items-center space-x-2">
-                                    <button class="favorite-btn text-xl" data-restaurant-id="${
-                                      restaurant.id
-                                    }">
-                                        ${
-                                          AppState.favorites.includes(
-                                            restaurant.id
-                                          )
-                                            ? "❤️"
-                                            : "🤍"
-                                        }
-                                    </button>
-                                    <div class="text-right">
-                                        <div class="flex items-center mb-1">
-                                            <span class="text-sm mr-1">${generateNatureRating(
-                                              restaurant.rating.leaves
-                                            )}</span>
-                                            <span class="text-xs text-tg-hint">(${
-                                              restaurant.rating.reviews
-                                            })</span>
-                                        </div>
-                                        <div class="text-xs text-tg-hint">${
-                                          restaurant.distance
-                                        } km</div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <p class="text-sm text-tg-hint mb-3">${
-                              restaurant.description
-                            }</p>
-                            
-                            <div class="flex items-center justify-between">
-                                <div class="flex space-x-1">
-                                    ${restaurant.tags
-                                      .map(
-                                        (tag) => `
-                                        <span class="px-2 py-1 bg-nature-primary/10 text-nature-secondary text-xs rounded-full">${tag}</span>
-                                    `
-                                      )
-                                      .join("")}
-                                </div>
-                                <div class="text-sm text-tg-text font-medium">⏱ ${
-                                  restaurant.deliveryTime
-                                }</div>
-                            </div>
-                        </div>
-                    </div>
-                `
-            )
-            .join("");
-
-          updateFavoriteButtons();
-        } catch (error) {
-          console.error("Failed to render restaurants:", error);
-          showError("Failed to load restaurants");
-        }
-      }
-
-      function renderRestaurantDetail(restaurantId) {
-        try {
-          const restaurant = SAMPLE_RESTAURANTS.find(
-            (r) => r.id === restaurantId
-          );
-          if (!restaurant) {
-            showError("Restaurant not found");
-            return;
-          }
-
-          const content = document.getElementById("restaurant-detail-content");
-          if (!content) return;
-
-          content.innerHTML = `
-                    <div class="restaurant-header bg-gradient-nature text-white p-6 relative overflow-hidden" data-restaurant-id="${
-                      restaurant.id
-                    }">
-                        <div class="absolute top-0 right-0 text-8xl opacity-20 transform rotate-12">${
-                          restaurant.image
-                        }</div>
-                        <div class="relative z-10">
-                            <div class="flex items-start justify-between mb-2">
-                                <h1 class="text-2xl font-bold flex-1">${
-                                  restaurant.name
-                                }</h1>
-                                <button class="favorite-btn text-2xl ml-3" data-restaurant-id="${
-                                  restaurant.id
-                                }">
-                                    ${
-                                      AppState.favorites.includes(restaurant.id)
-                                        ? "❤️"
-                                        : "🤍"
-                                    }
-                                </button>
-                            </div>
-                            <p class="text-lg opacity-90 mb-3">${
-                              restaurant.cuisine
-                            }</p>
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <span class="mr-2">${generateNatureRating(
-                                      restaurant.rating.leaves
-                                    )}</span>
-                                    <span class="text-sm opacity-90">(${
-                                      restaurant.rating.reviews
-                                    } reviews)</span>
-                                </div>
-                                <div class="flex items-center space-x-4">
-                                    <div class="text-sm">📍 ${
-                                      restaurant.distance
-                                    } km</div>
-                                    <div class="text-sm">⏱ ${
-                                      restaurant.deliveryTime
-                                    }</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="p-4">
-                        <p class="text-tg-hint mb-6">${
-                          restaurant.description
-                        }</p>
-                        
-                        <!-- Menu Categories -->
-                        <div class="menu-categories flex space-x-2 mb-6 overflow-x-auto pb-2">
-                            <button class="menu-category-btn active flex-shrink-0 px-4 py-2 bg-nature-primary text-white rounded-full text-sm font-medium" data-category="all">All</button>
-                            <button class="menu-category-btn flex-shrink-0 px-4 py-2 bg-tg-secondary-bg text-tg-text rounded-full text-sm font-medium border border-tg-hint/20" data-category="bowls">Bowls</button>
-                            <button class="menu-category-btn flex-shrink-0 px-4 py-2 bg-tg-secondary-bg text-tg-text rounded-full text-sm font-medium border border-tg-hint/20" data-category="mains">Mains</button>
-                            <button class="menu-category-btn flex-shrink-0 px-4 py-2 bg-tg-secondary-bg text-tg-text rounded-full text-sm font-medium border border-tg-hint/20" data-category="drinks">Drinks</button>
-                        </div>
-                        
-                        <!-- Menu Items -->
-                        <div class="menu-items space-y-4">
-                            ${restaurant.menu
-                              .map(
-                                (item) => `
-                                <div class="menu-item bg-tg-secondary-bg rounded-xl p-4 flex items-center justify-between" data-category="${item.category}">
-                                    <div class="flex items-center flex-1">
-                                        <div class="text-3xl mr-4">${item.image}</div>
-                                        <div class="flex-1">
-                                            <h4 class="font-semibold text-tg-text mb-1">${item.name}</h4>
-                                            <p class="text-sm text-tg-hint mb-2">${item.description}</p>
-                                            <p class="text-lg font-bold text-nature-primary">$${item.price}</p>
-                                        </div>
-                                    </div>
-                                    <button class="add-to-cart-btn bg-nature-primary text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-nature-secondary transition-colors" data-item-id="${item.id}">
-                                        Add
-                                    </button>
-                                </div>
-                            `
-                              )
-                              .join("")}
-                        </div>
-                    </div>
-                    
-                    <!-- Floating Cart Button -->
-                    <div id="floating-cart" class="hidden fixed bottom-20 right-4 z-40">
-                        <button id="view-cart-btn" class="bg-nature-primary text-white px-6 py-3 rounded-full shadow-lg flex items-center space-x-2 hover:bg-nature-secondary transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-                            </svg>
-                            <span id="cart-count">0</span>
-                            <span id="cart-total-floating">$0.00</span>
-                        </button>
-                    </div>
-                `;
-
-          updateFavoriteButtons();
-        } catch (error) {
-          console.error("Failed to render restaurant detail:", error);
-          showError("Failed to load restaurant details");
-        }
-      }
-
-      // Cart Functions
-      function addToCart(itemId, restaurantId) {
-        try {
-          const restaurant = SAMPLE_RESTAURANTS.find(
-            (r) => r.id === restaurantId
-          );
-          const item = restaurant?.menu.find((i) => i.id === itemId);
-
-          if (!item) {
-            showError("Item not found");
-            return;
-          }
-
-          const existingItem = AppState.cart.find(
-            (cartItem) => cartItem.id === itemId
-          );
-
-          if (existingItem) {
-            existingItem.quantity += 1;
-          } else {
-            AppState.cart.push({
-              ...item,
-              restaurantId,
-              restaurantName: restaurant.name,
-              quantity: 1,
-            });
-          }
-
-          updateCartUI();
-          hapticFeedback("impact");
-
-          // Show brief feedback
-          if (tg?.showPopup) {
-            tg.showPopup({
-              title: "Added to Cart! 🌿",
-              message: `${item.name} has been added to your cart`,
-              buttons: [{ type: "ok" }],
-            });
-          }
-        } catch (error) {
-          console.error("Failed to add to cart:", error);
-          showError("Failed to add item to cart");
-        }
-      }
-
-      function updateCartUI() {
-        try {
-          const cartCount = AppState.cart.reduce(
-            (sum, item) => sum + item.quantity,
-            0
-          );
-          const cartTotal = AppState.cart.reduce(
-            (sum, item) => sum + item.price * item.quantity,
-            0
-          );
-
-          // Update floating cart
-          const floatingCart = document.getElementById("floating-cart");
-          const cartCountEl = document.getElementById("cart-count");
-          const cartTotalEl = document.getElementById("cart-total-floating");
-
-          if (floatingCart && cartCountEl && cartTotalEl) {
-            if (cartCount > 0) {
-              floatingCart.classList.remove("hidden");
-              cartCountEl.textContent = cartCount;
-              cartTotalEl.textContent = `$${cartTotal.toFixed(2)}`;
-            } else {
-              floatingCart.classList.add("hidden");
-            }
-          }
-
-          // Update orders badge
-          const ordersBadge = document.getElementById("orders-badge");
-          if (ordersBadge) {
-            if (cartCount > 0) {
-              ordersBadge.classList.remove("hidden");
-              ordersBadge.textContent = cartCount;
-            } else {
-              ordersBadge.classList.add("hidden");
-            }
-          }
-        } catch (error) {
-          console.error("Failed to update cart UI:", error);
-        }
-      }
-
-      function renderCart() {
-        try {
-          const cartItems = document.getElementById("cart-items");
-          const cartTotal = document.getElementById("cart-total");
-
-          if (!cartItems || !cartTotal) return;
-
-          if (AppState.cart.length === 0) {
-            cartItems.innerHTML = `
-                        <div class="text-center py-12">
-                            <div class="text-6xl mb-4">🛒</div>
-                            <h3 class="text-lg font-semibold text-tg-text mb-2">Your cart is empty</h3>
-                            <p class="text-tg-hint">Add some delicious items from our restaurants!</p>
-                        </div>
-                    `;
-            cartTotal.textContent = "$0.00";
-            return;
-          }
-
-          const total = AppState.cart.reduce(
-            (sum, item) => sum + item.price * item.quantity,
-            0
-          );
-
-          cartItems.innerHTML = AppState.cart
-            .map(
-              (item) => `
-                    <div class="cart-item bg-tg-secondary-bg rounded-xl p-4 flex items-center justify-between">
-                        <div class="flex items-center flex-1">
-                            <div class="text-2xl mr-3">${item.image}</div>
-                            <div class="flex-1">
-                                <h4 class="font-semibold text-tg-text">${item.name}</h4>
-                                <p class="text-sm text-tg-hint">${item.restaurantName}</p>
-                                <p class="text-lg font-bold text-nature-primary">$${item.price}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center space-x-3">
-                            <button class="quantity-btn w-8 h-8 rounded-full bg-tg-hint/20 flex items-center justify-center" data-action="decrease" data-item-id="${item.id}">-</button>
-                            <span class="font-semibold">${item.quantity}</span>
-                            <button class="quantity-btn w-8 h-8 rounded-full bg-nature-primary text-white flex items-center justify-center" data-action="increase" data-item-id="${item.id}">+</button>
-                        </div>
-                    </div>
-                `
-            )
-            .join("");
-
-          cartTotal.textContent = `$${total.toFixed(2)}`;
-        } catch (error) {
-          console.error("Failed to render cart:", error);
-          showError("Failed to load cart");
-        }
-      }
-
-      function updateCartQuantity(itemId, action) {
-        try {
-          const item = AppState.cart.find((cartItem) => cartItem.id === itemId);
-          if (!item) return;
-
-          if (action === "increase") {
-            item.quantity += 1;
-          } else if (action === "decrease") {
-            item.quantity -= 1;
-            if (item.quantity <= 0) {
-              AppState.cart = AppState.cart.filter(
-                (cartItem) => cartItem.id !== itemId
-              );
-            }
-          }
-
-          renderCart();
-          updateCartUI();
-          hapticFeedback("selection");
-        } catch (error) {
-          console.error("Failed to update cart quantity:", error);
-          showError("Failed to update cart");
-        }
-      }
-
-      // Orders Functions
-      function placeOrder() {
-        try {
-          if (AppState.cart.length === 0) return;
-
-          const newOrder = {
-            id: Date.now(),
-            restaurantId: AppState.cart[0].restaurantId,
-            restaurantName: AppState.cart[0].restaurantName,
-            items: [...AppState.cart],
-            total: AppState.cart.reduce(
-              (sum, item) => sum + item.price * item.quantity,
-              0
-            ),
-            status: "preparing",
-            orderTime: new Date(),
-            estimatedDelivery: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes from now
-          };
-
-          AppState.orders.unshift(newOrder);
-          AppState.cart = [];
-
-          updateCartUI();
-          renderCart();
-          closeModal("cart-modal");
-
-          hapticFeedback("notification");
-
-          if (tg?.showPopup) {
-            tg.showPopup({
-              title: "Order Placed! 🎉",
-              message: `Your order from ${
-                newOrder.restaurantName
-              } has been placed successfully. Estimated delivery: ${formatTime(
-                newOrder.estimatedDelivery
-              )}`,
-              buttons: [{ type: "ok" }],
-            });
-          }
-
-          // Switch to orders screen
-          switchScreen("orders");
-        } catch (error) {
-          console.error("Failed to place order:", error);
-          showError("Failed to place order");
-        }
-      }
-
-      function renderOrders() {
-        const currentOrdersList = document.getElementById(
-          "current-orders-list"
-        );
-        const orderHistoryList = document.getElementById("order-history-list");
-        const orderCount = document.getElementById("order-count");
-
-        if (!currentOrdersList || !orderHistoryList || !orderCount) return;
-
-        const currentOrders = AppState.orders.filter((order) =>
-          ["preparing", "on_way"].includes(order.status)
-        );
-        const historyOrders = AppState.orders.filter((order) =>
-          ["delivered", "cancelled"].includes(order.status)
-        );
-
-        orderCount.textContent = AppState.orders.length;
-
-        // Render current orders
-        if (currentOrders.length === 0) {
-          currentOrdersList.innerHTML = `
-                        <div class="text-center py-8">
-                            <div class="text-4xl mb-2">📋</div>
-                            <p class="text-tg-hint text-sm">No active orders</p>
-                        </div>
-                    `;
-        } else {
-          currentOrdersList.innerHTML = currentOrders
-            .map(
-              (order) => `
-                        <div class="order-card bg-tg-secondary-bg rounded-xl p-4">
-                            <div class="flex items-center justify-between mb-3">
-                                <div>
-                                    <h4 class="font-semibold text-tg-text">${
-                                      order.restaurantName
-                                    }</h4>
-                                    <p class="text-sm text-tg-hint">Order #${
-                                      order.id
-                                    }</p>
-                                </div>
-                                <div class="text-right">
-                                    <div class="bg-nature-primary text-white px-3 py-1 rounded-full text-xs font-medium mb-1">
-                                        ${
-                                          order.status === "preparing"
-                                            ? "👨‍🍳 Preparing"
-                                            : "🚚 On the way"
-                                        }
-                                    </div>
-                                    <p class="text-sm text-tg-hint">ETA: ${formatTime(
-                                      order.estimatedDelivery
-                                    )}</p>
-                                </div>
-                            </div>
-                            
-                            <div class="space-y-2 mb-3">
-                                ${order.items
-                                  .map(
-                                    (item) => `
-                                    <div class="flex items-center justify-between text-sm">
-                                        <span class="text-tg-text">${
-                                          item.quantity
-                                        }x ${item.name}</span>
-                                        <span class="text-tg-hint">$${(
-                                          item.price * item.quantity
-                                        ).toFixed(2)}</span>
-                                    </div>
-                                `
-                                  )
-                                  .join("")}
-                            </div>
-                            
-                            <div class="flex items-center justify-between pt-3 border-t border-tg-hint/20">
-                                <span class="font-semibold text-tg-text">Total: $${order.total.toFixed(
-                                  2
-                                )}</span>
-                                <button class="track-order-btn text-nature-primary text-sm font-medium" data-order-id="${
-                                  order.id
-                                }">
-                                    Track Order
-                                </button>
-                            </div>
-                        </div>
-                    `
-            )
-            .join("");
+        if (connections.length === 0) {
+          recentContainer.classList.add('hidden');
+          noConnections.classList.remove('hidden');
+          return;
         }
 
-        // Render order history
-        if (historyOrders.length === 0) {
-          orderHistoryList.innerHTML = `
-                        <div class="text-center py-8">
-                            <div class="text-4xl mb-2">📜</div>
-                            <p class="text-tg-hint text-sm">No order history yet</p>
-                        </div>
-                    `;
-        } else {
-          orderHistoryList.innerHTML = historyOrders
-            .map(
-              (order) => `
-                        <div class="order-card bg-tg-secondary-bg rounded-xl p-4">
-                            <div class="flex items-center justify-between mb-3">
-                                <div>
-                                    <h4 class="font-semibold text-tg-text">${
-                                      order.restaurantName
-                                    }</h4>
-                                    <p class="text-sm text-tg-hint">Order #${
-                                      order.id
-                                    } • ${formatRelativeTime(
-                order.orderTime
-              )}</p>
-                                </div>
-                                <div class="text-right">
-                                    <div class="px-3 py-1 rounded-full text-xs font-medium mb-1 ${
-                                      order.status === "delivered"
-                                        ? "bg-green-100 text-green-700"
-                                        : "bg-red-100 text-red-700"
-                                    }">
-                                        ${
-                                          order.status === "delivered"
-                                            ? "✅ Delivered"
-                                            : "❌ Cancelled"
-                                        }
-                                    </div>
-                                    ${
-                                      order.deliveryTime
-                                        ? `<p class="text-sm text-tg-hint">${formatTime(
-                                            order.deliveryTime
-                                          )}</p>`
-                                        : ""
-                                    }
-                                </div>
-                            </div>
-                            
-                            <div class="space-y-1 mb-3">
-                                ${order.items
-                                  .slice(0, 2)
-                                  .map(
-                                    (item) => `
-                                    <div class="flex items-center justify-between text-sm">
-                                        <span class="text-tg-hint">${
-                                          item.quantity
-                                        }x ${item.name}</span>
-                                        <span class="text-tg-hint">$${(
-                                          item.price * item.quantity
-                                        ).toFixed(2)}</span>
-                                    </div>
-                                `
-                                  )
-                                  .join("")}
-                                ${
-                                  order.items.length > 2
-                                    ? `<p class="text-xs text-tg-hint">+${
-                                        order.items.length - 2
-                                      } more items</p>`
-                                    : ""
-                                }
-                            </div>
-                            
-                            <div class="flex items-center justify-between pt-3 border-t border-tg-hint/20">
-                                <span class="font-semibold text-tg-text">Total: $${order.total.toFixed(
-                                  2
-                                )}</span>
-                                <button class="reorder-btn text-nature-primary text-sm font-medium" data-order-id="${
-                                  order.id
-                                }">
-                                    Reorder
-                                </button>
-                            </div>
-                        </div>
-                    `
-            )
-            .join("");
-        }
-      }
+        recentContainer.classList.remove('hidden');
+        noConnections.classList.add('hidden');
 
-      // Profile Functions
-      function renderProfile() {
-        try {
-          const user = AppState.user || tg?.initDataUnsafe?.user;
+        // Sort by most recent activity
+        const sortedConnections = [...connections].sort((a, b) => {
+          const aTime = a.lastMessage?.timestamp || a.matchedAt;
+          const bTime = b.lastMessage?.timestamp || b.matchedAt;
+          return bTime - aTime;
+        }).slice(0, 3);
 
-          if (user) {
-            const profileAvatar = document.getElementById("profile-avatar");
-            const userName = document.getElementById("user-name");
-            const userUsername = document.getElementById("user-username");
-            const userAvatar = document.getElementById("user-avatar");
+        recentContainer.innerHTML = '';
+        sortedConnections.forEach(connection => {
+          const connectionEl = document.createElement('div');
+          connectionEl.className = 'flex items-center bg-section-bg rounded-lg p-3 cursor-pointer hover:bg-opacity-80 transition-colors';
+          
+          const progressPercent = Math.round((connection.activitiesCompleted / connection.totalActivities) * 100);
+          
+          connectionEl.innerHTML = `
+            <div class="w-12 h-12 rounded-full overflow-hidden mr-3" style="background-image: url('${connection.profile.avatar}'); background-size: cover; background-position: center;"></div>
+            <div class="flex-1">
+              <div class="flex items-center justify-between mb-1">
+                <div class="font-medium">${connection.profile.name}</div>
+                <div class="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">${connection.compatibility}%</div>
+              </div>
+              <div class="text-sm text-hint mb-1">${connection.activitiesCompleted}/${connection.totalActivities} activities completed</div>
+              <div class="progress-bar h-1">
+                <div class="progress-fill h-1" style="width: ${progressPercent}%"></div>
+              </div>
+            </div>
+          `;
 
-            if (profileAvatar)
-              profileAvatar.textContent = user.first_name?.charAt(0) || "🌱";
-            if (userName)
-              userName.textContent =
-                `${user.first_name || ""} ${user.last_name || ""}`.trim() ||
-                "Nature Lover";
-            if (userUsername)
-              userUsername.textContent = user.username
-                ? `@${user.username}`
-                : "@natureeats";
-            if (userAvatar)
-              userAvatar.textContent = user.first_name?.charAt(0) || "🌱";
-          }
-
-          // Update stats
-          const totalOrdersEl = document.getElementById("total-orders");
-          const ecoScoreEl = document.getElementById("eco-score");
-          const savedCo2El = document.getElementById("saved-co2");
-
-          if (totalOrdersEl) totalOrdersEl.textContent = AppState.orders.length;
-          if (ecoScoreEl)
-            ecoScoreEl.textContent = Math.min(100, AppState.orders.length * 10);
-          if (savedCo2El)
-            savedCo2El.textContent = (AppState.orders.length * 0.5).toFixed(1);
-
-          // Render favorites list
-          renderFavoritesList();
-        } catch (error) {
-          console.error("Failed to render profile:", error);
-          showError("Failed to load profile");
-        }
-      }
-
-      // Navigation Functions
-      function switchScreen(screenName) {
-        try {
-          // Hide all screens
-          document.querySelectorAll(".screen").forEach((screen) => {
-            screen.classList.add("hidden");
-            screen.classList.remove("active");
+          connectionEl.addEventListener('click', () => {
+            openChat(connection);
           });
 
-          // Show target screen
-          const targetScreen = document.getElementById(`${screenName}-screen`);
-          if (targetScreen) {
-            targetScreen.classList.remove("hidden");
-            targetScreen.classList.add("active");
-            targetScreen.style.animation = "fadeIn 0.3s ease-out";
-          }
+          recentContainer.appendChild(connectionEl);
+        });
+      }
 
-          // Update navigation
-          document.querySelectorAll(".nav-btn").forEach((btn) => {
-            btn.classList.remove("active", "text-nature-primary");
-            btn.classList.add("text-tg-hint");
+      // Update activities list
+      function updateActivitiesList() {
+        const activeContainer = document.getElementById('active-activities');
+        const completedContainer = document.getElementById('completed-activities');
+        const noActiveEl = document.getElementById('no-active-activities');
+        const noCompletedEl = document.getElementById('no-completed-activities');
+
+        const activeActivities = activities.filter(a => a.status === 'in-progress');
+        const completedActivities = activities.filter(a => a.status === 'completed');
+
+        // Update active activities
+        if (activeActivities.length === 0) {
+          activeContainer.classList.add('hidden');
+          noActiveEl.classList.remove('hidden');
+        } else {
+          activeContainer.classList.remove('hidden');
+          noActiveEl.classList.add('hidden');
+          
+          activeContainer.innerHTML = '';
+          activeActivities.forEach(activity => {
+            const activityData = activitiesDatabase.find(a => a.id === activity.activityId);
+            const partner = connections.find(c => c.id === activity.partnerId);
+            if (!activityData || !partner) return;
+
+            const activityEl = document.createElement('div');
+            activityEl.className = 'activity-card in-progress rounded-lg p-4 cursor-pointer';
+            activityEl.innerHTML = `
+              <div class="flex items-start justify-between mb-2">
+                <div>
+                  <div class="font-medium">${activityData.title}</div>
+                  <div class="text-sm text-hint">with ${partner.profile.name}</div>
+                </div>
+                <div class="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full">In Progress</div>
+              </div>
+              <div class="text-sm text-hint mb-3">${activityData.description}</div>
+              <div class="flex justify-between items-center">
+                <div class="text-xs text-hint">${activityData.category} • ${activityData.duration}</div>
+                <button class="complete-activity-btn bg-primary text-primary-text px-3 py-1 rounded text-sm" data-activity-id="${activityData.id}" data-partner-id="${activity.partnerId}">
+                  Complete
+                </button>
+              </div>
+            `;
+
+            activityEl.addEventListener('click', () => {
+              showActivityDetail(activityData);
+            });
+
+            activeContainer.appendChild(activityEl);
           });
 
-          const activeNavBtn = document.querySelector(
-            `[data-screen="${screenName}"]`
-          );
-          if (activeNavBtn) {
-            activeNavBtn.classList.add("active", "text-nature-primary");
-            activeNavBtn.classList.remove("text-tg-hint");
-          }
-
-          // Update header
-          const headerTitle = document.getElementById("header-title");
-          const backBtn = document.getElementById("back-btn");
-
-          if (headerTitle && backBtn) {
-            switch (screenName) {
-              case "home":
-                headerTitle.textContent = "NatureEats";
-                backBtn.classList.add("hidden");
-                break;
-              case "restaurant":
-                headerTitle.textContent = "Menu";
-                backBtn.classList.remove("hidden");
-                break;
-              case "orders":
-                headerTitle.textContent = "Your Orders";
-                backBtn.classList.add("hidden");
-                break;
-              case "profile":
-                headerTitle.textContent = "Profile";
-                backBtn.classList.add("hidden");
-                break;
-            }
-          }
-
-          AppState.currentScreen = screenName;
-
-          // Update Telegram BackButton
-          if (screenName === "restaurant") {
-            tg?.BackButton?.show();
-          } else {
-            tg?.BackButton?.hide();
-          }
-
-          hapticFeedback("selection");
-        } catch (error) {
-          console.error("Failed to switch screen:", error);
-          showError("Navigation error");
-        }
-      }
-
-      function showModal(modalId) {
-        try {
-          const modal = document.getElementById(modalId);
-          if (modal) {
-            modal.classList.remove("hidden");
-            modal.style.animation = "fadeIn 0.3s ease-out";
-          }
-        } catch (error) {
-          console.error("Failed to show modal:", error);
-        }
-      }
-
-      function closeModal(modalId) {
-        try {
-          const modal = document.getElementById(modalId);
-          if (modal) {
-            modal.classList.add("hidden");
-          }
-        } catch (error) {
-          console.error("Failed to close modal:", error);
-        }
-      }
-
-      // Search Functions
-      function performSearch(query) {
-        try {
-          AppState.searchQuery = query.toLowerCase();
-          renderRestaurants();
-        } catch (error) {
-          console.error("Failed to perform search:", error);
-          showError("Search failed");
-        }
-      }
-
-      // Initialization
-      async function initializeApp() {
-        showLoading(true);
-
-        try {
-          // Apply Telegram theme
-          applyTelegramTheme();
-
-          // Initialize user data
-          AppState.user = tg?.initDataUnsafe?.user;
-          AppState.orders = [...SAMPLE_ORDERS];
-
-          // Load favorites from storage
-          AppState.favorites = Storage.load("favorites", []);
-
-          // Get location
-          try {
-            const location = await getCurrentLocation();
-            const locationName = await reverseGeocode(
-              location.lat,
-              location.lng
-            );
-            const currentLocationEl =
-              document.getElementById("current-location");
-            if (currentLocationEl) {
-              currentLocationEl.textContent = locationName;
-            }
-          } catch (error) {
-            console.warn("Location error:", error.message);
-            const currentLocationEl =
-              document.getElementById("current-location");
-            if (currentLocationEl) {
-              currentLocationEl.textContent = "Location unavailable";
-            }
-            showError(
-              "Location access required for nearby restaurants",
-              "location"
-            );
-          }
-
-          // Render initial content
-          renderRestaurants();
-          renderOrders();
-          renderProfile();
-          updateCartUI();
-
-          // Set up Telegram-specific features
-          if (tg?.BackButton) {
-            tg.BackButton.onClick(() => {
-              if (AppState.currentScreen === "restaurant") {
-                switchScreen("home");
-              }
+          // Add event listeners to complete buttons
+          document.querySelectorAll('.complete-activity-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const activityId = parseInt(btn.dataset.activityId);
+              const partnerId = parseInt(btn.dataset.partnerId);
+              completeActivity(activityId, partnerId);
             });
-          }
+          });
+        }
 
-          // Enable haptic feedback
-          tg?.enableClosingConfirmation?.();
-        } catch (error) {
-          console.error("Initialization error:", error);
-          showError("Failed to initialize app. Please refresh and try again.");
-          if (tg?.showAlert) {
-            tg.showAlert("Failed to initialize app. Please try again.");
-          }
-        } finally {
-          showLoading(false);
+        // Update completed activities
+        if (completedActivities.length === 0) {
+          completedContainer.classList.add('hidden');
+          noCompletedEl.classList.remove('hidden');
+        } else {
+          completedContainer.classList.remove('hidden');
+          noCompletedEl.classList.add('hidden');
+          
+          completedContainer.innerHTML = '';
+          completedActivities.slice(0, 5).forEach(activity => {
+            const activityData = activitiesDatabase.find(a => a.id === activity.activityId);
+            const partner = connections.find(c => c.id === activity.partnerId);
+            if (!activityData || !partner) return;
+
+            const activityEl = document.createElement('div');
+            activityEl.className = 'activity-card completed rounded-lg p-3 cursor-pointer';
+            activityEl.innerHTML = `
+              <div class="flex items-center justify-between">
+                <div class="flex-1">
+                  <div class="font-medium text-sm">${activityData.title}</div>
+                  <div class="text-xs text-hint">with ${partner.profile.name} • ${formatTimestamp(activity.completedAt)}</div>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <div class="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">+${activity.points}</div>
+                  <i class="fas fa-check-circle text-green-500"></i>
+                </div>
+              </div>
+            `;
+
+            completedContainer.appendChild(activityEl);
+          });
         }
       }
 
-      // Event Listeners
-      document.addEventListener("DOMContentLoaded", () => {
-        initializeApp();
+      // Update achievements display
+      function updateAchievements() {
+        const achievementsContainer = document.getElementById('achievement-badges');
+        const recentAchievements = document.getElementById('recent-achievements');
+        const noAchievements = document.getElementById('no-achievements');
+        const badgesCount = document.getElementById('badges-count');
 
-        // Error banner dismiss
-        document
-          .getElementById("dismiss-error")
-          ?.addEventListener("click", hideError);
+        const unlockedCount = achievements.filter(a => a.unlocked).length;
+        badgesCount.textContent = `${unlockedCount}/${achievements.length} unlocked`;
 
+        // Update main achievements grid
+        achievementsContainer.innerHTML = '';
+        achievements.forEach(achievement => {
+          const badgeEl = document.createElement('div');
+          badgeEl.className = `achievement-badge ${achievement.unlocked ? 'unlocked' : 'locked'} w-16 h-16 rounded-xl flex flex-col items-center justify-center text-center cursor-pointer`;
+          badgeEl.innerHTML = `
+            <div class="text-2xl">${achievement.icon}</div>
+            <div class="text-xs font-medium mt-1">${achievement.name.split(' ')[0]}</div>
+          `;
+
+          badgeEl.addEventListener('click', () => {
+            document.getElementById('achievement-modal-icon').textContent = achievement.icon;
+            document.getElementById('achievement-modal-title').textContent = achievement.unlocked ? achievement.name : 'Locked Achievement';
+            document.getElementById('achievement-modal-description').textContent = achievement.description;
+            document.getElementById('achievement-modal-reward').textContent = `${achievement.points} points`;
+            showModal('achievement-detail-modal');
+          });
+
+          achievementsContainer.appendChild(badgeEl);
+        });
+
+        // Update recent achievements
+        const recentUnlocked = achievements.filter(a => a.unlocked).slice(-3);
+        if (recentUnlocked.length === 0) {
+          recentAchievements.classList.add('hidden');
+          noAchievements.classList.remove('hidden');
+        } else {
+          recentAchievements.classList.remove('hidden');
+          noAchievements.classList.add('hidden');
+          
+          recentAchievements.innerHTML = '';
+          recentUnlocked.forEach(achievement => {
+            const badgeEl = document.createElement('div');
+            badgeEl.className = 'achievement-badge unlocked w-20 h-20 rounded-xl flex flex-col items-center justify-center text-center cursor-pointer flex-shrink-0';
+            badgeEl.innerHTML = `
+              <div class="text-2xl">${achievement.icon}</div>
+              <div class="text-xs font-medium mt-1">${achievement.name.split(' ')[0]}</div>
+            `;
+            recentAchievements.appendChild(badgeEl);
+          });
+        }
+      }
+
+      // Open chat
+      function openChat(connection) {
+        activeChat = connection;
+        connection.unreadCount = 0;
+
+        // Update chat header
+        document.getElementById('chat-avatar').style.backgroundImage = `url(${connection.profile.avatar})`;
+        document.getElementById('chat-name').textContent = connection.profile.name;
+        document.getElementById('chat-status').textContent = connection.profile.lastActive || 'Active now';
+        document.getElementById('chat-compatibility').textContent = `${connection.compatibility}%`;
+
+        // Load messages
+        loadChatMessages(connection.id);
+
+        navigateTo('chat-page');
+        
+        // Suggest activity if none are active
+        const hasActiveActivity = activities.some(a => a.partnerId === connection.id && a.status === 'in-progress');
+        if (!hasActiveActivity) {
+          setTimeout(() => {
+            suggestActivity(connection.id);
+          }, 1000);
+        }
+      }
+
+      // Load chat messages
+      function loadChatMessages(chatId) {
+        const messagesContainer = document.getElementById('chat-messages');
+        messagesContainer.innerHTML = '<div class="text-center text-hint text-sm py-2"><span id="chat-start-date">Today</span></div>';
+
+        const messages = chatMessages[chatId] || [];
+        messages.forEach(message => {
+          const messageEl = document.createElement('div');
+          messageEl.className = `chat-bubble ${message.sender === 'user' ? 'sent' : 'received'}`;
+          messageEl.innerHTML = `
+            ${message.text}
+            <div class="time">${formatChatTime(message.timestamp)}</div>
+          `;
+          messagesContainer.appendChild(messageEl);
+        });
+
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+
+      // Send chat message
+      function sendChatMessage() {
+        if (!activeChat) return;
+
+        const input = document.getElementById('chat-input');
+        const text = input.value.trim();
+        if (!text) return;
+
+        const newMessage = {
+          id: Date.now(),
+          text: text,
+          timestamp: Date.now(),
+          sender: 'user'
+        };
+
+        // Add to messages
+        if (!chatMessages[activeChat.id]) {
+          chatMessages[activeChat.id] = [];
+        }
+        chatMessages[activeChat.id].push(newMessage);
+
+        // Update connection
+        activeChat.lastMessage = { text: text, timestamp: Date.now(), sender: 'user' };
+
+        // Add to UI
+        const messagesContainer = document.getElementById('chat-messages');
+        const messageEl = document.createElement('div');
+        messageEl.className = 'chat-bubble sent';
+        messageEl.innerHTML = `
+          ${text}
+          <div class="time">${formatChatTime(Date.now())}</div>
+        `;
+        messagesContainer.appendChild(messageEl);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+        input.value = '';
+
+        // Simulate response
+        setTimeout(() => {
+          simulateResponse(activeChat.id);
+        }, 1000 + Math.random() * 2000);
+
+        triggerHapticFeedback('light');
+      }
+
+      // Simulate chat response
+      function simulateResponse(chatId) {
+        const responses = [
+          "That's really interesting! Tell me more about that.",
+          "I love that perspective. It makes me think differently about things.",
+          "You always have such thoughtful insights.",
+          "I'm looking forward to trying our next activity together!",
+          "This conversation is exactly what I needed today.",
+          "Your enthusiasm is contagious!",
+          "I feel like we're really connecting on a deeper level.",
+          "That's exactly how I feel too!"
+        ];
+
+        const responseText = responses[Math.floor(Math.random() * responses.length)];
+        const newMessage = {
+          id: Date.now(),
+          text: responseText,
+          timestamp: Date.now(),
+          sender: chatId
+        };
+
+        chatMessages[chatId].push(newMessage);
+
+        if (activeChat && activeChat.id === chatId) {
+          const messagesContainer = document.getElementById('chat-messages');
+          const messageEl = document.createElement('div');
+          messageEl.className = 'chat-bubble received';
+          messageEl.innerHTML = `
+            ${responseText}
+            <div class="time">${formatChatTime(Date.now())}</div>
+          `;
+          messagesContainer.appendChild(messageEl);
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Update connection
+        const connection = connections.find(c => c.id === chatId);
+        if (connection) {
+          connection.lastMessage = { text: responseText, timestamp: Date.now(), sender: chatId };
+        }
+
+        updateConnectionsList();
+        updateRecentConnections();
+      }
+
+      // Set up event listeners
+      function setupEventListeners() {
         // Navigation
-        document.querySelectorAll(".nav-btn").forEach((btn) => {
-          btn.addEventListener("click", (e) => {
-            const screen = e.currentTarget.dataset.screen;
-            switchScreen(screen);
+        document.getElementById('nav-home').addEventListener('click', () => navigateTo('home-page'));
+        document.getElementById('nav-discover').addEventListener('click', () => navigateTo('discover-page'));
+        document.getElementById('nav-activities').addEventListener('click', () => navigateTo('activities-page'));
+        document.getElementById('nav-matches').addEventListener('click', () => navigateTo('matches-page'));
+        document.getElementById('nav-profile').addEventListener('click', () => navigateTo('profile-page'));
+
+        // Random matching
+        document.getElementById('find-random-match').addEventListener('click', startRandomMatch);
+        document.getElementById('start-random-match').addEventListener('click', startRandomMatch);
+
+        // Match modal
+        document.getElementById('match-accept').addEventListener('click', acceptMatch);
+        document.getElementById('match-decline').addEventListener('click', () => {
+          hideModal('random-match-modal');
+          showToast('Match declined. Keep exploring!');
+        });
+
+        // Activity suggestions
+        document.getElementById('accept-activity').addEventListener('click', acceptActivity);
+        document.getElementById('decline-activity').addEventListener('click', () => {
+          document.getElementById('activity-suggestions').classList.add('hidden');
+        });
+        document.getElementById('dismiss-suggestion').addEventListener('click', () => {
+          document.getElementById('activity-suggestions').classList.add('hidden');
+        });
+
+        // Activity modal
+        document.getElementById('close-activity-modal').addEventListener('click', () => {
+          hideModal('activity-detail-modal');
+        });
+        document.getElementById('activity-modal-cancel').addEventListener('click', () => {
+          hideModal('activity-detail-modal');
+        });
+        document.getElementById('activity-modal-start').addEventListener('click', () => {
+          hideModal('activity-detail-modal');
+          showToast('Activity started! Work together to complete all steps.');
+        });
+
+        // Achievement modal
+        document.getElementById('close-achievement-modal').addEventListener('click', () => {
+          hideModal('achievement-detail-modal');
+        });
+
+        // Chat
+        document.getElementById('back-to-matches').addEventListener('click', () => {
+          navigateTo('matches-page');
+          activeChat = null;
+        });
+        document.getElementById('chat-send-btn').addEventListener('click', sendChatMessage);
+        document.getElementById('chat-input').addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            sendChatMessage();
+          }
+        });
+
+        // View buttons
+        document.getElementById('view-achievements').addEventListener('click', () => {
+          navigateTo('profile-page');
+        });
+        document.getElementById('view-all-connections').addEventListener('click', () => {
+          navigateTo('matches-page');
+        });
+        document.getElementById('view-all-achievements').addEventListener('click', () => {
+          navigateTo('profile-page');
+        });
+        document.getElementById('start-discovering-btn').addEventListener('click', () => {
+          navigateTo('discover-page');
+        });
+
+        // Activity categories
+        document.querySelectorAll('.activity-category').forEach(category => {
+          category.addEventListener('click', (e) => {
+            const categoryType = e.currentTarget.dataset.category;
+            showCategoryActivities(categoryType);
           });
         });
-
-        // Back button
-        document.getElementById("back-btn")?.addEventListener("click", () => {
-          switchScreen("home");
-        });
-
-        // Profile button
-        document
-          .getElementById("profile-btn")
-          ?.addEventListener("click", () => {
-            switchScreen("profile");
-          });
-
-        // Search
-        document.getElementById("search-btn")?.addEventListener("click", () => {
-          showModal("search-modal");
-          document.getElementById("search-input")?.focus();
-        });
-
-        document
-          .getElementById("close-search")
-          ?.addEventListener("click", () => {
-            closeModal("search-modal");
-            AppState.searchQuery = "";
-            renderRestaurants();
-          });
-
-        document
-          .getElementById("search-input")
-          ?.addEventListener("input", (e) => {
-            performSearch(e.target.value);
-          });
-
-        // Filters
-        document.addEventListener("click", (e) => {
-          if (e.target.classList.contains("filter-btn")) {
-            document.querySelectorAll(".filter-btn").forEach((btn) => {
-              btn.classList.remove("active", "bg-nature-primary", "text-white");
-              btn.classList.add("bg-tg-secondary-bg", "text-tg-text");
-            });
-
-            e.target.classList.add("active", "bg-nature-primary", "text-white");
-            e.target.classList.remove("bg-tg-secondary-bg", "text-tg-text");
-
-            AppState.filters.active = e.target.dataset.filter;
-            renderRestaurants();
-            hapticFeedback("selection");
-          }
-        });
-
-        // Favorites
-        document.addEventListener("click", (e) => {
-          if (e.target.classList.contains("favorite-btn")) {
-            e.stopPropagation();
-            const restaurantId = parseInt(e.target.dataset.restaurantId);
-            toggleFavorite(restaurantId);
-          }
-        });
-
-        // Restaurant cards
-        document.addEventListener("click", (e) => {
-          const card = e.target.closest(".restaurant-card");
-          if (card && !e.target.classList.contains("favorite-btn")) {
-            const restaurantId = parseInt(card.dataset.id);
-            renderRestaurantDetail(restaurantId);
-            switchScreen("restaurant");
-          }
-        });
-
-        // Menu categories
-        document.addEventListener("click", (e) => {
-          if (e.target.classList.contains("menu-category-btn")) {
-            document.querySelectorAll(".menu-category-btn").forEach((btn) => {
-              btn.classList.remove("active", "bg-nature-primary", "text-white");
-              btn.classList.add("bg-tg-secondary-bg", "text-tg-text");
-            });
-
-            e.target.classList.add("active", "bg-nature-primary", "text-white");
-            e.target.classList.remove("bg-tg-secondary-bg", "text-tg-text");
-
-            const category = e.target.dataset.category;
-            document.querySelectorAll(".menu-item").forEach((item) => {
-              if (category === "all" || item.dataset.category === category) {
-                item.style.display = "flex";
-              } else {
-                item.style.display = "none";
-              }
-            });
-
-            hapticFeedback("selection");
-          }
-        });
-
-        // Add to cart
-        document.addEventListener("click", (e) => {
-          if (e.target.classList.contains("add-to-cart-btn")) {
-            const itemId = parseInt(e.target.dataset.itemId);
-            const restaurantHeader =
-              document.querySelector(".restaurant-header");
-            const restaurantId = parseInt(
-              restaurantHeader?.dataset?.restaurantId || 1
-            );
-            addToCart(itemId, restaurantId);
-          }
-        });
-
-        // Cart
-        document.addEventListener("click", (e) => {
-          if (
-            e.target.id === "view-cart-btn" ||
-            e.target.closest("#view-cart-btn")
-          ) {
-            renderCart();
-            showModal("cart-modal");
-          }
-        });
-
-        document.getElementById("close-cart")?.addEventListener("click", () => {
-          closeModal("cart-modal");
-        });
-
-        // Cart quantity
-        document.addEventListener("click", (e) => {
-          if (e.target.classList.contains("quantity-btn")) {
-            const action = e.target.dataset.action;
-            const itemId = parseInt(e.target.dataset.itemId);
-            updateCartQuantity(itemId, action);
-          }
-        });
-
-        // Checkout
-        document
-          .getElementById("checkout-btn")
-          ?.addEventListener("click", () => {
-            placeOrder();
-          });
-
-        // Location refresh
-        document
-          .getElementById("refresh-location")
-          ?.addEventListener("click", async () => {
-            try {
-              hapticFeedback("impact");
-              const location = await getCurrentLocation();
-              const locationName = await reverseGeocode(
-                location.lat,
-                location.lng
-              );
-              const currentLocationEl =
-                document.getElementById("current-location");
-              if (currentLocationEl) {
-                currentLocationEl.textContent = locationName;
-              }
-
-              if (tg?.showPopup) {
-                tg.showPopup({
-                  title: "Location Updated! 📍",
-                  message: `Your location has been updated to ${locationName}`,
-                  buttons: [{ type: "ok" }],
-                });
-              }
-              hideError();
-            } catch (error) {
-              if (tg?.showAlert) {
-                tg.showAlert(`Failed to update location: ${error.message}`);
-              }
-              showError(
-                `Failed to update location: ${error.message}`,
-                "location"
-              );
-            }
-          });
-
-        // Settings
-        document.addEventListener("click", (e) => {
-          if (e.target.classList.contains("settings-item")) {
-            const action = e.target.dataset.action;
-            hapticFeedback("selection");
-
-            switch (action) {
-              case "notifications":
-                if (tg?.showPopup) {
-                  tg.showPopup({
-                    title: "Notifications 🔔",
-                    message:
-                      "Notification settings will be available in the next update!",
-                    buttons: [{ type: "ok" }],
-                  });
-                }
-                break;
-              case "location":
-                if (tg?.showPopup) {
-                  tg.showPopup({
-                    title: "Location Settings 📍",
-                    message:
-                      "Location settings will be available in the next update!",
-                    buttons: [{ type: "ok" }],
-                  });
-                }
-                break;
-              case "preferences":
-                if (tg?.showPopup) {
-                  tg.showPopup({
-                    title: "Dietary Preferences 🌱",
-                    message:
-                      "Dietary preference settings will be available in the next update!",
-                    buttons: [{ type: "ok" }],
-                  });
-                }
-                break;
-              case "help":
-                if (tg?.openLink) {
-                  tg.openLink("https://t.me/natureeats_support");
-                }
-                break;
-              case "about":
-                if (tg?.showPopup) {
-                  tg.showPopup({
-                    title: "About NatureEats 🌿",
-                    message:
-                      "NatureEats v1.0\n\nSustainable food delivery with a nature-inspired approach to healthy eating.",
-                    buttons: [{ type: "ok" }],
-                  });
-                }
-                break;
-            }
-          }
-        });
-
-        // Theme changes
-        window
-          .matchMedia("(prefers-color-scheme: dark)")
-          .addEventListener("change", applyTelegramTheme);
-
-        // Handle visibility changes
-        document.addEventListener("visibilitychange", () => {
-          if (!document.hidden) {
-            // App became visible, refresh data if needed
-            renderOrders();
-          }
-        });
-      });
-
-      // Handle Telegram Web App events
-      try {
-        tg?.onEvent?.("themeChanged", applyTelegramTheme);
-        tg?.onEvent?.("viewportChanged", () => {
-          console.log(
-            "Viewport changed:",
-            tg.viewportHeight,
-            tg.viewportStableHeight
-          );
-        });
-      } catch (error) {
-        console.warn("Failed to register Telegram events:", error);
       }
 
-      // Expose necessary functions to global scope for debugging
-      if (
-        window.location.hostname === "localhost" ||
-        window.location.hostname === "127.0.0.1"
-      ) {
-        window.AppState = AppState;
-        window.switchScreen = switchScreen;
-        window.renderRestaurants = renderRestaurants;
-        window.toggleFavorite = toggleFavorite;
+      // Navigate to page
+      function navigateTo(pageId) {
+        const currentPage = document.querySelector('.page.active');
+        const targetPage = document.getElementById(pageId);
+
+        if (currentPage.id === pageId) return;
+
+        currentPage.classList.remove('active');
+        targetPage.classList.add('active');
+
+        updateHeader(pageId);
+        updateNavigation(pageId);
+        updateBackButton(pageId);
+
+        triggerHapticFeedback('medium');
       }
-    </script>
-  </body>
+
+      // Update header
+      function updateHeader(pageId) {
+        const headerTitle = document.getElementById('header-title');
+        const headerAction = document.getElementById('header-action');
+
+        headerAction.classList.add('hidden');
+
+        switch(pageId) {
+          case 'home-page':
+            headerTitle.textContent = 'Connect & Grow';
+            break;
+          case 'discover-page':
+            headerTitle.textContent = 'Discover';
+            break;
+          case 'activities-page':
+            headerTitle.textContent = 'Activities';
+            break;
+          case 'matches-page':
+            headerTitle.textContent = 'Connections';
+            break;
+          case 'profile-page':
+            headerTitle.textContent = 'Profile';
+            break;
+          case 'chat-page':
+            headerTitle.textContent = '';
+            break;
+        }
+      }
+
+      // Update navigation
+      function updateNavigation(pageId) {
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+          btn.classList.remove('text-primary');
+          btn.classList.add('text-hint');
+        });
+
+        const buttonId = 'nav-' + pageId.split('-')[0];
+        const activeBtn = document.getElementById(buttonId);
+        if (activeBtn) {
+          activeBtn.classList.remove('text-hint');
+          activeBtn.classList.add('text-primary');
+        }
+      }
+
+      // Update back button
+      function updateBackButton(pageId) {
+        if (!tgApp) return;
+
+        if (pageId === 'home-page') {
+          tgApp.BackButton.hide();
+        } else {
+          tgApp.BackButton.show();
+        }
+      }
+
+      // Handle back navigation
+      function handleBackNavigation() {
+        if (activeChat) {
+          navigateTo('matches-page');
+          activeChat = null;
+        } else {
+          navigateTo('home-page');
+        }
+      }
+
+      // Show modal
+      function showModal(modalId) {
+        document.getElementById(modalId).classList.add('active');
+        triggerHapticFeedback('light');
+      }
+
+      // Hide modal
+      function hideModal(modalId) {
+        document.getElementById(modalId).classList.remove('active');
+      }
+
+      // Show category activities
+      function showCategoryActivities(category) {
+        const categoryActivities = activitiesDatabase.filter(a => a.category === category);
+        // Implementation would show a filtered view of activities
+        showToast(`Showing ${capitalizeFirst(category)} activities`);
+      }
+
+      // Set up haptic feedback
+      function setupHapticFeedback() {
+        if (!tgApp || !tgApp.HapticFeedback) return;
+
+        document.querySelectorAll('button').forEach(btn => {
+          btn.addEventListener('click', () => {
+            triggerHapticFeedback('light');
+          });
+        });
+      }
+
+      // Trigger haptic feedback
+      function triggerHapticFeedback(type) {
+        if (!tgApp || !tgApp.HapticFeedback) return;
+
+        switch (type) {
+          case 'light':
+            tgApp.HapticFeedback.impactOccurred('light');
+            break;
+          case 'medium':
+            tgApp.HapticFeedback.impactOccurred('medium');
+            break;
+          case 'heavy':
+            tgApp.HapticFeedback.impactOccurred('heavy');
+            break;
+        }
+      }
+
+      // Show toast
+      function showToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'fixed bottom-20 left-0 right-0 mx-auto w-4/5 max-w-sm bg-section-bg text-text py-3 px-4 rounded-lg shadow-lg z-50 text-center opacity-0 transition-opacity';
+        toast.textContent = message;
+
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+          toast.style.opacity = '1';
+        }, 10);
+
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          setTimeout(() => {
+            toast.remove();
+          }, 300);
+        }, 3000);
+      }
+
+      // Generate avatar
+      function generateAvatar(name, color = '#5D5CDE') {
+        const canvas = document.createElement('canvas');
+        canvas.width = 200;
+        canvas.height = 200;
+        const ctx = canvas.getContext('2d');
+
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, 200, 200);
+
+        const initials = name.split(' ').map(n => n[0]).join('').toUpperCase();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 80px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(initials, 100, 100);
+
+        return canvas.toDataURL();
+      }
+
+      // Format timestamp
+      function formatTimestamp(timestamp) {
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffSec = Math.floor(diffMs / 1000);
+        const diffMin = Math.floor(diffSec / 60);
+        const diffHour = Math.floor(diffMin / 60);
+        const diffDay = Math.floor(diffHour / 24);
+
+        if (diffSec < 60) return 'Just now';
+        if (diffMin < 60) return `${diffMin}m ago`;
+        if (diffHour < 24) return `${diffHour}h ago`;
+        if (diffDay < 7) return `${diffDay}d ago`;
+
+        return date.toLocaleDateString();
+      }
+
+      // Format chat time
+      function formatChatTime(timestamp) {
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+
+      // Capitalize first letter
+      function capitalizeFirst(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1);
+      }
+    });
+  </script>
+</body>
 </html>
