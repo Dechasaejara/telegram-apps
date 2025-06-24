@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Event Banner Creator</title>
+    <title>Party Banner Creator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -11,7 +11,20 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:wght@700&family=Poppins:wght@400;600&family=Libre+Baskerville:ital@1&family=Roboto+Slab:wght@700&family=Merriweather:wght@700&family=Oswald:wght@700&family=Montserrat:wght@700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Poppins', sans-serif; }
+        :root {
+            --tg-bg-color: #ffffff;
+            --tg-text-color: #000000;
+            --tg-button-color: #0088cc;
+        }
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background-color: var(--tg-bg-color);
+            color: var(--tg-text-color);
+        }
+        button {
+            background-color: var(--tg-button-color);
+            color: #ffffff;
+        }
         .banner-container { width: 100%; max-width: 600px; aspect-ratio: 16 / 9; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .placeholder-bg { background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%23d1d5db' stroke-width='3' stroke-dasharray='6%2c 14' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e"); background-color: #f9fafb; }
         .dark .placeholder-bg { background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%234b5563' stroke-width='3' stroke-dasharray='6%2c 14' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e"); background-color: #374151; }
@@ -24,10 +37,10 @@
         .dark input[type="range"]::-webkit-slider-track { background: #4b5563; }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white overflow-hidden flex flex-col h-screen">
+<body class="overflow-hidden flex flex-col h-screen">
     <div id="app" class="flex-grow flex flex-col items-center p-4 space-y-4 overflow-y-auto">
         <h1 class="text-2xl font-bold text-center flex-shrink-0 flex items-center gap-2">
-            <i class="ph-fill ph-confetti text-blue-500"></i> Event Banner Creator
+            <i class="ph-fill ph-confetti text-blue-500"></i> Party Banner Creator
         </h1>
         <div class="w-full max-w-md space-y-4">
             <div id="image-upload-section" class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md">
@@ -44,24 +57,9 @@
             <div id="customization-section" class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md space-y-6 hidden">
                 <h2 class="text-xl font-semibold flex items-center gap-2"><i class="ph-bold ph-paint-brush text-purple-500"></i> 2. Customize Banner</h2>
                 <div class="space-y-4">
-                    <h3 class="font-semibold text-lg">General Settings</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label for="orientation-selector" class="block mb-2 text-sm font-medium">Orientation</label>
-                            <select id="orientation-selector" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
-                                <option value="landscape">Landscape (1920x1080)</option>
-                                <option value="portrait">Portrait (1080x1920)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="layout-selector" class="block mb-2 text-sm font-medium">Layout Style</label>
-                            <select id="layout-selector" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
-                                <!-- Options set dynamically -->
-                            </select>
-                        </div>
-                    </div>
+                    <h3 class="font-semibold text-lg">Event Details</h3>
                     <div>
-                        <label for="event-selector" class="block mb-2 text-sm font-medium">Select a Style</label>
+                        <label for="event-selector" class="block mb-2 text-sm font-medium">Event Type</label>
                         <select id="event-selector" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
                             <option value="wedding">Wedding</option>
                             <option value="birthday">Birthday</option>
@@ -73,9 +71,33 @@
                             <option value="get_well">Get Well Soon</option>
                         </select>
                     </div>
+                    <div>
+                        <label for="header-text" class="block mb-2 text-sm font-medium">Header Title</label>
+                        <input type="text" id="header-text" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="main-content-text" class="block mb-2 text-sm font-medium">Main Content</label>
+                        <textarea id="main-content-text" rows="3" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+                    <div>
+                        <label for="location-text" class="block mb-2 text-sm font-medium">Location</label>
+                        <input type="text" id="location-text" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="date-time-picker" class="block mb-2 text-sm font-medium">Date & Time</label>
+                        <input type="datetime-local" id="date-time-picker" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
                 </div>
                 <div class="space-y-4">
                     <h3 class="font-semibold text-lg">Appearance</h3>
+                    <div>
+                        <label for="layout-selector" class="block mb-2 text-sm font-medium">Layout Style</label>
+                        <select id="layout-selector" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="split-left">Text Left, Image Right</option>
+                            <option value="split-right">Text Right, Image Left</option>
+                            <option value="overlay">Overlay Layout</option>
+                        </select>
+                    </div>
                     <div>
                         <label for="font-selector" class="block mb-2 text-sm font-medium">Select a Font</label>
                         <select id="font-selector" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
@@ -101,7 +123,7 @@
                             <option value="custom">Custom Colors</option>
                         </select>
                     </div>
-                    <div id="custom-colors" class="grid grid-cols-2 gap-4 hidden">
+                    <div id="custom-colors" class="space-y-4 hidden">
                         <div>
                             <label for="text-color" class="block mb-2 text-sm font-medium">Text Color</label>
                             <input type="color" id="text-color" value="#FFFFFF" class="w-full h-10 border border-gray-300 rounded-md">
@@ -111,54 +133,23 @@
                             <input type="color" id="overlay-color" value="#000000" class="w-full h-10 border border-gray-300 rounded-md">
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label for="overlay-opacity" class="block mb-2 text-sm font-medium">Background Opacity</label>
-                            <input type="range" id="overlay-opacity" min="0" max="100" value="50" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
-                            <div class="text-xs text-gray-500 text-center mt-1"><span id="opacity-value">50</span>%</div>
-                        </div>
-                        <div>
-                            <label for="text-shadow" class="block mb-2 text-sm font-medium">Text Shadow</label>
-                            <select id="text-shadow" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
-                                <option value="none">None</option>
-                                <option value="light">Light Shadow</option>
-                                <option value="medium">Medium Shadow</option>
-                                <option value="strong">Strong Shadow</option>
-                            </select>
-                        </div>
+                    <div>
+                        <label for="overlay-opacity" class="block mb-2 text-sm font-medium">Background Opacity</label>
+                        <input type="range" id="overlay-opacity" min="0" max="100" value="50" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        <div class="text-xs text-gray-500 text-center mt-1"><span id="opacity-value">50</span>%</div>
                     </div>
                 </div>
                 <div class="space-y-4">
                     <h3 class="font-semibold text-lg">Text Settings</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label for="header-size" class="block mb-2 text-sm font-medium">Header Size</label>
-                            <input type="range" id="header-size" min="60" max="200" value="120" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
-                            <div class="text-xs text-gray-500 text-center mt-1"><span id="header-size-value">120</span>px</div>
-                        </div>
-                        <div>
-                            <label for="content-size" class="block mb-2 text-sm font-medium">Content Size</label>
-                            <input type="range" id="content-size" min="30" max="80" value="55" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
-                            <div class="text-xs text-gray-500 text-center mt-1"><span id="content-size-value">55</span>px</div>
-                        </div>
+                    <div>
+                        <label for="header-size" class="block mb-2 text-sm font-medium">Header Size</label>
+                        <input type="range" id="header-size" min="60" max="200" value="120" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        <div class="text-xs text-gray-500 text-center mt-1"><span id="header-size-value">120</span>px</div>
                     </div>
                     <div>
-                        <label for="header-text" class="block mb-2 text-sm font-medium">Header Title</label>
-                        <input type="text" id="header-text" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label for="main-content-text" class="block mb-2 text-sm font-medium">Main Content</label>
-                        <textarea id="main-content-text" rows="3" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"></textarea>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label for="location-text" class="block mb-2 text-sm font-medium">Location</label>
-                            <input type="text" id="location-text" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                        <div>
-                            <label for="date-time-picker" class="block mb-2 text-sm font-medium">Date & Time</label>
-                            <input type="datetime-local" id="date-time-picker" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
-                        </div>
+                        <label for="content-size" class="block mb-2 text-sm font-medium">Content Size</label>
+                        <input type="range" id="content-size" min="30" max="80" value="55" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        <div class="text-xs text-gray-500 text-center mt-1"><span id="content-size-value">55</span>px</div>
                     </div>
                 </div>
             </div>
@@ -167,15 +158,15 @@
                 <div class="banner-container mx-auto rounded-lg overflow-hidden placeholder-bg relative">
                     <canvas id="banner-canvas" class="w-full h-full"></canvas>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    <button id="download-button" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out disabled:bg-gray-400 icon-button">
+                <div class="grid grid-cols-1 gap-2">
+                    <button id="download-button" class="w-full py-2 px-4 rounded transition duration-300 ease-in-out disabled:bg-gray-400 icon-button">
                         <i class="ph-bold ph-download-simple"></i> Download
                     </button>
-                    <button id="share-button" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out disabled:bg-gray-400 icon-button">
+                    <button id="share-button" class="w-full py-2 px-4 rounded transition duration-300 ease-in-out disabled:bg-gray-400 icon-button">
                         <i class="ph-bold ph-telegram-logo"></i> Share
                     </button>
                 </div>
-                <button id="reset-button" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out mt-2 icon-button">
+                <button id="reset-button" class="w-full py-2 px-4 rounded transition duration-300 ease-in-out mt-2 icon-button">
                     <i class="ph-bold ph-arrow-counter-clockwise"></i> Start Over
                 </button>
             </div>
@@ -187,20 +178,18 @@
             try {
                 tg.ready();
                 tg.expand();
-                if (tg.colorScheme === 'dark') document.documentElement.classList.add('dark');
+                const themeParams = tg.themeParams;
+                document.documentElement.style.setProperty('--tg-bg-color', themeParams.bg_color || '#ffffff');
+                document.documentElement.style.setProperty('--tg-text-color', themeParams.text_color || '#000000');
+                document.documentElement.style.setProperty('--tg-button-color', themeParams.button_color || '#0088cc');
             } catch (error) {
                 console.warn("Telegram WebApp script not found or failed. Running in standalone mode.");
             }
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.classList.add('dark');
-            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
-                document.documentElement.classList.toggle('dark', event.matches);
-            });
 
             const imageUploadSection = document.getElementById('image-upload-section');
             const customizationSection = document.getElementById('customization-section');
             const bannerPreviewSection = document.getElementById('banner-preview-section');
             const imageUploadInput = document.getElementById('image-upload');
-            const orientationSelector = document.getElementById('orientation-selector');
             const layoutSelector = document.getElementById('layout-selector');
             const eventSelector = document.getElementById('event-selector');
             const fontSelector = document.getElementById('font-selector');
@@ -210,7 +199,6 @@
             const overlayColorInput = document.getElementById('overlay-color');
             const overlayOpacitySlider = document.getElementById('overlay-opacity');
             const opacityValueDisplay = document.getElementById('opacity-value');
-            const textShadowSelector = document.getElementById('text-shadow');
             const headerSizeSlider = document.getElementById('header-size');
             const headerSizeValue = document.getElementById('header-size-value');
             const contentSizeSlider = document.getElementById('content-size');
@@ -225,9 +213,10 @@
             const shareButton = document.getElementById('share-button');
             const resetButton = document.getElementById('reset-button');
 
+            canvas.width = 1920;
+            canvas.height = 1080;
+
             let userImage = null;
-            updateCanvasSize();
-            updateLayoutOptions();
 
             const colorThemes = {
                 classic: { text: '#FFFFFF', overlay: '#000000' },
@@ -236,10 +225,6 @@
                 blue: { text: '#87CEEB', overlay: '#000080' },
                 green: { text: '#98FB98', overlay: '#006400' },
                 purple: { text: '#DDA0DD', overlay: '#4B0082' }
-            };
-            const shadowStyles = {
-                none: '', light: '2px 2px 4px rgba(0,0,0,0.3)',
-                medium: '3px 3px 6px rgba(0,0,0,0.5)', strong: '4px 4px 8px rgba(0,0,0,0.7)'
             };
             const eventTemplates = {
                 wedding: { header: "Save the Date", content: "Join us to celebrate the wedding of", headerSize: 120, contentSize: 55, defaultFont: 'Dancing Script', color: "#FFFFFF" },
@@ -251,24 +236,6 @@
                 funeral: { header: "In Loving Memory", content: "Forever in our hearts", headerSize: 110, contentSize: 50, defaultFont: 'Libre Baskerville', color: "#FFFFFF" },
                 get_well: { header: "Get Well Soon", content: "Sending our love and support", headerSize: 115, contentSize: 50, defaultFont: 'Playfair Display', color: "#FFFFFF" }
             };
-
-            function updateCanvasSize() {
-                const orientation = orientationSelector.value;
-                canvas.width = orientation === 'landscape' ? 1920 : 1080;
-                canvas.height = orientation === 'landscape' ? 1080 : 1920;
-            }
-
-            function updateLayoutOptions() {
-                const orientation = orientationSelector.value;
-                layoutSelector.innerHTML = orientation === 'landscape' ?
-                    `<option value="split-left">Text Left, Image Right</option>
-                     <option value="split-right">Text Right, Image Left</option>
-                     <option value="overlay">Overlay Layout</option>` :
-                    `<option value="vertical-top">Text Top, Image Bottom</option>
-                     <option value="vertical-bottom">Text Bottom, Image Top</option>
-                     <option value="overlay">Overlay Layout</option>`;
-                layoutSelector.value = layoutSelector.options[0].value;
-            }
 
             function updateTemplate() {
                 const selectedEvent = eventSelector.value;
@@ -311,12 +278,6 @@
                 }
             });
 
-            orientationSelector.addEventListener('change', () => {
-                updateCanvasSize();
-                updateLayoutOptions();
-                drawBanner();
-            });
-
             colorThemeSelector.addEventListener('change', () => {
                 const selectedTheme = colorThemeSelector.value;
                 customColorsDiv.classList.toggle('hidden', selectedTheme !== 'custom');
@@ -340,7 +301,7 @@
                 contentSizeValue.textContent = contentSizeSlider.value;
                 drawBanner();
             });
-            [eventSelector, fontSelector, layoutSelector, textShadowSelector, textColorInput, overlayColorInput,
+            [eventSelector, fontSelector, layoutSelector, textColorInput, overlayColorInput,
              headerTextInput, mainContentTextInput, locationTextInput, dateTimePicker].forEach(el => {
                 el.addEventListener('input', () => {
                     if (el.id === 'event-selector') updateTemplate();
@@ -359,10 +320,9 @@
                 downloadButton.disabled = true;
                 colorThemeSelector.value = 'classic';
                 customColorsDiv.classList.add('hidden');
-                layoutSelector.value = layoutSelector.options[0].value;
+                layoutSelector.value = 'split-left';
                 overlayOpacitySlider.value = 50;
                 opacityValueDisplay.textContent = '50';
-                textShadowSelector.value = 'none';
                 headerSizeSlider.value = 120;
                 contentSizeSlider.value = 55;
                 headerSizeValue.textContent = '120';
@@ -442,20 +402,11 @@
                 const textColor = textColorInput.value;
                 const overlayColor = overlayColorInput.value;
                 const overlayOpacity = overlayOpacitySlider.value / 100;
-                const shadowStyle = shadowStyles[textShadowSelector.value];
                 const headerSize = parseInt(headerSizeSlider.value);
                 const contentSize = parseInt(contentSizeSlider.value);
                 const padding = 100;
 
-                if (shadowStyle) {
-                    ctx.shadowColor = 'rgba(0,0,0,0.8)';
-                    ctx.shadowBlur = shadowStyle.includes('8px') ? 8 : shadowStyle.includes('6px') ? 6 : 4;
-                    ctx.shadowOffsetX = shadowStyle.includes('4px') ? 4 : shadowStyle.includes('3px') ? 3 : 2;
-                    ctx.shadowOffsetY = shadowStyle.includes('4px') ? 4 : shadowStyle.includes('3px') ? 3 : 2;
-                }
-
                 if (layout.startsWith('split')) drawSplitLayout(layout === 'split-left' ? 'left' : 'right');
-                else if (layout.startsWith('vertical')) drawVerticalLayout(layout === 'vertical-top' ? 'top' : 'bottom');
                 else if (layout === 'overlay') drawOverlayLayout();
 
                 function drawSplitLayout(textSide) {
@@ -512,71 +463,30 @@
                     drawTextContent(canvas.width / 2, canvas.width - padding * 2, 0, canvas.height);
                 }
 
-                function drawVerticalLayout(textPosition) {
-                    const textPanelHeight = canvas.height * 0.4;
-                    const textAreaY = textPosition === 'top' ? 0 : canvas.height - textPanelHeight;
-                    const imagePanelY = textPosition === 'top' ? textPanelHeight : 0;
-                    const imagePanelHeight = canvas.height - textPanelHeight;
-
-                    ctx.save();
-                    const coverRatio = Math.max(canvas.width / userImage.width, canvas.height / userImage.height);
-                    const coverWidth = userImage.width * coverRatio;
-                    const coverHeight = userImage.height * coverRatio;
-                    const coverX = (canvas.width - coverWidth) / 2;
-                    const coverY = (canvas.height - coverHeight) / 2;
-                    ctx.filter = `blur(20px) brightness(${overlayOpacity})`;
-                    ctx.drawImage(userImage, coverX, coverY, coverWidth, coverHeight);
-                    ctx.restore();
-
-                    ctx.save();
-                    ctx.fillStyle = overlayColor;
-                    ctx.globalAlpha = overlayOpacity * 0.8;
-                    ctx.fillRect(0, textAreaY, canvas.width, textPanelHeight);
-                    ctx.restore();
-
-                    ctx.save();
-                    const imageMargin = 20;
-                    const fitRatio = Math.min((canvas.width - imageMargin * 2) / userImage.width, (imagePanelHeight - imageMargin * 2) / userImage.height);
-                    const imgNewWidth = userImage.width * fitRatio;
-                    const imgNewHeight = userImage.height * fitRatio;
-                    const centerShiftX = (canvas.width - imgNewWidth) / 2;
-                    const centerShiftY = imagePanelY + (imagePanelHeight - imgNewHeight) / 2;
-                    ctx.drawImage(userImage, centerShiftX, centerShiftY, imgNewWidth, imgNewHeight);
-                    ctx.restore();
-
-                    drawTextContent(canvas.width / 2, canvas.width - padding * 2, textAreaY, textAreaY + textPanelHeight);
-                }
-
                 function drawTextContent(centerX, maxWidth, startY, maxY) {
                     const textAreaHeight = maxY - startY;
-                    const headerMaxY = startY + 0.3 * textAreaHeight;
-                    const contentStartY = startY + 0.35 * textAreaHeight;
-                    const contentMaxY = startY + 0.65 * textAreaHeight;
-                    const footerStartY = startY + 0.7 * textAreaHeight;
+                    const headerStartY = startY;
+                    const headerMaxY = startY + 0.2 * textAreaHeight;
+                    const contentStartY = startY + 0.25 * textAreaHeight;
+                    const contentMaxY = startY + 0.75 * textAreaHeight;
+                    const footerStartY = startY + 0.8 * textAreaHeight;
+                    const footerMaxY = startY + 0.9 * textAreaHeight;
 
                     ctx.fillStyle = textColor;
                     ctx.textAlign = 'center';
 
-                    // Draw header
                     ctx.font = `bold ${headerSize}px '${selectedFont}'`;
-                    ctx.textBaseline = 'top';
-                    wrapText(ctx, headerTextInput.value, centerX, startY + padding, maxWidth, headerSize * 0.9, headerMaxY);
+                    wrapText(ctx, headerTextInput.value, centerX, headerStartY + padding, maxWidth, headerSize * 1.2, headerMaxY);
 
-                    // Draw content
                     ctx.font = `${contentSize}px '${selectedFont}'`;
                     wrapText(ctx, mainContentTextInput.value, centerX, contentStartY, maxWidth, contentSize * 1.4, contentMaxY);
 
-                    // Draw footer
                     const detailSize = Math.max(24, contentSize * 0.6);
                     const footerText = `Location: ${locationTextInput.value}\nDate: ${formatDateTime(dateTimePicker.value)}`;
                     ctx.font = `${detailSize}px 'Poppins'`;
-                    wrapText(ctx, footerText, centerX, footerStartY, maxWidth, detailSize * 1.5, maxY);
+                    wrapText(ctx, footerText, centerX, footerStartY, maxWidth, detailSize * 1.5, footerMaxY);
                 }
 
-                ctx.shadowColor = 'transparent';
-                ctx.shadowBlur = 0;
-                ctx.shadowOffsetX = 0;
-                ctx.shadowOffsetY = 0;
                 shareButton.disabled = false;
                 downloadButton.disabled = false;
             }
