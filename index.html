@@ -329,43 +329,57 @@
                 contentSizeValue.textContent = '55';
             });
 
-          downloadButton.addEventListener('click', () => {
+ downloadButton.addEventListener('click', () => {
     const dataURL = canvas.toDataURL('image/png');
     const fileName = `${eventSelector.value}-banner.png`;
 
-    // Convert Data URL to Blob
+    // Convert Data URL to Blob, then to Blob URL
+    // Telegram's downloadFile CAN accept Blob URLs directly.
     fetch(dataURL)
         .then(res => res.blob())
         .then(blob => {
-            // Create a Blob URL
             const blobUrl = URL.createObjectURL(blob);
 
-            // Check if Telegram WebApp object exists
-            if (window.Telegram && window.Telegram.WebApp) {
-                Telegram.WebApp.requestFileDownload({
-                    url: blobUrl,
-                    file_name: fileName
-                });
+            // Check if Telegram WebApp object and the specific method exist
+            if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.downloadFile) {
+                try {
+                    // Correct method name: downloadFile
+                    Telegram.WebApp.downloadFile(blobUrl, fileName);
+
+                    // You might want to revoke the Blob URL after the download is initiated
+                    // However, in a Web App, the Telegram client might take some time to process
+                    // the download, so it's generally safer to let the browser manage it
+                    // or revoke after a short delay if you are absolutely sure it's not needed.
+                    // For simplicity here, we'll let it be.
+                    // URL.revokeObjectURL(blobUrl); 
+                } catch (error) {
+                    console.error('Error calling Telegram.WebApp.downloadFile:', error);
+                    if (window.Telegram.WebApp) {
+                        Telegram.WebApp.showAlert(`Download failed: ${error.message}. Please ensure you are in the Telegram app and have the latest version.`);
+                    } else {
+                        alert(`Download failed: ${error.message}`);
+                    }
+                }
             } else {
-                // Fallback for regular web browsers (outside of Telegram Web App)
+                // Fallback for regular web browsers or older Telegram Web App versions
+                // where downloadFile might not be available.
+                console.warn("Telegram.WebApp.downloadFile is not available. Using standard browser download.");
                 const link = document.createElement('a');
                 link.href = blobUrl;
                 link.download = fileName;
                 link.click();
-                URL.revokeObjectURL(blobUrl); // Clean up the Blob URL
+                URL.revokeObjectURL(blobUrl); // Clean up the Blob URL for browser download
             }
         })
         .catch(error => {
-            console.error('Error creating Blob or requesting download:', error);
-            // Optionally show an alert to the user
+            console.error('Error creating Blob or preparing for download:', error);
             if (window.Telegram && window.Telegram.WebApp) {
-                Telegram.WebApp.showAlert(`Error downloading file: ${error.message}`);
+                Telegram.WebApp.showAlert(`Error preparing download: ${error.message}`);
             } else {
-                alert(`Error downloading file: ${error.message}`);
+                alert(`Error preparing download: ${error.message}`);
             }
         });
 });
-
       shareButton.addEventListener('click', () => {
     canvas.toBlob((blob) => {
         if (!blob) {
