@@ -3,46 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Party Banner Creator</title>
+    <title>Event Banner Creator</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Telegram Web App SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Phosphor Icons for a nicer UI -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Google Fonts for more style options -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:wght@700&family=Poppins:wght@400;600&family=Libre+Baskerville:ital@1&family=Roboto+Slab:wght@700&family=Merriweather:wght@700&family=Oswald:wght@700&family=Montserrat:wght@700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --tg-bg-color: #ffffff;
-            --tg-text-color: #000000;
-            --tg-button-color: #0088cc;
+        body {
+            font-family: 'Poppins', sans-serif;
         }
-        body { 
-            font-family: 'Poppins', sans-serif; 
-            background-color: var(--tg-bg-color);
-            color: var(--tg-text-color);
+        /* Style for the banner preview container */
+        .banner-container {
+            width: 100%;
+            max-width: 600px; /* Width for landscape view */
+            aspect-ratio: 16 / 9; /* Landscape aspect ratio */
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
         }
-        button {
-            background-color: var(--tg-button-color);
-            color: #ffffff;
+        .placeholder-bg {
+            background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%23d1d5db' stroke-width='3' stroke-dasharray='6%2c 14' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+            background-color: #f9fafb;
         }
-        .banner-container { width: 100%; max-width: 600px; aspect-ratio: 16 / 9; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .placeholder-bg { background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%23d1d5db' stroke-width='3' stroke-dasharray='6%2c 14' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e"); background-color: #f9fafb; }
-        .dark .placeholder-bg { background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%234b5563' stroke-width='3' stroke-dasharray='6%2c 14' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e"); background-color: #374151; }
-        .icon-button { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; }
-        input[type="datetime-local"]::-webkit-calendar-picker-indicator { cursor: pointer; filter: invert(0.6); }
-        .dark input[type="datetime-local"]::-webkit-calendar-picker-indicator { filter: invert(1); }
-        input[type="range"] { background: transparent; cursor: pointer; }
-        input[type="range"]::-webkit-slider-track { width: 100%; height: 8px; cursor: pointer; background: #e5e7eb; border-radius: 4px; }
-        input[type="range"]::-webkit-slider-thumb { height: 20px; width: 20px; border-radius: 50%; background: #5D5CDE; cursor: pointer; -webkit-appearance: none; margin-top: -6px; }
-        .dark input[type="range"]::-webkit-slider-track { background: #4b5563; }
+        .dark .placeholder-bg {
+             background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%234b5563' stroke-width='3' stroke-dasharray='6%2c 14' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+            background-color: #374151;
+        }
+        .icon-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        /* Style for datetime-local icon */
+        input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            filter: invert(0.6);
+        }
+        .dark input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+        }
+        /* Custom range slider styles */
+        input[type="range"] {
+            background: transparent;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: #e5e7eb;
+            border-radius: 4px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #5D5CDE;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+        }
+        .dark input[type="range"]::-webkit-slider-track {
+            background: #4b5563;
+        }
     </style>
 </head>
-<body class="overflow-hidden flex flex-col h-screen">
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white overflow-hidden flex flex-col h-screen">
+
     <div id="app" class="flex-grow flex flex-col items-center p-4 space-y-4 overflow-y-auto">
         <h1 class="text-2xl font-bold text-center flex-shrink-0 flex items-center gap-2">
-            <i class="ph-fill ph-confetti text-blue-500"></i> Party Banner Creator
+            <i class="ph-fill ph-confetti text-blue-500"></i>
+            Event Banner Creator
         </h1>
+
         <div class="w-full max-w-md space-y-4">
+            <!-- 1. Image Upload Section -->
             <div id="image-upload-section" class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md">
                 <h2 class="text-xl font-semibold mb-4 flex items-center gap-2"><i class="ph-bold ph-image text-green-500"></i> 1. Upload Photo</h2>
                 <label for="image-upload" class="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-bray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600">
@@ -54,12 +94,14 @@
                     <input id="image-upload" type="file" class="hidden" accept="image/png, image/jpeg" />
                 </label>
             </div>
-            <div id="customization-section" class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md space-y-6 hidden">
+
+            <!-- 2. Customization Section -->
+            <div id="customization-section" class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md space-y-4 hidden">
                 <h2 class="text-xl font-semibold flex items-center gap-2"><i class="ph-bold ph-paint-brush text-purple-500"></i> 2. Customize Banner</h2>
-                <div class="space-y-4">
-                    <h3 class="font-semibold text-lg">Event Details</h3>
+                
+                <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label for="event-selector" class="block mb-2 text-sm font-medium">Event Type</label>
+                        <label for="event-selector" class="block mb-2 text-sm font-medium">Select a Style</label>
                         <select id="event-selector" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
                             <option value="wedding">Wedding</option>
                             <option value="birthday">Birthday</option>
@@ -71,34 +113,7 @@
                             <option value="get_well">Get Well Soon</option>
                         </select>
                     </div>
-                    <div>
-                        <label for="header-text" class="block mb-2 text-sm font-medium">Header Title</label>
-                        <input type="text" id="header-text" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label for="main-content-text" class="block mb-2 text-sm font-medium">Main Content</label>
-                        <textarea id="main-content-text" rows="3" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"></textarea>
-                    </div>
-                    <div>
-                        <label for="location-text" class="block mb-2 text-sm font-medium">Location</label>
-                        <input type="text" id="location-text" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label for="date-time-picker" class="block mb-2 text-sm font-medium">Date & Time</label>
-                        <input type="datetime-local" id="date-time-picker" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                </div>
-                <div class="space-y-4">
-                    <h3 class="font-semibold text-lg">Appearance</h3>
-                    <div>
-                        <label for="layout-selector" class="block mb-2 text-sm font-medium">Layout Style</label>
-                        <select id="layout-selector" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="split-left">Text Left, Image Right</option>
-                            <option value="split-right">Text Right, Image Left</option>
-                            <option value="overlay">Overlay Layout</option>
-                        </select>
-                    </div>
-                    <div>
+                     <div>
                         <label for="font-selector" class="block mb-2 text-sm font-medium">Select a Font</label>
                         <select id="font-selector" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
                             <option value="Dancing Script">Dancing Script</option>
@@ -111,36 +126,64 @@
                             <option value="Poppins">Poppins</option>
                         </select>
                     </div>
+                </div>
+
+                <!-- Color Theme Selection -->
+                <div>
+                    <label for="color-theme" class="block mb-2 text-sm font-medium">Color Theme</label>
+                    <select id="color-theme" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="classic">Classic White</option>
+                        <option value="gold">Elegant Gold</option>
+                        <option value="rose">Rose Gold</option>
+                        <option value="blue">Ocean Blue</option>
+                        <option value="green">Nature Green</option>
+                        <option value="purple">Royal Purple</option>
+                        <option value="custom">Custom Colors</option>
+                    </select>
+                </div>
+
+                <!-- Custom Color Controls (hidden by default) -->
+                <div id="custom-colors" class="grid grid-cols-2 gap-4 hidden">
                     <div>
-                        <label for="color-theme" class="block mb-2 text-sm font-medium">Color Theme</label>
-                        <select id="color-theme" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="classic">Classic White</option>
-                            <option value="gold">Elegant Gold</option>
-                            <option value="rose">Rose Gold</option>
-                            <option value="blue">Ocean Blue</option>
-                            <option value="green">Nature Green</option>
-                            <option value="purple">Royal Purple</option>
-                            <option value="custom">Custom Colors</option>
-                        </select>
+                        <label for="text-color" class="block mb-2 text-sm font-medium">Text Color</label>
+                        <input type="color" id="text-color" value="#FFFFFF" class="w-full h-10 border border-gray-300 rounded-md">
                     </div>
-                    <div id="custom-colors" class="space-y-4 hidden">
-                        <div>
-                            <label for="text-color" class="block mb-2 text-sm font-medium">Text Color</label>
-                            <input type="color" id="text-color" value="#FFFFFF" class="w-full h-10 border border-gray-300 rounded-md">
-                        </div>
-                        <div>
-                            <label for="overlay-color" class="block mb-2 text-sm font-medium">Overlay Color</label>
-                            <input type="color" id="overlay-color" value="#000000" class="w-full h-10 border border-gray-300 rounded-md">
-                        </div>
+                    <div>
+                        <label for="overlay-color" class="block mb-2 text-sm font-medium">Overlay Color</label>
+                        <input type="color" id="overlay-color" value="#000000" class="w-full h-10 border border-gray-300 rounded-md">
                     </div>
+                </div>
+
+                <!-- Layout Options -->
+                <div>
+                    <label for="layout-selector" class="block mb-2 text-sm font-medium">Layout Style</label>
+                    <select id="layout-selector" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="split">Split Layout (Text Left, Image Right)</option>
+                        <option value="overlay">Overlay Layout (Text Over Image)</option>
+                        <option value="top-bottom">Vertical Layout (Text Top, Image Bottom)</option>
+                    </select>
+                </div>
+
+                <!-- Background Effects -->
+                <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label for="overlay-opacity" class="block mb-2 text-sm font-medium">Background Opacity</label>
                         <input type="range" id="overlay-opacity" min="0" max="100" value="50" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
                         <div class="text-xs text-gray-500 text-center mt-1"><span id="opacity-value">50</span>%</div>
                     </div>
+                    <div>
+                        <label for="text-shadow" class="block mb-2 text-sm font-medium">Text Shadow</label>
+                        <select id="text-shadow" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="none">None</option>
+                            <option value="light">Light Shadow</option>
+                            <option value="medium">Medium Shadow</option>
+                            <option value="strong">Strong Shadow</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="space-y-4">
-                    <h3 class="font-semibold text-lg">Text Settings</h3>
+
+                <!-- Text Size Controls -->
+                <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label for="header-size" class="block mb-2 text-sm font-medium">Header Size</label>
                         <input type="range" id="header-size" min="60" max="200" value="120" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
@@ -152,72 +195,136 @@
                         <div class="text-xs text-gray-500 text-center mt-1"><span id="content-size-value">55</span>px</div>
                     </div>
                 </div>
+
+                <div>
+                    <label for="header-text" class="block mb-2 text-sm font-medium">Header Title</label>
+                    <input type="text" id="header-text" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                 <div>
+                    <label for="main-content-text" class="block mb-2 text-sm font-medium">Main Content</label>
+                    <textarea id="main-content-text" rows="3" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                </div>
+                 <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="location-text" class="block mb-2 text-sm font-medium">Location</label>
+                        <input type="text" id="location-text" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="date-time-picker" class="block mb-2 text-sm font-medium">Date & Time</label>
+                        <input type="datetime-local" id="date-time-picker" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+
+                <!-- Additional Information Fields -->
+                <div class="space-y-4 border-t pt-4">
+                    <h3 class="font-semibold text-lg flex items-center gap-2">
+                        <i class="ph-bold ph-plus-circle text-blue-500"></i>Additional Details
+                    </h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="rsvp-text" class="block mb-2 text-sm font-medium">RSVP Info</label>
+                            <input type="text" id="rsvp-text" placeholder="RSVP by Dec 15" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500 text-base">
+                        </div>
+                        <div>
+                            <label for="contact-text" class="block mb-2 text-sm font-medium">Contact Info</label>
+                            <input type="text" id="contact-text" placeholder="Call: +1 234 567 8900" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500 text-base">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="dress-code-text" class="block mb-2 text-sm font-medium">Dress Code / Special Notes</label>
+                        <input type="text" id="dress-code-text" placeholder="Formal attire requested" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500 text-base">
+                    </div>
+                </div>
             </div>
+
+            <!-- 3. Banner Preview and Share -->
             <div id="banner-preview-section" class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md space-y-4 hidden">
                 <h2 class="text-xl font-semibold flex items-center gap-2"><i class="ph-bold ph-sparkle text-yellow-500"></i> 3. Preview & Share</h2>
                 <div class="banner-container mx-auto rounded-lg overflow-hidden placeholder-bg relative">
                     <canvas id="banner-canvas" class="w-full h-full"></canvas>
                 </div>
-                <div class="grid grid-cols-1 gap-2">
-                    <button id="download-button" class="w-full py-2 px-4 rounded transition duration-300 ease-in-out disabled:bg-gray-400 icon-button">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <button id="download-button" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out disabled:bg-gray-400 icon-button">
                         <i class="ph-bold ph-download-simple"></i> Download
                     </button>
-                    <button id="share-button" class="w-full py-2 px-4 rounded transition duration-300 ease-in-out disabled:bg-gray-400 icon-button">
+                    <button id="share-button" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out disabled:bg-gray-400 icon-button">
                         <i class="ph-bold ph-telegram-logo"></i> Share
                     </button>
                 </div>
-                <button id="reset-button" class="w-full py-2 px-4 rounded transition duration-300 ease-in-out mt-2 icon-button">
+                 <button id="reset-button" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out mt-2 icon-button">
                     <i class="ph-bold ph-arrow-counter-clockwise"></i> Start Over
                 </button>
             </div>
         </div>
     </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const tg = window.Telegram.WebApp;
             try {
                 tg.ready();
                 tg.expand();
-                const themeParams = tg.themeParams;
-                document.documentElement.style.setProperty('--tg-bg-color', themeParams.bg_color || '#ffffff');
-                document.documentElement.style.setProperty('--tg-text-color', themeParams.text_color || '#000000');
-                document.documentElement.style.setProperty('--tg-button-color', themeParams.button_color || '#0088cc');
+                if (tg.colorScheme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                }
             } catch (error) {
                 console.warn("Telegram WebApp script not found or failed. Running in standalone mode.");
             }
 
+            // Dark mode support
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            }
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+                if (event.matches) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            });
+
+            // DOM Elements
             const imageUploadSection = document.getElementById('image-upload-section');
             const customizationSection = document.getElementById('customization-section');
             const bannerPreviewSection = document.getElementById('banner-preview-section');
+
             const imageUploadInput = document.getElementById('image-upload');
-            const layoutSelector = document.getElementById('layout-selector');
             const eventSelector = document.getElementById('event-selector');
             const fontSelector = document.getElementById('font-selector');
             const colorThemeSelector = document.getElementById('color-theme');
             const customColorsDiv = document.getElementById('custom-colors');
             const textColorInput = document.getElementById('text-color');
             const overlayColorInput = document.getElementById('overlay-color');
+            const layoutSelector = document.getElementById('layout-selector');
             const overlayOpacitySlider = document.getElementById('overlay-opacity');
             const opacityValueDisplay = document.getElementById('opacity-value');
+            const textShadowSelector = document.getElementById('text-shadow');
             const headerSizeSlider = document.getElementById('header-size');
             const headerSizeValue = document.getElementById('header-size-value');
             const contentSizeSlider = document.getElementById('content-size');
             const contentSizeValue = document.getElementById('content-size-value');
+            
             const headerTextInput = document.getElementById('header-text');
             const mainContentTextInput = document.getElementById('main-content-text');
             const locationTextInput = document.getElementById('location-text');
             const dateTimePicker = document.getElementById('date-time-picker');
+            const rsvpTextInput = document.getElementById('rsvp-text');
+            const contactTextInput = document.getElementById('contact-text');
+            const dressCodeTextInput = document.getElementById('dress-code-text');
+            
             const canvas = document.getElementById('banner-canvas');
             const ctx = canvas.getContext('2d');
             const downloadButton = document.getElementById('download-button');
             const shareButton = document.getElementById('share-button');
             const resetButton = document.getElementById('reset-button');
-
-            canvas.width = 1920;
-            canvas.height = 1080;
-
+            
             let userImage = null;
+            const canvasWidth = 1920;
+            const canvasHeight = 1080; 
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
 
+            // Color themes
             const colorThemes = {
                 classic: { text: '#FFFFFF', overlay: '#000000' },
                 gold: { text: '#FFD700', overlay: '#8B4513' },
@@ -226,6 +333,16 @@
                 green: { text: '#98FB98', overlay: '#006400' },
                 purple: { text: '#DDA0DD', overlay: '#4B0082' }
             };
+
+            // Text shadow styles
+            const shadowStyles = {
+                none: '',
+                light: '2px 2px 4px rgba(0,0,0,0.3)',
+                medium: '3px 3px 6px rgba(0,0,0,0.5)',
+                strong: '4px 4px 8px rgba(0,0,0,0.7)'
+            };
+
+            // Expanded templates with more events
             const eventTemplates = {
                 wedding: { header: "Save the Date", content: "Join us to celebrate the wedding of", headerSize: 120, contentSize: 55, defaultFont: 'Dancing Script', color: "#FFFFFF" },
                 birthday: { header: "Happy Birthday!", content: "Wishing you the best on your special day!", headerSize: 130, contentSize: 50, defaultFont: 'Playfair Display', color: "#FFFFFF" },
@@ -234,9 +351,9 @@
                 baby_shower: { header: "A Little Star is on the Way", content: "Join us for a baby shower honoring", headerSize: 100, contentSize: 50, defaultFont: 'Dancing Script', color: "#FFFFFF" },
                 new_home: { header: "Home Sweet Home", content: "We've moved! Come celebrate with us.", headerSize: 115, contentSize: 50, defaultFont: 'Montserrat', color: "#FFFFFF"},
                 funeral: { header: "In Loving Memory", content: "Forever in our hearts", headerSize: 110, contentSize: 50, defaultFont: 'Libre Baskerville', color: "#FFFFFF" },
-                get_well: { header: "Get Well Soon", content: "Sending our love and support", headerSize: 115, contentSize: 50, defaultFont: 'Playfair Display', color: "#FFFFFF" }
+                get_well: { header: "Get Well Soon", content: "Sending our love and support", headerSize: 115, contentSize: 50, defaultFont: 'Playfair Display', color: "#FFFFFF" },
             };
-
+            
             function updateTemplate() {
                 const selectedEvent = eventSelector.value;
                 const template = eventTemplates[selectedEvent];
@@ -247,7 +364,10 @@
                 contentSizeSlider.value = template.contentSize;
                 headerSizeValue.textContent = template.headerSize;
                 contentSizeValue.textContent = template.contentSize;
+                
                 locationTextInput.value = 'Addis Ababa, Ethiopia';
+
+                // Set a default date and time (e.g., one week from now at 7 PM)
                 const now = new Date();
                 now.setDate(now.getDate() + 7);
                 now.setHours(19, 0, 0, 0);
@@ -257,9 +377,11 @@
                 const hours = now.getHours().toString().padStart(2, '0');
                 const minutes = now.getMinutes().toString().padStart(2, '0');
                 dateTimePicker.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+                
                 drawBanner();
             }
 
+            // --- Event Listeners ---
             imageUploadInput.addEventListener('change', (e) => {
                 const file = e.target.files[0];
                 if (file) {
@@ -278,10 +400,13 @@
                 }
             });
 
+            // Color theme selector
             colorThemeSelector.addEventListener('change', () => {
                 const selectedTheme = colorThemeSelector.value;
-                customColorsDiv.classList.toggle('hidden', selectedTheme !== 'custom');
-                if (selectedTheme !== 'custom') {
+                if (selectedTheme === 'custom') {
+                    customColorsDiv.classList.remove('hidden');
+                } else {
+                    customColorsDiv.classList.add('hidden');
                     const theme = colorThemes[selectedTheme];
                     textColorInput.value = theme.text;
                     overlayColorInput.value = theme.overlay;
@@ -289,23 +414,31 @@
                 drawBanner();
             });
 
+            // Slider event listeners
             overlayOpacitySlider.addEventListener('input', () => {
                 opacityValueDisplay.textContent = overlayOpacitySlider.value;
                 drawBanner();
             });
+
             headerSizeSlider.addEventListener('input', () => {
                 headerSizeValue.textContent = headerSizeSlider.value;
                 drawBanner();
             });
+
             contentSizeSlider.addEventListener('input', () => {
                 contentSizeValue.textContent = contentSizeSlider.value;
                 drawBanner();
             });
-            [eventSelector, fontSelector, layoutSelector, textColorInput, overlayColorInput,
-             headerTextInput, mainContentTextInput, locationTextInput, dateTimePicker].forEach(el => {
+            
+            [eventSelector, fontSelector, layoutSelector, textShadowSelector, textColorInput, overlayColorInput, 
+             headerTextInput, mainContentTextInput, locationTextInput, dateTimePicker, 
+             rsvpTextInput, contactTextInput, dressCodeTextInput].forEach(el => {
                 el.addEventListener('input', () => {
-                    if (el.id === 'event-selector') updateTemplate();
-                    else drawBanner();
+                    if (el.id === 'event-selector') {
+                        updateTemplate(); 
+                    } else {
+                        drawBanner();
+                    }
                 });
             });
 
@@ -318,17 +451,23 @@
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 shareButton.disabled = true;
                 downloadButton.disabled = true;
+                
+                // Reset all controls to defaults
                 colorThemeSelector.value = 'classic';
                 customColorsDiv.classList.add('hidden');
-                layoutSelector.value = 'split-left';
+                layoutSelector.value = 'split';
                 overlayOpacitySlider.value = 50;
                 opacityValueDisplay.textContent = '50';
+                textShadowSelector.value = 'none';
                 headerSizeSlider.value = 120;
                 contentSizeSlider.value = 55;
                 headerSizeValue.textContent = '120';
                 contentSizeValue.textContent = '55';
+                rsvpTextInput.value = '';
+                contactTextInput.value = '';
+                dressCodeTextInput.value = '';
             });
-
+            
             downloadButton.addEventListener('click', () => {
                 const link = document.createElement('a');
                 link.href = canvas.toDataURL('image/png');
@@ -337,21 +476,22 @@
             });
 
             shareButton.addEventListener('click', () => {
-                canvas.toBlob((blob) => {
+                 canvas.toBlob((blob) => {
                     const reader = new FileReader();
                     reader.onload = () => {
-                        try {
-                            tg.sendData(JSON.stringify({ imageData: reader.result }));
-                            tg.close();
-                        } catch (error) {
-                            console.error("Share failed:", error);
-                            alert("Share functionality is intended for the Telegram app.");
-                        }
+                       try {
+                           tg.sendData(JSON.stringify({ imageData: reader.result }));
+                           tg.close();
+                       } catch (error) {
+                           console.error("Share failed:", error);
+                           alert("Share functionality is intended for the Telegram app.");
+                       }
                     };
                     reader.readAsDataURL(blob);
                 }, 'image/png');
             });
 
+            // Helper to format date-time string
             function formatDateTime(dateTimeString) {
                 if (!dateTimeString) return "";
                 const date = new Date(dateTimeString);
@@ -359,134 +499,222 @@
                 const optionsTime = { hour: 'numeric', minute: '2-digit', hour12: true };
                 return `${date.toLocaleDateString('en-US', optionsDate)} at ${date.toLocaleTimeString('en-US', optionsTime)}`;
             }
-
-            function wrapText(context, text, x, y, maxWidth, lineHeight, maxY) {
+            
+            function wrapText(context, text, x, y, maxWidth, lineHeight) {
                 const lines = text.split('\n');
                 let lastY = y;
-                let truncated = false;
-                for (const lineText of lines) {
+                lines.forEach(lineText => {
                     const words = lineText.split(' ');
                     let line = '';
-                    for (let n = 0; n < words.length; n++) {
+                    for(let n = 0; n < words.length; n++) {
                         const testLine = line + words[n] + ' ';
                         const metrics = context.measureText(testLine);
-                        if (metrics.width > maxWidth && n > 0) {
-                            if (lastY + lineHeight > maxY) {
-                                truncated = true;
-                                break;
-                            }
-                            context.fillText(line.trim(), x, lastY);
+                        const testWidth = metrics.width;
+                        if (testWidth > maxWidth && n > 0) {
+                            context.fillText(line, x, lastY);
                             line = words[n] + ' ';
                             lastY += lineHeight;
                         } else {
                             line = testLine;
                         }
                     }
-                    if (!truncated && lastY + lineHeight <= maxY) {
-                        context.fillText(line.trim(), x, lastY);
-                        lastY += lineHeight;
-                    } else {
-                        truncated = true;
-                        break;
-                    }
-                }
-                if (truncated && lastY - lineHeight <= maxY) context.fillText('...', x, lastY - lineHeight);
-                return { lastY: lastY - lineHeight, truncated };
+                    context.fillText(line, x, lastY);
+                    lastY += lineHeight;
+                });
+                return lastY - lineHeight; 
             }
 
+            // --- Main Drawing Logic ---
             function drawBanner() {
                 if (!userImage) return;
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                ctx.clearRect(0, 0, canvasWidth, canvasHeight);
                 const selectedFont = fontSelector.value;
                 const layout = layoutSelector.value;
                 const textColor = textColorInput.value;
                 const overlayColor = overlayColorInput.value;
                 const overlayOpacity = overlayOpacitySlider.value / 100;
+                const shadowStyle = shadowStyles[textShadowSelector.value];
                 const headerSize = parseInt(headerSizeSlider.value);
                 const contentSize = parseInt(contentSizeSlider.value);
                 const padding = 100;
 
-                if (layout.startsWith('split')) drawSplitLayout(layout === 'split-left' ? 'left' : 'right');
-                else if (layout === 'overlay') drawOverlayLayout();
+                // Apply text shadow if selected
+                if (shadowStyle) {
+                    ctx.shadowColor = 'rgba(0,0,0,0.8)';
+                    ctx.shadowBlur = shadowStyle.includes('8px') ? 8 : shadowStyle.includes('6px') ? 6 : 4;
+                    ctx.shadowOffsetX = shadowStyle.includes('4px') ? 4 : shadowStyle.includes('3px') ? 3 : 2;
+                    ctx.shadowOffsetY = shadowStyle.includes('4px') ? 4 : shadowStyle.includes('3px') ? 3 : 2;
+                }
 
-                function drawSplitLayout(textSide) {
-                    const textPanelWidth = canvas.width * 0.5;
-                    const textAreaX = textSide === 'left' ? 0 : canvas.width - textPanelWidth;
-                    const imagePanelX = textSide === 'left' ? textPanelWidth : 0;
-                    const imagePanelWidth = canvas.width - textPanelWidth;
+                if (layout === 'split') {
+                    drawSplitLayout();
+                } else if (layout === 'overlay') {
+                    drawOverlayLayout();
+                } else if (layout === 'top-bottom') {
+                    drawVerticalLayout();
+                }
 
+                function drawSplitLayout() {
+                    const textPanelWidth = canvasWidth * 0.5;
+                    const imagePanelX = textPanelWidth;
+                    const imagePanelWidth = canvasWidth - textPanelWidth;
+
+                    // 1. Draw Blurred Background
                     ctx.save();
-                    const coverRatio = Math.max(canvas.width / userImage.width, canvas.height / userImage.height);
+                    const coverRatio = Math.max(canvasWidth / userImage.width, canvasHeight / userImage.height);
                     const coverWidth = userImage.width * coverRatio;
                     const coverHeight = userImage.height * coverRatio;
-                    const coverX = (canvas.width - coverWidth) / 2;
-                    const coverY = (canvas.height - coverHeight) / 2;
+                    const coverX = (canvasWidth - coverWidth) / 2;
+                    const coverY = (canvasHeight - coverHeight) / 2;
                     ctx.filter = `blur(20px) brightness(${overlayOpacity})`;
                     ctx.drawImage(userImage, coverX, coverY, coverWidth, coverHeight);
+                    ctx.filter = 'none';
                     ctx.restore();
 
+                    // 2. Add colored overlay
                     ctx.save();
                     ctx.fillStyle = overlayColor;
                     ctx.globalAlpha = overlayOpacity * 0.3;
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
                     ctx.restore();
 
+                    // 3. Draw Clear Image in Right Panel
                     ctx.save();
                     const imageMargin = 30;
-                    const fitRatio = Math.min((imagePanelWidth - imageMargin * 2) / userImage.width, (canvas.height - imageMargin * 2) / userImage.height);
+                    const fitRatio = Math.min((imagePanelWidth - imageMargin * 2) / userImage.width, (canvasHeight - imageMargin * 2) / userImage.height);
                     const imgNewWidth = userImage.width * fitRatio;
                     const imgNewHeight = userImage.height * fitRatio;
                     const centerShiftX = imagePanelX + (imagePanelWidth - imgNewWidth) / 2;
-                    const centerShiftY = (canvas.height - imgNewHeight) / 2;
+                    const centerShiftY = (canvasHeight - imgNewHeight) / 2;
                     ctx.drawImage(userImage, centerShiftX, centerShiftY, imgNewWidth, imgNewHeight);
                     ctx.restore();
 
-                    drawTextContent(textAreaX + textPanelWidth / 2, textPanelWidth - padding * 2, 0, canvas.height);
+                    // 4. Draw Text over the Left Panel
+                    drawTextContent(textPanelWidth / 2, textPanelWidth - padding * 1.5);
                 }
 
                 function drawOverlayLayout() {
+                    // 1. Draw full image
                     ctx.save();
-                    const coverRatio = Math.max(canvas.width / userImage.width, canvas.height / userImage.height);
+                    const coverRatio = Math.max(canvasWidth / userImage.width, canvasHeight / userImage.height);
                     const coverWidth = userImage.width * coverRatio;
                     const coverHeight = userImage.height * coverRatio;
-                    const coverX = (canvas.width - coverWidth) / 2;
-                    const coverY = (canvas.height - coverHeight) / 2;
+                    const coverX = (canvasWidth - coverWidth) / 2;
+                    const coverY = (canvasHeight - coverHeight) / 2;
                     ctx.drawImage(userImage, coverX, coverY, coverWidth, coverHeight);
                     ctx.restore();
 
+                    // 2. Add overlay
                     ctx.save();
                     ctx.fillStyle = overlayColor;
                     ctx.globalAlpha = overlayOpacity;
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
                     ctx.restore();
 
-                    drawTextContent(canvas.width / 2, canvas.width - padding * 2, 0, canvas.height);
+                    // 3. Draw text centered
+                    drawTextContent(canvasWidth / 2, canvasWidth - padding * 2);
                 }
 
-                function drawTextContent(centerX, maxWidth, startY, maxY) {
-                    const textAreaHeight = maxY - startY;
-                    const headerStartY = startY;
-                    const headerMaxY = startY + 0.2 * textAreaHeight;
-                    const contentStartY = startY + 0.25 * textAreaHeight;
-                    const contentMaxY = startY + 0.75 * textAreaHeight;
-                    const footerStartY = startY + 0.8 * textAreaHeight;
-                    const footerMaxY = startY + 0.9 * textAreaHeight;
+                function drawVerticalLayout() {
+                    const textPanelHeight = canvasHeight * 0.4;
+                    const imagePanelY = textPanelHeight;
+                    const imagePanelHeight = canvasHeight - textPanelHeight;
 
+                    // 1. Draw blurred background
+                    ctx.save();
+                    const coverRatio = Math.max(canvasWidth / userImage.width, canvasHeight / userImage.height);
+                    const coverWidth = userImage.width * coverRatio;
+                    const coverHeight = userImage.height * coverRatio;
+                    const coverX = (canvasWidth - coverWidth) / 2;
+                    const coverY = (canvasHeight - coverHeight) / 2;
+                    ctx.filter = `blur(20px) brightness(${overlayOpacity})`;
+                    ctx.drawImage(userImage, coverX, coverY, coverWidth, coverHeight);
+                    ctx.filter = 'none';
+                    ctx.restore();
+
+                    // 2. Add colored overlay to text area
+                    ctx.save();
+                    ctx.fillStyle = overlayColor;
+                    ctx.globalAlpha = overlayOpacity * 0.8;
+                    ctx.fillRect(0, 0, canvasWidth, textPanelHeight);
+                    ctx.restore();
+
+                    // 3. Draw clear image in bottom panel
+                    ctx.save();
+                    const imageMargin = 20;
+                    const fitRatio = Math.min((canvasWidth - imageMargin * 2) / userImage.width, (imagePanelHeight - imageMargin * 2) / userImage.height);
+                    const imgNewWidth = userImage.width * fitRatio;
+                    const imgNewHeight = userImage.height * fitRatio;
+                    const centerShiftX = (canvasWidth - imgNewWidth) / 2;
+                    const centerShiftY = imagePanelY + (imagePanelHeight - imgNewHeight) / 2;
+                    ctx.drawImage(userImage, centerShiftX, centerShiftY, imgNewWidth, imgNewHeight);
+                    ctx.restore();
+
+                    // 4. Draw text in top panel
+                    drawTextContent(canvasWidth / 2, canvasWidth - padding * 2, padding, textPanelHeight - padding);
+                }
+
+                function drawTextContent(centerX, maxWidth, startY = padding * 1.8, maxHeight = canvasHeight - padding) {
                     ctx.fillStyle = textColor;
                     ctx.textAlign = 'center';
 
-                    ctx.font = `bold ${headerSize}px '${selectedFont}'`;
-                    wrapText(ctx, headerTextInput.value, centerX, headerStartY + padding, maxWidth, headerSize * 1.2, headerMaxY);
+                    // Header Title
+                    let currentY = startY;
+                    const headerFont = `bold ${headerSize}px '${selectedFont}'`;
+                    ctx.font = headerFont;
+                    ctx.textBaseline = 'top';
+                    currentY = wrapText(ctx, headerTextInput.value, centerX, currentY, maxWidth, headerSize * 0.9);
+                    
+                    currentY += Math.min(180, (maxHeight - currentY) * 0.15);
 
-                    ctx.font = `${contentSize}px '${selectedFont}'`;
-                    wrapText(ctx, mainContentTextInput.value, centerX, contentStartY, maxWidth, contentSize * 1.4, contentMaxY);
+                    // Main Content
+                    const contentFont = `${contentSize}px '${selectedFont}'`;
+                    ctx.font = contentFont;
+                    currentY = wrapText(ctx, mainContentTextInput.value, centerX, currentY, maxWidth, contentSize * 1.4);
+                    
+                    currentY += Math.min(100, (maxHeight - currentY) * 0.1);
 
+                    // Additional details
                     const detailSize = Math.max(24, contentSize * 0.6);
-                    const footerText = `Location: ${locationTextInput.value}\nDate: ${formatDateTime(dateTimePicker.value)}`;
                     ctx.font = `${detailSize}px 'Poppins'`;
-                    wrapText(ctx, footerText, centerX, footerStartY, maxWidth, detailSize * 1.5, footerMaxY);
+                    
+                    const locationText = locationTextInput.value;
+                    const dateText = formatDateTime(dateTimePicker.value);
+                    const rsvpText = rsvpTextInput.value;
+                    const contactText = contactTextInput.value;
+                    const dressCodeText = dressCodeTextInput.value;
+                    
+                    const details = [locationText, dateText, rsvpText, contactText, dressCodeText].filter(text => text.trim());
+                    
+                    if (layout === 'top-bottom') {
+                        // For vertical layout, show details in footer
+                        ctx.textBaseline = 'bottom';
+                        let footerY = maxHeight;
+                        for (let i = details.length - 1; i >= 0; i--) {
+                            if (details[i]) {
+                                ctx.fillText(details[i], centerX, footerY);
+                                footerY -= detailSize * 1.5;
+                            }
+                        }
+                    } else {
+                        // For other layouts, continue from current position
+                        for (const detail of details) {
+                            if (detail && currentY < maxHeight - detailSize * 2) {
+                                ctx.fillText(detail, centerX, currentY);
+                                currentY += detailSize * 1.5;
+                            }
+                        }
+                    }
                 }
 
+                // Reset shadow after drawing
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+
+                // Enable buttons after drawing
                 shareButton.disabled = false;
                 downloadButton.disabled = false;
             }
