@@ -1,611 +1,586 @@
-import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
-import type { FC, ReactNode } from 'react';
-
-// --- TYPE DEFINITIONS (Based on your User Journey Plan) ---
-// These interfaces define the shape of our data, providing type safety with TypeScript.
-
-interface TelegramUser {
-  id: number;
-  first_name: string;
-  last_name?: string;
-  username?: string;
-  language_code?: string;
-  photo_url?: string;
-}
-
-interface WebApp {
-  initDataUnsafe: {
-    user?: TelegramUser;
-  };
-  onEvent: (event: string, callback: () => void) => void;
-  offEvent: (event: string, callback: () => void) => void;
-  sendData: (data: any) => void;
-  ready: () => void;
-  expand: () => void;
-  close: () => void;
-  MainButton: {
-    show: () => void;
-    hide: () => void;
-    setText: (text: string) => void;
-    onClick: (callback: () => void) => void;
-    offClick: (callback: () => void) => void;
-  };
-}
-
-declare global {
-  interface Window {
-    Telegram: {
-      WebApp: WebApp;
-    };
-  }
-}
-
-// Data structures from your schema
-interface EventCategory {
-  id: string;
-  name: string;
-  icon: string; // Emoji or SVG string
-}
-
-interface OrganizerProfile {
-  id: string;
-  organizerName: string;
-  profileImageUrl: string;
-  isVerified: boolean;
-}
-
-interface TicketType {
-  id: string;
-  name: string;
-  price: number;
-  currency: string;
-  capacity: number;
-  soldCount: number;
-}
-
-interface Event {
-  id: string;
-  title: string;
-  description: string;
-  startDateTime: string;
-  locationName: string;
-  coverImageUrl: string;
-  isFeatured: boolean;
-  organizerId: string;
-  categoryId: string;
-  ticketTypes: TicketType[];
-  averageRating: number;
-  totalReviews: number;
-}
-
-interface Booking {
-  id: string;
-  eventId: string;
-  userId: number;
-  status: 'confirmed' | 'cancelled';
-  bookingReference: string;
-}
-
-
-// --- MOCK DATA ---
-// In a real application, this data would come from your backend API.
-
-const MOCK_ORGANIZERS: OrganizerProfile[] = [
-  { id: 'org1', organizerName: 'Starlight Concerts', profileImageUrl: 'https://placehold.co/100x100/7c3aed/ffffff?text=SC', isVerified: true },
-  { id: 'org2', organizerName: 'Tech Summit Global', profileImageUrl: 'https://placehold.co/100x100/16a34a/ffffff?text=TSG', isVerified: false },
-  { id: 'org3', organizerName: 'Local Art Fest', profileImageUrl: 'https://placehold.co/100x100/ea580c/ffffff?text=LAF', isVerified: true },
-];
-
-const MOCK_CATEGORIES: EventCategory[] = [
-  { id: 'cat1', name: 'Music', icon: '🎵' },
-  { id: 'cat2', name: 'Tech', icon: '💻' },
-  { id: 'cat3', name: 'Art & Culture', icon: '🎨' },
-  { id: 'cat4', name: 'Food & Drink', icon: '🍔' },
-  { id: 'cat5', name: 'Sports', icon: '⚽' },
-  { id: 'cat6', name: 'Networking', icon: '🤝' },
-];
-
-const MOCK_EVENTS: Event[] = [
-  {
-    id: 'evt1',
-    title: 'Summer Music Festival',
-    description: 'Join us for a three-day festival featuring the best indie bands from around the world. Enjoy great music, food trucks, and a vibrant atmosphere.',
-    startDateTime: '2025-08-15T18:00:00Z',
-    locationName: 'Green Park Meadows',
-    coverImageUrl: 'https://placehold.co/600x400/a78bfa/ffffff?text=Music+Festival',
-    isFeatured: true,
-    organizerId: 'org1',
-    categoryId: 'cat1',
-    averageRating: 4.8,
-    totalReviews: 250,
-    ticketTypes: [
-      { id: 'tkt1a', name: 'General Admission', price: 75, currency: 'USD', capacity: 5000, soldCount: 3200 },
-      { id: 'tkt1b', name: 'VIP Pass', price: 250, currency: 'USD', capacity: 500, soldCount: 450 },
-    ],
-  },
-  {
-    id: 'evt2',
-    title: 'Future of AI Conference',
-    description: 'A deep dive into the latest advancements in Artificial Intelligence. Featuring keynote speakers from leading tech companies and research institutions.',
-    startDateTime: '2025-09-10T09:00:00Z',
-    locationName: 'Innovation Hall',
-    coverImageUrl: 'https://placehold.co/600x400/4ade80/ffffff?text=AI+Conference',
-    isFeatured: true,
-    organizerId: 'org2',
-    categoryId: 'cat2',
-    averageRating: 4.9,
-    totalReviews: 400,
-    ticketTypes: [
-      { id: 'tkt2a', name: 'Standard Ticket', price: 499, currency: 'USD', capacity: 1000, soldCount: 850 },
-      { id: 'tkt2b', name: 'Student Ticket', price: 199, currency: 'USD', capacity: 200, soldCount: 195 },
-    ],
-  },
-  {
-    id: 'evt3',
-    title: 'Downtown Art Walk',
-    description: 'Explore local galleries and artist studios in the vibrant downtown district. A self-guided tour with live music and interactive installations.',
-    startDateTime: '2025-07-20T17:00:00Z',
-    locationName: 'Downtown Arts District',
-    coverImageUrl: 'https://placehold.co/600x400/fb923c/ffffff?text=Art+Walk',
-    isFeatured: false,
-    organizerId: 'org3',
-    categoryId: 'cat3',
-    averageRating: 4.6,
-    totalReviews: 120,
-    ticketTypes: [
-      { id: 'tkt3a', name: 'Free Entry', price: 0, currency: 'USD', capacity: 10000, soldCount: 3450 },
-    ],
-  },
-];
-
-const MOCK_BOOKINGS: Booking[] = [
-    { id: 'bk1', eventId: 'evt2', userId: 123456789, status: 'confirmed', bookingReference: 'XYZ-123' },
-    { id: 'bk2', eventId: 'evt3', userId: 123456789, status: 'confirmed', bookingReference: 'ABC-789' },
-];
-
-// --- TELEGRAM SDK INTEGRATION ---
-// A custom hook to safely access the Telegram WebApp object.
-
-const TelegramContext = createContext<WebApp | null>(null);
-
-const useTelegram = () => {
-    const context = useContext(TelegramContext);
-    if (!context) {
-        throw new Error("useTelegram must be used within a TelegramProvider");
-    }
-    return context;
-};
-
-const TelegramProvider: FC<{ children: ReactNode }> = ({ children }) => {
-    const [webApp, setWebApp] = useState<WebApp | null>(null);
-
-    useEffect(() => {
-        if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
-            const app = window.Telegram.WebApp;
-            app.ready();
-            app.expand(); // Expands the Mini App to full height
-            setWebApp(app);
-        }
-    }, []);
-
-    return (
-        <TelegramContext.Provider value={webApp}>
-            {webApp ? children : <LoadingScreen message="Connecting to Telegram..." />}
-        </TelegramContext.Provider>
-    );
-};
-
-
-// --- UI COMPONENTS ---
-
-const LoadingScreen: FC<{ message?: string }> = ({ message = "Loading..." }) => (
-    <div className="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50">
-        <div className="flex flex-col items-center">
-            <svg className="animate-spin -ml-1 mr-3 h-10 w-10 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <p className="mt-4 text-white text-lg">{message}</p>
-        </div>
-    </div>
-);
-
-const EventCard: FC<{ event: Event; onSelect: (id: string) => void }> = ({ event, onSelect }) => (
-    <div onClick={() => onSelect(event.id)} className="bg-gray-800 rounded-lg overflow-hidden shadow-lg cursor-pointer transform hover:-translate-y-1 transition-transform duration-300">
-        <img src={event.coverImageUrl} alt={event.title} className="w-full h-32 object-cover" />
-        <div className="p-4">
-            <h3 className="font-bold text-lg text-white truncate">{event.title}</h3>
-            <p className="text-sm text-gray-400 mt-1">{new Date(event.startDateTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</p>
-            <p className="text-sm text-gray-400 truncate">{event.locationName}</p>
-             <div className="flex items-center mt-2 text-sm text-yellow-400">
-                <StarIcon />
-                <span className="ml-1 font-semibold">{event.averageRating}</span>
-                <span className="text-gray-400 ml-1">({event.totalReviews})</span>
-            </div>
-        </div>
-    </div>
-);
-
-const CategoryPill: FC<{ category: EventCategory, isSelected: boolean, onSelect: (id: string) => void }> = ({ category, isSelected, onSelect }) => (
-    <button onClick={() => onSelect(category.id)} className={`flex-shrink-0 px-4 py-2 mr-2 text-sm font-semibold rounded-full transition-colors duration-300 flex items-center ${isSelected ? 'bg-purple-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>
-        <span className="mr-2">{category.icon}</span>
-        {category.name}
-    </button>
-);
-
-const TicketOption: FC<{ ticket: TicketType }> = ({ ticket }) => {
-    const [quantity, setQuantity] = useState(0);
-    const isSoldOut = ticket.soldCount >= ticket.capacity;
-
-    return (
-        <div className={`p-4 border rounded-lg ${isSoldOut ? 'border-gray-700 bg-gray-800' : 'border-gray-600 bg-gray-700/50'}`}>
-            <div className="flex justify-between items-start">
-                <div>
-                    <h4 className={`font-bold text-lg ${isSoldOut ? 'text-gray-500' : 'text-white'}`}>{ticket.name}</h4>
-                    <p className={`text-lg font-semibold ${isSoldOut ? 'text-gray-600' : 'text-purple-400'}`}>
-                        {ticket.price > 0 ? `${ticket.price} ${ticket.currency}` : 'Free'}
-                    </p>
-                    {isSoldOut && <p className="text-red-500 font-bold text-sm mt-1">SOLD OUT</p>}
-                </div>
-                {!isSoldOut && (
-                     <div className="flex items-center bg-gray-800 rounded-full">
-                        <button onClick={() => setQuantity(q => Math.max(0, q - 1))} className="px-3 py-1 text-white text-xl font-bold rounded-l-full hover:bg-gray-700">-</button>
-                        <span className="px-4 py-1 text-white font-semibold">{quantity}</span>
-                        <button onClick={() => setQuantity(q => Math.min(10, q + 1))} className="px-3 py-1 text-white text-xl font-bold rounded-r-full hover:bg-gray-700">+</button>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Banner Creator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:wght@700&family=Poppins:wght@400;600&family=Libre+Baskerville:ital@1&family=Roboto+Slab:wght@700&family=Merriweather:wght@700&family=Oswald:wght@700&family=Montserrat:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        .banner-container { width: 100%; max-width: 600px; aspect-ratio: 16 / 9; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .placeholder-bg { background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%23d1d5db' stroke-width='3' stroke-dasharray='6%2c 14' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e"); background-color: #f9fafb; }
+        .dark .placeholder-bg { background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%234b5563' stroke-width='3' stroke-dasharray='6%2c 14' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e"); background-color: #374151; }
+        .icon-button { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        input[type="datetime-local"]::-webkit-calendar-picker-indicator { cursor: pointer; filter: invert(0.6); }
+        .dark input[type="datetime-local"]::-webkit-calendar-picker-indicator { filter: invert(1); }
+        input[type="range"] { background: transparent; cursor: pointer; }
+        input[type="range"]::-webkit-slider-track { width: 100%; height: 8px; cursor: pointer; background: #e5e7eb; border-radius: 4px; }
+        input[type="range"]::-webkit-slider-thumb { height: 20px; width: 20px; border-radius: 50%; background: #5D5CDE; cursor: pointer; -webkit-appearance: none; margin-top: -6px; }
+        .dark input[type="range"]::-webkit-slider-track { background: #4b5563; }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white overflow-hidden flex flex-col h-screen">
+    <div id="app" class="flex-grow flex flex-col items-center p-4 space-y-4 overflow-y-auto">
+        <h1 class="text-2xl font-bold text-center flex-shrink-0 flex items-center gap-2">
+            <i class="ph-fill ph-confetti text-blue-500"></i> Event Banner Creator
+        </h1>
+        <div class="w-full max-w-md space-y-4">
+            <div id="image-upload-section" class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md">
+                <h2 class="text-xl font-semibold mb-4 flex items-center gap-2"><i class="ph-bold ph-image text-green-500"></i> 1. Upload Photo</h2>
+                <label for="image-upload" class="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-bray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600">
+                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                        <i class="ph-bold ph-upload text-4xl text-gray-500 dark:text-gray-400 mb-2"></i>
+                        <p class="mb-2 text-sm text-gray-500 dark:text-gray-400"><span class="font-semibold">Click to upload</span></p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">PNG or JPG</p>
                     </div>
-                )}
+                    <input id="image-upload" type="file" class="hidden" accept="image/png, image/jpeg" />
+                </label>
+            </div>
+            <div id="customization-section" class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md space-y-6 hidden">
+                <h2 class="text-xl font-semibold flex items-center gap-2"><i class="ph-bold ph-paint-brush text-purple-500"></i> 2. Customize Banner</h2>
+                <div class="space-y-4">
+                    <h3 class="font-semibold text-lg">General Settings</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="orientation-selector" class="block mb-2 text-sm font-medium">Orientation</label>
+                            <select id="orientation-selector" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="landscape">Landscape (1920x1080)</option>
+                                <option value="portrait">Portrait (1080x1920)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="layout-selector" class="block mb-2 text-sm font-medium">Layout Style</label>
+                            <select id="layout-selector" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                                <!-- Options set dynamically -->
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="event-selector" class="block mb-2 text-sm font-medium">Select a Style</label>
+                        <select id="event-selector" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="wedding">Wedding</option>
+                            <option value="birthday">Birthday</option>
+                            <option value="congratulations">Congratulations</option>
+                            <option value="graduation">Graduation</option>
+                            <option value="baby_shower">Baby Shower</option>
+                            <option value="new_home">New Home</option>
+                            <option value="funeral">In Loving Memory</option>
+                            <option value="get_well">Get Well Soon</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <h3 class="font-semibold text-lg">Appearance</h3>
+                    <div>
+                        <label for="font-selector" class="block mb-2 text-sm font-medium">Select a Font</label>
+                        <select id="font-selector" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="Dancing Script">Dancing Script</option>
+                            <option value="Playfair Display">Playfair Display</option>
+                            <option value="Libre Baskerville">Libre Baskerville</option>
+                            <option value="Roboto Slab">Roboto Slab</option>
+                            <option value="Merriweather">Merriweather</option>
+                            <option value="Oswald">Oswald</option>
+                            <option value="Montserrat">Montserrat</option>
+                            <option value="Poppins">Poppins</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="color-theme" class="block mb-2 text-sm font-medium">Color Theme</label>
+                        <select id="color-theme" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="classic">Classic White</option>
+                            <option value="gold">Elegant Gold</option>
+                            <option value="rose">Rose Gold</option>
+                            <option value="blue">Ocean Blue</option>
+                            <option value="green">Nature Green</option>
+                            <option value="purple">Royal Purple</option>
+                            <option value="custom">Custom Colors</option>
+                        </select>
+                    </div>
+                    <div id="custom-colors" class="grid grid-cols-2 gap-4 hidden">
+                        <div>
+                            <label for="text-color" class="block mb-2 text-sm font-medium">Text Color</label>
+                            <input type="color" id="text-color" value="#FFFFFF" class="w-full h-10 border border-gray-300 rounded-md">
+                        </div>
+                        <div>
+                            <label for="overlay-color" class="block mb-2 text-sm font-medium">Overlay Color</label>
+                            <input type="color" id="overlay-color" value="#000000" class="w-full h-10 border border-gray-300 rounded-md">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="overlay-opacity" class="block mb-2 text-sm font-medium">Background Opacity</label>
+                            <input type="range" id="overlay-opacity" min="0" max="100" value="50" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            <div class="text-xs text-gray-500 text-center mt-1"><span id="opacity-value">50</span>%</div>
+                        </div>
+                        <div>
+                            <label for="text-shadow" class="block mb-2 text-sm font-medium">Text Shadow</label>
+                            <select id="text-shadow" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="none">None</option>
+                                <option value="light">Light Shadow</option>
+                                <option value="medium">Medium Shadow</option>
+                                <option value="strong">Strong Shadow</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <h3 class="font-semibold text-lg">Text Settings</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="header-size" class="block mb-2 text-sm font-medium">Header Size</label>
+                            <input type="range" id="header-size" min="60" max="200" value="120" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            <div class="text-xs text-gray-500 text-center mt-1"><span id="header-size-value">120</span>px</div>
+                        </div>
+                        <div>
+                            <label for="content-size" class="block mb-2 text-sm font-medium">Content Size</label>
+                            <input type="range" id="content-size" min="30" max="80" value="55" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            <div class="text-xs text-gray-500 text-center mt-1"><span id="content-size-value">55</span>px</div>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="header-text" class="block mb-2 text-sm font-medium">Header Title</label>
+                        <input type="text" id="header-text" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="main-content-text" class="block mb-2 text-sm font-medium">Main Content</label>
+                        <textarea id="main-content-text" rows="3" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="location-text" class="block mb-2 text-sm font-medium">Location</label>
+                            <input type="text" id="location-text" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="date-time-picker" class="block mb-2 text-sm font-medium">Date & Time</label>
+                            <input type="datetime-local" id="date-time-picker" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="banner-preview-section" class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md space-y-4 hidden">
+                <h2 class="text-xl font-semibold flex items-center gap-2"><i class="ph-bold ph-sparkle text-yellow-500"></i> 3. Preview & Share</h2>
+                <div class="banner-container mx-auto rounded-lg overflow-hidden placeholder-bg relative">
+                    <canvas id="banner-canvas" class="w-full h-full"></canvas>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <button id="download-button" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out disabled:bg-gray-400 icon-button">
+                        <i class="ph-bold ph-download-simple"></i> Download
+                    </button>
+                    <button id="share-button" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out disabled:bg-gray-400 icon-button">
+                        <i class="ph-bold ph-telegram-logo"></i> Share
+                    </button>
+                </div>
+                <button id="reset-button" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out mt-2 icon-button">
+                    <i class="ph-bold ph-arrow-counter-clockwise"></i> Start Over
+                </button>
             </div>
         </div>
-    );
-};
-
-// --- ICON COMPONENTS (Heroicons) ---
-
-const HomeIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-  </svg>
-);
-
-const TicketIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-  </svg>
-);
-
-const UserIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-  </svg>
-);
-
-const ArrowLeftIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-    </svg>
-);
-
-const StarIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-    </svg>
-);
-
-const QrCodeIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h4V6H3v4zm14 0h4V6h-4v4zM3 20h4v-4H3v4zm14 0h4v-4h-4v4zM10 3h4v4h-4V3zM8 8h8v8H8V8z" />
-    </svg>
-);
-
-// --- PAGES / SCREENS ---
-// Each component represents a different screen in the mini-app.
-
-const HomePage: FC<{ onNavigate: (page: string, params?: any) => void }> = ({ onNavigate }) => {
-    const tg = useTelegram();
-    const [selectedCategory, setSelectedCategory] = useState<string>('all');
-    
-    const user = tg?.initDataUnsafe.user;
-
-    const filteredEvents = MOCK_EVENTS.filter(event => {
-        if (selectedCategory === 'all') return event.isFeatured;
-        return event.categoryId === selectedCategory;
-    });
-
-    return (
-        <div className="p-4 space-y-6">
-            <header>
-                <h1 className="text-2xl font-bold text-white">Hello, {user?.first_name || 'Guest'}!</h1>
-                <p className="text-gray-400">Let's find your next experience.</p>
-            </header>
-
-            {/* Search Bar */}
-            <div className="relative">
-                <input
-                    type="text"
-                    placeholder="Search events, organizers..."
-                    className="w-full bg-gray-700 border border-gray-600 rounded-full py-3 pl-12 pr-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                </div>
-            </div>
-
-            {/* Categories */}
-            <div>
-                <h2 className="text-xl font-bold text-white mb-3">Categories</h2>
-                <div className="flex overflow-x-auto pb-2 -mx-4 px-4">
-                    <CategoryPill category={{id: 'all', name: 'Featured', icon: '⭐'}} isSelected={selectedCategory === 'all'} onSelect={setSelectedCategory} />
-                    {MOCK_CATEGORIES.map(cat => (
-                        <CategoryPill key={cat.id} category={cat} isSelected={selectedCategory === cat.id} onSelect={setSelectedCategory} />
-                    ))}
-                </div>
-            </div>
-
-            {/* Event Grid */}
-            <div>
-                <h2 className="text-xl font-bold text-white mb-3">{selectedCategory === 'all' ? 'Featured Events' : MOCK_CATEGORIES.find(c=>c.id === selectedCategory)?.name}</h2>
-                 <div className="grid grid-cols-2 gap-4">
-                    {filteredEvents.map(event => (
-                        <EventCard key={event.id} event={event} onSelect={(id) => onNavigate('eventDetails', { eventId: id })} />
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-};
-
-const EventDetailsPage: FC<{ eventId: string; onNavigate: (page: string, params?: any) => void }> = ({ eventId, onNavigate }) => {
-    const tg = useTelegram();
-    const [event, setEvent] = useState<Event | null>(null);
-    const [organizer, setOrganizer] = useState<OrganizerProfile | null>(null);
-
-    useEffect(() => {
-        // Simulating API call
-        const foundEvent = MOCK_EVENTS.find(e => e.id === eventId);
-        if (foundEvent) {
-            setEvent(foundEvent);
-            const foundOrganizer = MOCK_ORGANIZERS.find(o => o.id === foundEvent.organizerId);
-            setOrganizer(foundOrganizer || null);
-        }
-    }, [eventId]);
-    
-    // Telegram Main Button Integration
-    useEffect(() => {
-        if (tg && event) {
-            const onMainButtonClick = () => {
-                // In a real app, this would trigger the payment sheet or booking confirmation
-                tg.sendData(JSON.stringify({ action: 'book', eventId: event.id }));
-                onNavigate('myBookings');
-            };
-            tg.MainButton.setText('Book Now');
-            tg.MainButton.show();
-            tg.MainButton.onClick(onMainButtonClick);
-            
-            return () => {
-                tg.MainButton.offClick(onMainButtonClick);
-                tg.MainButton.hide();
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tg = window.Telegram.WebApp;
+            try {
+                tg.ready();
+                tg.expand();
+                if (tg.colorScheme === 'dark') document.documentElement.classList.add('dark');
+            } catch (error) {
+                console.warn("Telegram WebApp script not found or failed. Running in standalone mode.");
             }
-        }
-    }, [tg, event, onNavigate]);
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.classList.add('dark');
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+                document.documentElement.classList.toggle('dark', event.matches);
+            });
 
-    if (!event) return <LoadingScreen message="Loading event..." />;
+            const imageUploadSection = document.getElementById('image-upload-section');
+            const customizationSection = document.getElementById('customization-section');
+            const bannerPreviewSection = document.getElementById('banner-preview-section');
+            const imageUploadInput = document.getElementById('image-upload');
+            const orientationSelector = document.getElementById('orientation-selector');
+            const layoutSelector = document.getElementById('layout-selector');
+            const eventSelector = document.getElementById('event-selector');
+            const fontSelector = document.getElementById('font-selector');
+            const colorThemeSelector = document.getElementById('color-theme');
+            const customColorsDiv = document.getElementById('custom-colors');
+            const textColorInput = document.getElementById('text-color');
+            const overlayColorInput = document.getElementById('overlay-color');
+            const overlayOpacitySlider = document.getElementById('overlay-opacity');
+            const opacityValueDisplay = document.getElementById('opacity-value');
+            const textShadowSelector = document.getElementById('text-shadow');
+            const headerSizeSlider = document.getElementById('header-size');
+            const headerSizeValue = document.getElementById('header-size-value');
+            const contentSizeSlider = document.getElementById('content-size');
+            const contentSizeValue = document.getElementById('content-size-value');
+            const headerTextInput = document.getElementById('header-text');
+            const mainContentTextInput = document.getElementById('main-content-text');
+            const locationTextInput = document.getElementById('location-text');
+            const dateTimePicker = document.getElementById('date-time-picker');
+            const canvas = document.getElementById('banner-canvas');
+            const ctx = canvas.getContext('2d');
+            const downloadButton = document.getElementById('download-button');
+            const shareButton = document.getElementById('share-button');
+            const resetButton = document.getElementById('reset-button');
 
-    return (
-        <div>
-            {/* Header with Back Button */}
-            <div className="absolute top-0 left-0 p-4 z-10">
-                 <button onClick={() => onNavigate('home')} className="bg-black bg-opacity-50 rounded-full p-2 text-white">
-                    <ArrowLeftIcon />
-                </button>
-            </div>
+            let userImage = null;
+            updateCanvasSize();
+            updateLayoutOptions();
 
-            <img src={event.coverImageUrl} alt={event.title} className="w-full h-60 object-cover" />
-            
-            <div className="p-4 space-y-6">
-                <h1 className="text-3xl font-bold text-white">{event.title}</h1>
-                
-                {/* Event Meta Info */}
-                 <div className="grid grid-cols-2 gap-4 text-gray-300">
-                    <div className="flex items-start space-x-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                        <div>
-                            <p className="font-semibold">{new Date(event.startDateTime).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                            <p className="text-sm">{new Date(event.startDateTime).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</p>
-                        </div>
-                    </div>
-                     <div className="flex items-start space-x-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                        <div>
-                            <p className="font-semibold">{event.locationName}</p>
-                            <p className="text-sm text-gray-400">Physical Event</p>
-                        </div>
-                    </div>
-                </div>
+            const colorThemes = {
+                classic: { text: '#FFFFFF', overlay: '#000000' },
+                gold: { text: '#FFD700', overlay: '#8B4513' },
+                rose: { text: '#FFB6C1', overlay: '#8B0000' },
+                blue: { text: '#87CEEB', overlay: '#000080' },
+                green: { text: '#98FB98', overlay: '#006400' },
+                purple: { text: '#DDA0DD', overlay: '#4B0082' }
+            };
+            const shadowStyles = {
+                none: '', light: '2px 2px 4px rgba(0,0,0,0.3)',
+                medium: '3px 3px 6px rgba(0,0,0,0.5)', strong: '4px 4px 8px rgba(0,0,0,0.7)'
+            };
+            const eventTemplates = {
+                wedding: { header: "Save the Date", content: "Join us to celebrate the wedding of", headerSize: 120, contentSize: 55, defaultFont: 'Dancing Script', color: "#FFFFFF" },
+                birthday: { header: "Happy Birthday!", content: "Wishing you the best on your special day!", headerSize: 130, contentSize: 50, defaultFont: 'Playfair Display', color: "#FFFFFF" },
+                congratulations: { header: "Congratulations!", content: "We're so proud of your amazing achievement!", headerSize: 125, contentSize: 50, defaultFont: 'Roboto Slab', color: "#FFFFFF" },
+                graduation: { header: "The Tassel Was Worth the Hassle", content: "Celebrating the graduation of", headerSize: 110, contentSize: 50, defaultFont: 'Merriweather', color: "#FFFFFF"},
+                baby_shower: { header: "A Little Star is on the Way", content: "Join us for a baby shower honoring", headerSize: 100, contentSize: 50, defaultFont: 'Dancing Script', color: "#FFFFFF" },
+                new_home: { header: "Home Sweet Home", content: "We've moved! Come celebrate with us.", headerSize: 115, contentSize: 50, defaultFont: 'Montserrat', color: "#FFFFFF"},
+                funeral: { header: "In Loving Memory", content: "Forever in our hearts", headerSize: 110, contentSize: 50, defaultFont: 'Libre Baskerville', color: "#FFFFFF" },
+                get_well: { header: "Get Well Soon", content: "Sending our love and support", headerSize: 115, contentSize: 50, defaultFont: 'Playfair Display', color: "#FFFFFF" }
+            };
 
-                {/* Organizer Info */}
-                {organizer && (
-                     <div className="flex items-center space-x-4 bg-gray-800 p-3 rounded-lg">
-                        <img src={organizer.profileImageUrl} alt={organizer.organizerName} className="w-12 h-12 rounded-full" />
-                        <div>
-                            <p className="text-sm text-gray-400">Organized by</p>
-                            <p className="font-bold text-white flex items-center">{organizer.organizerName} {organizer.isVerified && <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1 text-blue-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zM12 12a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /><path d="M11.707 8.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0z" /></svg>}</p>
-                        </div>
-                    </div>
-                )}
-                
-                {/* About Section */}
-                <div>
-                    <h2 className="text-xl font-bold text-white mb-2">About this event</h2>
-                    <p className="text-gray-300">{event.description}</p>
-                </div>
-                
-                 {/* Tickets Section */}
-                <div>
-                    <h2 className="text-xl font-bold text-white mb-3">Tickets</h2>
-                    <div className="space-y-3">
-                         {event.ticketTypes.map(ticket => (
-                            <TicketOption key={ticket.id} ticket={ticket} />
-                         ))}
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
+            function updateCanvasSize() {
+                const orientation = orientationSelector.value;
+                canvas.width = orientation === 'landscape' ? 1920 : 1080;
+                canvas.height = orientation === 'landscape' ? 1080 : 1920;
+            }
 
-const MyBookingsPage: FC<{ onNavigate: (page: string, params?: any) => void }> = ({ onNavigate }) => {
-    const tg = useTelegram();
-    const [bookings, setBookings] = useState<Booking[]>([]);
+            function updateLayoutOptions() {
+                const orientation = orientationSelector.value;
+                layoutSelector.innerHTML = orientation === 'landscape' ?
+                    `<option value="split-left">Text Left, Image Right</option>
+                     <option value="split-right">Text Right, Image Left</option>
+                     <option value="overlay">Overlay Layout</option>` :
+                    `<option value="vertical-top">Text Top, Image Bottom</option>
+                     <option value="vertical-bottom">Text Bottom, Image Top</option>
+                     <option value="overlay">Overlay Layout</option>`;
+                layoutSelector.value = layoutSelector.options[0].value;
+            }
 
-    useEffect(() => {
-        // Fetch bookings for the current user
-        if (tg?.initDataUnsafe.user) {
-            const userBookings = MOCK_BOOKINGS.filter(b => b.userId === tg.initDataUnsafe.user.id);
-            setBookings(userBookings);
-        }
-    }, [tg]);
-    
-    return (
-        <div className="p-4 space-y-4">
-            <h1 className="text-2xl font-bold text-white">My Bookings</h1>
-            {bookings.length > 0 ? (
-                bookings.map(booking => {
-                    const event = MOCK_EVENTS.find(e => e.id === booking.eventId);
-                    if (!event) return null;
-                    
-                    return (
-                        <div key={booking.id} className="bg-gray-800 rounded-lg p-4 flex items-start space-x-4">
-                            <img src={event.coverImageUrl} alt={event.title} className="w-20 h-20 rounded-md object-cover" />
-                            <div className="flex-1">
-                                <h3 className="font-bold text-white">{event.title}</h3>
-                                <p className="text-sm text-gray-400">{new Date(event.startDateTime).toLocaleDateString()}</p>
-                                <p className={`text-sm font-semibold mt-1 ${booking.status === 'confirmed' ? 'text-green-400' : 'text-red-400'}`}>
-                                    Status: {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                                </p>
-                            </div>
-                             <div className="flex flex-col items-center justify-center text-purple-400">
-                                <QrCodeIcon />
-                                <span className="text-xs mt-1">View Ticket</span>
-                            </div>
-                        </div>
-                    );
-                })
-            ) : (
-                <div className="text-center py-10">
-                    <p className="text-gray-400">You have no bookings yet.</p>
-                    <button onClick={() => onNavigate('home')} className="mt-4 bg-purple-600 text-white font-bold py-2 px-4 rounded-full">Find Events</button>
-                </div>
-            )}
-        </div>
-    );
-};
+            function updateTemplate() {
+                const selectedEvent = eventSelector.value;
+                const template = eventTemplates[selectedEvent];
+                headerTextInput.value = template.header;
+                mainContentTextInput.value = template.content;
+                fontSelector.value = template.defaultFont;
+                headerSizeSlider.value = template.headerSize;
+                contentSizeSlider.value = template.contentSize;
+                headerSizeValue.textContent = template.headerSize;
+                contentSizeValue.textContent = template.contentSize;
+                locationTextInput.value = 'Addis Ababa, Ethiopia';
+                const now = new Date();
+                now.setDate(now.getDate() + 7);
+                now.setHours(19, 0, 0, 0);
+                const year = now.getFullYear();
+                const month = (now.getMonth() + 1).toString().padStart(2, '0');
+                const day = now.getDate().toString().padStart(2, '0');
+                const hours = now.getHours().toString().padStart(2, '0');
+                const minutes = now.getMinutes().toString().padStart(2, '0');
+                dateTimePicker.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+                drawBanner();
+            }
 
-const ProfilePage: FC<{ onNavigate: (page: string, params?: any) => void }> = ({ onNavigate }) => {
-    const tg = useTelegram();
-    const user = tg?.initDataUnsafe.user;
-    
-    // This is a placeholder for a real user role check
-    const userRole = 'organizer'; 
+            imageUploadInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        userImage = new Image();
+                        userImage.onload = () => {
+                            imageUploadSection.classList.add('hidden');
+                            customizationSection.classList.remove('hidden');
+                            bannerPreviewSection.classList.remove('hidden');
+                            updateTemplate();
+                        };
+                        userImage.src = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
 
-    return (
-        <div className="p-4 space-y-6">
-            <div className="flex items-center space-x-4">
-                <img src={user?.photo_url || 'https://placehold.co/80x80/1f2937/ffffff?text=U'} alt="User" className="w-20 h-20 rounded-full border-2 border-purple-500"/>
-                <div>
-                    <h1 className="text-2xl font-bold text-white">{user?.first_name} {user?.last_name || ''}</h1>
-                    <p className="text-gray-400">@{user?.username || 'telegram_user'}</p>
-                </div>
-            </div>
-            
-            <div className="space-y-2">
-                <button className="w-full text-left p-4 bg-gray-800 rounded-lg flex justify-between items-center">
-                    <span className="text-white">Settings</span>
-                    <span className="text-gray-500">&gt;</span>
-                </button>
-                 <button className="w-full text-left p-4 bg-gray-800 rounded-lg flex justify-between items-center">
-                    <span className="text-white">Wishlist</span>
-                    <span className="text-gray-500">&gt;</span>
-                </button>
-                
-                {/* Organizer Section */}
-                {userRole === 'organizer' && (
-                     <div className="pt-4 mt-4 border-t border-gray-700">
-                        <h2 className="text-lg font-bold text-gray-400 px-1 mb-2">Organizer Tools</h2>
-                        <button className="w-full text-left p-4 bg-gray-800 rounded-lg flex justify-between items-center">
-                            <span className="text-white">Organizer Dashboard</span>
-                             <span className="text-gray-500">&gt;</span>
-                        </button>
-                         <button className="w-full text-left p-4 bg-gray-800 rounded-lg flex justify-between items-center mt-2">
-                            <span className="text-white">Create New Event</span>
-                             <span className="text-gray-500">&gt;</span>
-                        </button>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
+            orientationSelector.addEventListener('change', () => {
+                updateCanvasSize();
+                updateLayoutOptions();
+                drawBanner();
+            });
 
-// --- MAIN APP COMPONENT & LAYOUT ---
+            colorThemeSelector.addEventListener('change', () => {
+                const selectedTheme = colorThemeSelector.value;
+                customColorsDiv.classList.toggle('hidden', selectedTheme !== 'custom');
+                if (selectedTheme !== 'custom') {
+                    const theme = colorThemes[selectedTheme];
+                    textColorInput.value = theme.text;
+                    overlayColorInput.value = theme.overlay;
+                }
+                drawBanner();
+            });
 
-const App: FC = () => {
-    const [page, setPage] = useState('home');
-    const [pageParams, setPageParams] = useState<any>({});
+            overlayOpacitySlider.addEventListener('input', () => {
+                opacityValueDisplay.textContent = overlayOpacitySlider.value;
+                drawBanner();
+            });
+            headerSizeSlider.addEventListener('input', () => {
+                headerSizeValue.textContent = headerSizeSlider.value;
+                drawBanner();
+            });
+            contentSizeSlider.addEventListener('input', () => {
+                contentSizeValue.textContent = contentSizeSlider.value;
+                drawBanner();
+            });
+            [eventSelector, fontSelector, layoutSelector, textShadowSelector, textColorInput, overlayColorInput,
+             headerTextInput, mainContentTextInput, locationTextInput, dateTimePicker].forEach(el => {
+                el.addEventListener('input', () => {
+                    if (el.id === 'event-selector') updateTemplate();
+                    else drawBanner();
+                });
+            });
 
-    const handleNavigate = useCallback((newPage: string, params: any = {}) => {
-        setPage(newPage);
-        setPageParams(params);
-        window.scrollTo(0, 0); // Scroll to top on page change
-    }, []);
+            resetButton.addEventListener('click', () => {
+                userImage = null;
+                imageUploadInput.value = '';
+                imageUploadSection.classList.remove('hidden');
+                customizationSection.classList.add('hidden');
+                bannerPreviewSection.classList.add('hidden');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                shareButton.disabled = true;
+                downloadButton.disabled = true;
+                colorThemeSelector.value = 'classic';
+                customColorsDiv.classList.add('hidden');
+                layoutSelector.value = layoutSelector.options[0].value;
+                overlayOpacitySlider.value = 50;
+                opacityValueDisplay.textContent = '50';
+                textShadowSelector.value = 'none';
+                headerSizeSlider.value = 120;
+                contentSizeSlider.value = 55;
+                headerSizeValue.textContent = '120';
+                contentSizeValue.textContent = '55';
+            });
 
-    const renderPage = () => {
-        switch (page) {
-            case 'home':
-                return <HomePage onNavigate={handleNavigate} />;
-            case 'eventDetails':
-                return <EventDetailsPage eventId={pageParams.eventId} onNavigate={handleNavigate} />;
-            case 'myBookings':
-                return <MyBookingsPage onNavigate={handleNavigate} />;
-            case 'profile':
-                 return <ProfilePage onNavigate={handleNavigate} />;
-            default:
-                return <HomePage onNavigate={handleNavigate} />;
-        }
-    };
-    
-    // We don't render anything until the Telegram SDK is ready
-    // The provider handles showing a loading screen.
-    return (
-        <TelegramProvider>
-            <div className="bg-gray-900 text-white min-h-screen font-sans">
-                {/* This script is essential for the mini-app to work */}
-                <script src="https://telegram.org/js/telegram-web-app.js" async></script>
+            downloadButton.addEventListener('click', () => {
+                const link = document.createElement('a');
+                link.href = canvas.toDataURL('image/png');
+                link.download = `${eventSelector.value}-banner.png`;
+                link.click();
+            });
 
-                <main className="pb-20">
-                    {renderPage()}
-                </main>
-                
-                {/* Bottom Navigation Bar */}
-                <footer className="fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700">
-                    <nav className="flex justify-around items-center h-16">
-                        <button onClick={() => handleNavigate('home')} className={`flex flex-col items-center justify-center w-full transition-colors duration-200 ${page === 'home' ? 'text-purple-400' : 'text-gray-400 hover:text-white'}`}>
-                            <HomeIcon />
-                            <span className="text-xs font-medium">Home</span>
-                        </button>
-                        <button onClick={() => handleNavigate('myBookings')} className={`flex flex-col items-center justify-center w-full transition-colors duration-200 ${page === 'myBookings' ? 'text-purple-400' : 'text-gray-400 hover:text-white'}`}>
-                            <TicketIcon />
-                            <span className="text-xs font-medium">My Bookings</span>
-                        </button>
-                         <button onClick={() => handleNavigate('profile')} className={`flex flex-col items-center justify-center w-full transition-colors duration-200 ${page === 'profile' ? 'text-purple-400' : 'text-gray-400 hover:text-white'}`}>
-                            <UserIcon />
-                            <span className="text-xs font-medium">Profile</span>
-                        </button>
-                    </nav>
-                </footer>
-            </div>
-        </TelegramProvider>
-    );
-};
+            shareButton.addEventListener('click', () => {
+                canvas.toBlob((blob) => {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        try {
+                            tg.sendData(JSON.stringify({ imageData: reader.result }));
+                            tg.close();
+                        } catch (error) {
+                            console.error("Share failed:", error);
+                            alert("Share functionality is intended for the Telegram app.");
+                        }
+                    };
+                    reader.readAsDataURL(blob);
+                }, 'image/png');
+            });
 
-export default App;
+            function formatDateTime(dateTimeString) {
+                if (!dateTimeString) return "";
+                const date = new Date(dateTimeString);
+                const optionsDate = { year: 'numeric', month: 'long', day: 'numeric' };
+                const optionsTime = { hour: 'numeric', minute: '2-digit', hour12: true };
+                return `${date.toLocaleDateString('en-US', optionsDate)} at ${date.toLocaleTimeString('en-US', optionsTime)}`;
+            }
+
+            function wrapText(context, text, x, y, maxWidth, lineHeight, maxY) {
+                const lines = text.split('\n');
+                let lastY = y;
+                let truncated = false;
+                for (const lineText of lines) {
+                    const words = lineText.split(' ');
+                    let line = '';
+                    for (let n = 0; n < words.length; n++) {
+                        const testLine = line + words[n] + ' ';
+                        const metrics = context.measureText(testLine);
+                        if (metrics.width > maxWidth && n > 0) {
+                            if (lastY + lineHeight > maxY) {
+                                truncated = true;
+                                break;
+                            }
+                            context.fillText(line.trim(), x, lastY);
+                            line = words[n] + ' ';
+                            lastY += lineHeight;
+                        } else {
+                            line = testLine;
+                        }
+                    }
+                    if (!truncated && lastY + lineHeight <= maxY) {
+                        context.fillText(line.trim(), x, lastY);
+                        lastY += lineHeight;
+                    } else {
+                        truncated = true;
+                        break;
+                    }
+                }
+                if (truncated && lastY - lineHeight <= maxY) context.fillText('...', x, lastY - lineHeight);
+                return { lastY: lastY - lineHeight, truncated };
+            }
+
+            function drawBanner() {
+                if (!userImage) return;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                const selectedFont = fontSelector.value;
+                const layout = layoutSelector.value;
+                const textColor = textColorInput.value;
+                const overlayColor = overlayColorInput.value;
+                const overlayOpacity = overlayOpacitySlider.value / 100;
+                const shadowStyle = shadowStyles[textShadowSelector.value];
+                const headerSize = parseInt(headerSizeSlider.value);
+                const contentSize = parseInt(contentSizeSlider.value);
+                const padding = 100;
+
+                if (shadowStyle) {
+                    ctx.shadowColor = 'rgba(0,0,0,0.8)';
+                    ctx.shadowBlur = shadowStyle.includes('8px') ? 8 : shadowStyle.includes('6px') ? 6 : 4;
+                    ctx.shadowOffsetX = shadowStyle.includes('4px') ? 4 : shadowStyle.includes('3px') ? 3 : 2;
+                    ctx.shadowOffsetY = shadowStyle.includes('4px') ? 4 : shadowStyle.includes('3px') ? 3 : 2;
+                }
+
+                if (layout.startsWith('split')) drawSplitLayout(layout === 'split-left' ? 'left' : 'right');
+                else if (layout.startsWith('vertical')) drawVerticalLayout(layout === 'vertical-top' ? 'top' : 'bottom');
+                else if (layout === 'overlay') drawOverlayLayout();
+
+                function drawSplitLayout(textSide) {
+                    const textPanelWidth = canvas.width * 0.5;
+                    const textAreaX = textSide === 'left' ? 0 : canvas.width - textPanelWidth;
+                    const imagePanelX = textSide === 'left' ? textPanelWidth : 0;
+                    const imagePanelWidth = canvas.width - textPanelWidth;
+
+                    ctx.save();
+                    const coverRatio = Math.max(canvas.width / userImage.width, canvas.height / userImage.height);
+                    const coverWidth = userImage.width * coverRatio;
+                    const coverHeight = userImage.height * coverRatio;
+                    const coverX = (canvas.width - coverWidth) / 2;
+                    const coverY = (canvas.height - coverHeight) / 2;
+                    ctx.filter = `blur(20px) brightness(${overlayOpacity})`;
+                    ctx.drawImage(userImage, coverX, coverY, coverWidth, coverHeight);
+                    ctx.restore();
+
+                    ctx.save();
+                    ctx.fillStyle = overlayColor;
+                    ctx.globalAlpha = overlayOpacity * 0.3;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.restore();
+
+                    ctx.save();
+                    const imageMargin = 30;
+                    const fitRatio = Math.min((imagePanelWidth - imageMargin * 2) / userImage.width, (canvas.height - imageMargin * 2) / userImage.height);
+                    const imgNewWidth = userImage.width * fitRatio;
+                    const imgNewHeight = userImage.height * fitRatio;
+                    const centerShiftX = imagePanelX + (imagePanelWidth - imgNewWidth) / 2;
+                    const centerShiftY = (canvas.height - imgNewHeight) / 2;
+                    ctx.drawImage(userImage, centerShiftX, centerShiftY, imgNewWidth, imgNewHeight);
+                    ctx.restore();
+
+                    drawTextContent(textAreaX + textPanelWidth / 2, textPanelWidth - padding * 2, 0, canvas.height);
+                }
+
+                function drawOverlayLayout() {
+                    ctx.save();
+                    const coverRatio = Math.max(canvas.width / userImage.width, canvas.height / userImage.height);
+                    const coverWidth = userImage.width * coverRatio;
+                    const coverHeight = userImage.height * coverRatio;
+                    const coverX = (canvas.width - coverWidth) / 2;
+                    const coverY = (canvas.height - coverHeight) / 2;
+                    ctx.drawImage(userImage, coverX, coverY, coverWidth, coverHeight);
+                    ctx.restore();
+
+                    ctx.save();
+                    ctx.fillStyle = overlayColor;
+                    ctx.globalAlpha = overlayOpacity;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.restore();
+
+                    drawTextContent(canvas.width / 2, canvas.width - padding * 2, 0, canvas.height);
+                }
+
+                function drawVerticalLayout(textPosition) {
+                    const textPanelHeight = canvas.height * 0.4;
+                    const textAreaY = textPosition === 'top' ? 0 : canvas.height - textPanelHeight;
+                    const imagePanelY = textPosition === 'top' ? textPanelHeight : 0;
+                    const imagePanelHeight = canvas.height - textPanelHeight;
+
+                    ctx.save();
+                    const coverRatio = Math.max(canvas.width / userImage.width, canvas.height / userImage.height);
+                    const coverWidth = userImage.width * coverRatio;
+                    const coverHeight = userImage.height * coverRatio;
+                    const coverX = (canvas.width - coverWidth) / 2;
+                    const coverY = (canvas.height - coverHeight) / 2;
+                    ctx.filter = `blur(20px) brightness(${overlayOpacity})`;
+                    ctx.drawImage(userImage, coverX, coverY, coverWidth, coverHeight);
+                    ctx.restore();
+
+                    ctx.save();
+                    ctx.fillStyle = overlayColor;
+                    ctx.globalAlpha = overlayOpacity * 0.8;
+                    ctx.fillRect(0, textAreaY, canvas.width, textPanelHeight);
+                    ctx.restore();
+
+                    ctx.save();
+                    const imageMargin = 20;
+                    const fitRatio = Math.min((canvas.width - imageMargin * 2) / userImage.width, (imagePanelHeight - imageMargin * 2) / userImage.height);
+                    const imgNewWidth = userImage.width * fitRatio;
+                    const imgNewHeight = userImage.height * fitRatio;
+                    const centerShiftX = (canvas.width - imgNewWidth) / 2;
+                    const centerShiftY = imagePanelY + (imagePanelHeight - imgNewHeight) / 2;
+                    ctx.drawImage(userImage, centerShiftX, centerShiftY, imgNewWidth, imgNewHeight);
+                    ctx.restore();
+
+                    drawTextContent(canvas.width / 2, canvas.width - padding * 2, textAreaY, textAreaY + textPanelHeight);
+                }
+
+                function drawTextContent(centerX, maxWidth, startY, maxY) {
+                    const textAreaHeight = maxY - startY;
+                    const headerMaxY = startY + 0.3 * textAreaHeight;
+                    const contentStartY = startY + 0.35 * textAreaHeight;
+                    const contentMaxY = startY + 0.65 * textAreaHeight;
+                    const footerStartY = startY + 0.7 * textAreaHeight;
+
+                    ctx.fillStyle = textColor;
+                    ctx.textAlign = 'center';
+
+                    // Draw header
+                    ctx.font = `bold ${headerSize}px '${selectedFont}'`;
+                    ctx.textBaseline = 'top';
+                    wrapText(ctx, headerTextInput.value, centerX, startY + padding, maxWidth, headerSize * 0.9, headerMaxY);
+
+                    // Draw content
+                    ctx.font = `${contentSize}px '${selectedFont}'`;
+                    wrapText(ctx, mainContentTextInput.value, centerX, contentStartY, maxWidth, contentSize * 1.4, contentMaxY);
+
+                    // Draw footer
+                    const detailSize = Math.max(24, contentSize * 0.6);
+                    const footerText = `Location: ${locationTextInput.value}\nDate: ${formatDateTime(dateTimePicker.value)}`;
+                    ctx.font = `${detailSize}px 'Poppins'`;
+                    wrapText(ctx, footerText, centerX, footerStartY, maxWidth, detailSize * 1.5, maxY);
+                }
+
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+                shareButton.disabled = false;
+                downloadButton.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
