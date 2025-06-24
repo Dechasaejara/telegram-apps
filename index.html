@@ -344,7 +344,7 @@
             if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.downloadFile) {
                 try {
                     // Correct method name: downloadFile
-                    Telegram.WebApp.downloadFile(blobUrl, fileName);
+                    Telegram.WebApp.web_app_request_file_download(blobUrl, fileName);
 
                     // You might want to revoke the Blob URL after the download is initiated
                     // However, in a Web App, the Telegram client might take some time to process
