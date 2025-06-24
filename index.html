@@ -341,17 +341,17 @@
             const blobUrl = URL.createObjectURL(blob);
 
             // Check if Telegram WebApp object and the specific method exist
-            if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.downloadFile) {
+            if (window.Telegram && window.Telegram.WebApp) {
                 try {
-                    // Correct method name: downloadFile
-                    Telegram.WebApp.web_app_request_file_download(blobUrl, fileName);
+                                const data = JSON.stringify({
+  eventType: 'web_app_request_file_download',
+  eventData: {
+    url: blobUrl,
+    filename: fileName
+  },
+});
 
-                    // You might want to revoke the Blob URL after the download is initiated
-                    // However, in a Web App, the Telegram client might take some time to process
-                    // the download, so it's generally safer to let the browser manage it
-                    // or revoke after a short delay if you are absolutely sure it's not needed.
-                    // For simplicity here, we'll let it be.
-                    // URL.revokeObjectURL(blobUrl); 
+window.parent.postMessage(data, 'https://web.telegram.org');
                 } catch (error) {
                     console.error('Error calling Telegram.WebApp.downloadFile:', error);
                     if (window.Telegram.WebApp) {
