@@ -37,7 +37,7 @@
         .dark input[type="range"]::-webkit-slider-track { background: #4b5563; }
     </style>
 </head>
-<body class="overflow-hidden flex flex-col h-screen">
+<body class="overflow-hidden flex pt-5 flex-col h-screen">
     <div id="app" class="flex-grow flex flex-col items-center p-4 space-y-4 overflow-y-auto">
         <h1 class="text-2xl font-bold text-center flex-shrink-0 flex items-center gap-2">
             <i class="ph-fill ph-confetti text-blue-500"></i> Party Banner Creator
@@ -159,16 +159,13 @@
                     <canvas id="banner-canvas" class="w-full h-full"></canvas>
                 </div>
                 <div class="grid grid-cols-1 gap-2">
-                   <button id="download-button" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out disabled:bg-gray-400 icon-button">
+                    <button id="download-button" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out disabled:bg-gray-400 icon-button">
                         <i class="ph-bold ph-download-simple"></i> Download
                     </button>
-                    <button id="share-button" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out disabled:bg-gray-400 icon-button">
-                        <i class="ph-bold ph-telegram-logo"></i> Share
+                    <button id="reset-button" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out disabled:bg-gray-400 icon-button">
+                        <i class="ph-bold ph-telegram-logo"></i> Start Over
                     </button>
                 </div>
-                <button id="reset-button" class="w-full bg-green-200 py-2 px-4 rounded transition duration-300 ease-in-out mt-2 icon-button">
-                    <i class="ph-bold ph-arrow-counter-clockwise"></i> Start Over
-                </button>
             </div>
         </div>
     </div>
@@ -210,7 +207,6 @@
             const canvas = document.getElementById('banner-canvas');
             const ctx = canvas.getContext('2d');
             const downloadButton = document.getElementById('download-button');
-            const shareButton = document.getElementById('share-button');
             const resetButton = document.getElementById('reset-button');
 
             canvas.width = 1920;
@@ -329,104 +325,12 @@
                 contentSizeValue.textContent = '55';
             });
 
- downloadButton.addEventListener('click', () => {
-    const dataURL = canvas.toDataURL('image/png');
-    const fileName = `${eventSelector.value}-banner.png`;
-
-    // Convert Data URL to Blob, then to Blob URL
-    // Telegram's downloadFile CAN accept Blob URLs directly.
-    fetch(dataURL)
-        .then(res => res.blob())
-        .then(blob => {
-            const blobUrl = URL.createObjectURL(blob);
-
-            // Check if Telegram WebApp object and the specific method exist
-            if (window.Telegram && window.Telegram.WebApp) {
-                try {
-                                const data = JSON.stringify({
-  eventType: 'web_app_request_file_download',
-  eventData: {
-    url: blobUrl,
-    filename: fileName
-  },
-});
-
-window.parent.postMessage(data, 'https://telegram-apps-s6ee.onrender.com');
-                } catch (error) {
-                    console.error('Error calling Telegram.WebApp.downloadFile:', error);
-                    if (window.Telegram.WebApp) {
-                        Telegram.WebApp.showAlert(`Download failed: ${error.message}. Please ensure you are in the Telegram app and have the latest version.`);
-                    } else {
-                        alert(`Download failed: ${error.message}`);
-                    }
-                }
-            } else {
-                // Fallback for regular web browsers or older Telegram Web App versions
-                // where downloadFile might not be available.
-                console.warn("Telegram.WebApp.downloadFile is not available. Using standard browser download.");
+            downloadButton.addEventListener('click', () => {
                 const link = document.createElement('a');
-                link.href = blobUrl;
-                link.download = fileName;
+                link.href = canvas.toDataURL('image/png');
+                link.download = `${eventSelector.value}-banner.png`;
                 link.click();
-                URL.revokeObjectURL(blobUrl); // Clean up the Blob URL for browser download
-            }
-        })
-        .catch(error => {
-            console.error('Error creating Blob or preparing for download:', error);
-            if (window.Telegram && window.Telegram.WebApp) {
-                Telegram.WebApp.showAlert(`Error preparing download: ${error.message}`);
-            } else {
-                alert(`Error preparing download: ${error.message}`);
-            }
-        });
-});
-      shareButton.addEventListener('click', () => {
-    canvas.toBlob((blob) => {
-        if (!blob) {
-            console.error("Failed to create blob for sharing.");
-            if (window.Telegram && window.Telegram.WebApp) {
-                Telegram.WebApp.showAlert("Failed to prepare image for sharing.");
-            } else {
-                alert("Failed to prepare image for sharing.");
-            }
-            return;
-        }
-
-        const fileName = `${eventSelector.value}-banner.png`;
-        const file = new File([blob], fileName, { type: 'image/png' });
-
-        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-            navigator.share({
-                files: [file],
-                title: 'Check out my banner!',
-                text: 'Created using my awesome Telegram Mini App.',
-            })
-            .then(() => console.log('Shared successfully'))
-            .catch((error) => {
-                console.error('Error sharing:', error);
-                if (window.Telegram && window.Telegram.WebApp) {
-                    Telegram.WebApp.showAlert(`Share failed: ${error.message}. Try downloading and sharing manually.`);
-                } else {
-                    alert(`Share failed: ${error.message}. Try downloading and sharing manually.`);
-                }
             });
-        } else {
-            // Fallback if Web Share API is not supported or cannot share files
-            console.warn("Web Share API not supported or cannot share files directly. Offering download instead.");
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = fileName;
-            link.click();
-            URL.revokeObjectURL(link.href); // Clean up Blob URL
-
-            if (window.Telegram && window.Telegram.WebApp) {
-                Telegram.WebApp.showAlert("Your browser doesn't support direct sharing. Image downloaded! You can share it manually.");
-            } else {
-                alert("Your browser doesn't support direct sharing. Image downloaded!");
-            }
-        }
-    }, 'image/png');
-});
 
             function formatDateTime(dateTimeString) {
                 if (!dateTimeString) return "";
@@ -438,7 +342,7 @@ window.parent.postMessage(data, 'https://telegram-apps-s6ee.onrender.com');
 
             function wrapText(context, text, x, y, maxWidth, lineHeight, maxY) {
                 const lines = text.split('\n');
-                let lastY = y;
+                let currentY = y;
                 let truncated = false;
                 for (const lineText of lines) {
                     const words = lineText.split(' ');
@@ -447,27 +351,32 @@ window.parent.postMessage(data, 'https://telegram-apps-s6ee.onrender.com');
                         const testLine = line + words[n] + ' ';
                         const metrics = context.measureText(testLine);
                         if (metrics.width > maxWidth && n > 0) {
-                            if (lastY + lineHeight > maxY) {
+                            if (currentY + lineHeight > maxY) {
                                 truncated = true;
                                 break;
                             }
-                            context.fillText(line.trim(), x, lastY);
+                            context.fillText(line.trim(), x, currentY);
                             line = words[n] + ' ';
-                            lastY += lineHeight;
+                            currentY += lineHeight;
                         } else {
                             line = testLine;
                         }
                     }
-                    if (!truncated && lastY + lineHeight <= maxY) {
-                        context.fillText(line.trim(), x, lastY);
-                        lastY += lineHeight;
+                    if (!truncated) {
+                        if (currentY + lineHeight > maxY) {
+                            truncated = true;
+                        } else {
+                            context.fillText(line.trim(), x, currentY);
+                            currentY += lineHeight;
+                        }
                     } else {
-                        truncated = true;
                         break;
                     }
                 }
-                if (truncated && lastY - lineHeight <= maxY) context.fillText('...', x, lastY - lineHeight);
-                return { lastY: lastY - lineHeight, truncated };
+                if (truncated && currentY - lineHeight <= maxY) {
+                    context.fillText('...', x, currentY - lineHeight);
+                }
+                return { nextY: currentY, truncated };
             }
 
             function drawBanner() {
@@ -540,27 +449,33 @@ window.parent.postMessage(data, 'https://telegram-apps-s6ee.onrender.com');
                 }
 
                 function drawTextContent(centerX, maxWidth, startY, maxY) {
-                    const textAreaHeight = maxY - startY;
-                    const headerStartY = startY;
-                    const headerMaxY = startY + 0.2 * textAreaHeight;
-                    const contentStartY = startY + 0.25 * textAreaHeight;
-                    const contentMaxY = startY + 0.75 * textAreaHeight;
-                    const footerStartY = startY + 0.8 * textAreaHeight;
-                    const footerMaxY = startY + 0.9 * textAreaHeight;
+                    const padding = 100;
+                    const spacing = 50;
+                    let currentY = startY + padding;
+                    const maxTextY = maxY - padding;
 
                     ctx.fillStyle = textColor;
                     ctx.textAlign = 'center';
 
+                    // Draw header
                     ctx.font = `bold ${headerSize}px '${selectedFont}'`;
-                    wrapText(ctx, headerTextInput.value, centerX, headerStartY + padding, maxWidth, headerSize * 1.2, headerMaxY);
+                    const headerResult = wrapText(ctx, headerTextInput.value, centerX, currentY, maxWidth, headerSize * 1.2, maxTextY);
+                    currentY = headerResult.nextY + spacing;
 
-                    ctx.font = `${contentSize}px '${selectedFont}'`;
-                    wrapText(ctx, mainContentTextInput.value, centerX, contentStartY, maxWidth, contentSize * 1.4, contentMaxY);
+                    // Draw content
+                    if (currentY < maxTextY) {
+                        ctx.font = `${contentSize}px '${selectedFont}'`;
+                        const contentResult = wrapText(ctx, mainContentTextInput.value, centerX, currentY, maxWidth, contentSize * 1.4, maxTextY);
+                        currentY = contentResult.nextY + spacing;
+                    }
 
-                    const detailSize = Math.max(24, contentSize * 0.6);
-                    const footerText = `Location: ${locationTextInput.value}\nDate: ${formatDateTime(dateTimePicker.value)}`;
-                    ctx.font = `${detailSize}px 'Poppins'`;
-                    wrapText(ctx, footerText, centerX, footerStartY, maxWidth, detailSize * 1.5, footerMaxY);
+                    // Draw footer
+                    if (currentY < maxTextY) {
+                        const detailSize = Math.max(24, contentSize * 0.6);
+                        const footerText = `Location: ${locationTextInput.value}\nDate: ${formatDateTime(dateTimePicker.value)}`;
+                        ctx.font = `${detailSize}px 'Poppins'`;
+                        wrapText(ctx, footerText, centerX, currentY, maxWidth, detailSize * 1.5, maxTextY);
+                    }
                 }
 
                 shareButton.disabled = false;
