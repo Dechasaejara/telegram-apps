@@ -3,484 +3,2257 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Party Banner Creator</title>
+    <title>FlavorFind - Discover Amazing Food</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:wght@700&family=Poppins:wght@400;600&family=Libre+Baskerville:ital@1&family=Roboto+Slab:wght@700&family=Merriweather:wght@700&family=Oswald:wght@700&family=Montserrat:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                        'display': ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary': {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        'accent': {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            200: '#fed7aa',
+                            300: '#fdba74',
+                            400: '#fb923c',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                            800: '#9a3412',
+                            900: '#7c2d12',
+                        },
+                        'success': {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            200: '#bbf7d0',
+                            300: '#86efac',
+                            400: '#4ade80',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'scale-in': 'scaleIn 0.2s ease-out',
+                        'bounce-in': 'bounceIn 0.6s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        scaleIn: {
+                            '0%': { transform: 'scale(0.95)', opacity: '0' },
+                            '100%': { transform: 'scale(1)', opacity: '1' },
+                        },
+                        bounceIn: {
+                            '0%': { transform: 'scale(0.3)', opacity: '0' },
+                            '50%': { transform: 'scale(1.05)' },
+                            '70%': { transform: 'scale(0.9)' },
+                            '100%': { transform: 'scale(1)', opacity: '1' },
+                        },
+                    },
+                    boxShadow: {
+                        'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
+                        'medium': '0 4px 25px -3px rgba(0, 0, 0, 0.1), 0 8px 15px -1px rgba(0, 0, 0, 0.06)',
+                        'strong': '0 10px 40px -3px rgba(0, 0, 0, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        :root {
-            --tg-bg-color: #ffffff;
-            --tg-text-color: #000000;
-            --tg-button-color: #0088cc;
+        /* Dark mode support */
+        .dark {
+            color-scheme: dark;
         }
-        body { 
-            font-family: 'Poppins', sans-serif; 
-            background-color: var(--tg-bg-color);
-            color: var(--tg-text-color);
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
         }
-        button {
-            background-color: var(--tg-button-color);
-            color: #ffffff;
+        ::-webkit-scrollbar-track {
+            background: transparent;
         }
-        .banner-container { width: 100%; max-width: 600px; aspect-ratio: 16 / 9; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .placeholder-bg { background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%23d1d5db' stroke-width='3' stroke-dasharray='6%2c 14' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e"); background-color: #f9fafb; }
-        .dark .placeholder-bg { background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%234b5563' stroke-width='3' stroke-dasharray='6%2c 14' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e"); background-color: #374151; }
-        .icon-button { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; }
-        input[type="datetime-local"]::-webkit-calendar-picker-indicator { cursor: pointer; filter: invert(0.6); }
-        .dark input[type="datetime-local"]::-webkit-calendar-picker-indicator { filter: invert(1); }
-        input[type="range"] { background: transparent; cursor: pointer; }
-        input[type="range"]::-webkit-slider-track { width: 100%; height: 8px; cursor: pointer; background: #e5e7eb; border-radius: 4px; }
-        input[type="range"]::-webkit-slider-thumb { height: 20px; width: 20px; border-radius: 50%; background: #5D5CDE; cursor: pointer; -webkit-appearance: none; margin-top: -6px; }
-        .dark input[type="range"]::-webkit-slider-track { background: #4b5563; }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.5);
+            border-radius: 3px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: rgba(75, 85, 99, 0.5);
+        }
+
+        /* Glassmorphism effect */
+        .glass {
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            background-color: rgba(255, 255, 255, 0.75);
+            border: 1px solid rgba(209, 213, 219, 0.3);
+        }
+        .dark .glass {
+            background-color: rgba(17, 24, 39, 0.75);
+            border: 1px solid rgba(75, 85, 99, 0.3);
+        }
+
+        /* Enhanced button styles */
+        .btn-primary {
+            @apply bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white font-semibold py-3 px-6 rounded-xl shadow-medium hover:shadow-strong transition-all duration-300 transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-primary-200 dark:focus:ring-primary-800;
+        }
+        .btn-secondary {
+            @apply bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-semibold py-3 px-6 rounded-xl shadow-soft hover:shadow-medium transition-all duration-300 transform hover:scale-105 active:scale-95 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600;
+        }
+        .btn-success {
+            @apply bg-gradient-to-r from-success-500 to-success-600 hover:from-success-600 hover:to-success-700 text-white font-semibold py-3 px-6 rounded-xl shadow-medium hover:shadow-strong transition-all duration-300 transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-success-200 dark:focus:ring-success-800;
+        }
+        .btn-danger {
+            @apply bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold py-3 px-6 rounded-xl shadow-medium hover:shadow-strong transition-all duration-300 transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-red-200 dark:focus:ring-red-800;
+        }
+
+        /* Enhanced card styles */
+        .card {
+            @apply bg-white dark:bg-gray-800 rounded-2xl shadow-soft hover:shadow-medium transition-all duration-300 border border-gray-100 dark:border-gray-700;
+        }
+        .card-interactive {
+            @apply cursor-pointer transform hover:scale-[1.02] hover:-translate-y-1;
+        }
+
+        /* Enhanced form inputs */
+        .form-input {
+            @apply w-full px-4 py-3 text-base bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-4 focus:ring-primary-200 dark:focus:ring-primary-800 focus:border-primary-500 dark:focus:border-primary-400 transition-all duration-200 placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-gray-100;
+        }
+
+        /* Tab styles */
+        .tab-button {
+            @apply flex flex-col items-center justify-center px-3 py-2 rounded-xl transition-all duration-200 text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20;
+        }
+        .tab-button.active {
+            @apply text-primary-600 dark:text-primary-400 bg-primary-100 dark:bg-primary-900/30 font-medium;
+        }
+
+        /* Category tab styles */
+        .category-tab {
+            @apply px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:border-primary-200 dark:hover:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20;
+        }
+        .category-tab.active {
+            @apply bg-primary-600 text-white border-primary-600 shadow-medium;
+        }
+
+        /* Like button animation */
+        .like-button {
+            @apply transition-all duration-300 transform hover:scale-110 active:scale-95;
+        }
+        .like-button.liked {
+            @apply text-red-500;
+        }
+        .like-button.not-liked {
+            @apply text-gray-400 hover:text-red-400;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            @apply animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600;
+        }
+
+        /* Enhanced modal */
+        .modal-backdrop {
+            @apply fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300;
+        }
+        .modal-content {
+            @apply bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-strong transform transition-all duration-300 scale-95 opacity-0 max-h-[90vh] overflow-y-auto;
+        }
+        .modal-content.show {
+            @apply scale-100 opacity-100;
+        }
+
+        /* Price badge styles */
+        .price-badge {
+            @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+        }
+        .price-badge.low {
+            @apply bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400;
+        }
+        .price-badge.medium {
+            @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400;
+        }
+        .price-badge.high {
+            @apply bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400;
+        }
+
+        /* Distance badge */
+        .distance-badge {
+            @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400;
+        }
+
+        /* Status indicators */
+        .status-indicator {
+            @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+        }
+        .status-indicator.pending {
+            @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400;
+        }
+        .status-indicator.complete {
+            @apply bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400;
+        }
+
+        /* Enhanced message box */
+        .message-box {
+            @apply fixed top-6 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-2xl shadow-strong text-white font-medium animate-slide-up;
+        }
+        .message-box.success {
+            @apply bg-gradient-to-r from-success-500 to-success-600;
+        }
+        .message-box.error {
+            @apply bg-gradient-to-r from-red-500 to-red-600;
+        }
+        .message-box.info {
+            @apply bg-gradient-to-r from-primary-500 to-primary-600;
+        }
     </style>
 </head>
-<body class="overflow-hidden flex pt-5 flex-col h-screen">
-    <div id="app" class="flex-grow flex flex-col items-center p-4 space-y-4 overflow-y-auto">
-        <h1 class="text-2xl font-bold text-center flex-shrink-0 flex items-center gap-2">
-            <i class="ph-fill ph-confetti text-blue-500"></i> Party Banner Creator
-        </h1>
-        <div class="w-full max-w-md space-y-4">
-            <div id="image-upload-section" class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md">
-                <h2 class="text-xl font-semibold mb-4 flex items-center gap-2"><i class="ph-bold ph-image text-green-500"></i> 1. Upload Photo</h2>
-                <label for="image-upload" class="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-bray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600">
-                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                        <i class="ph-bold ph-upload text-4xl text-gray-500 dark:text-gray-400 mb-2"></i>
-                        <p class="mb-2 text-sm text-gray-500 dark:text-gray-400"><span class="font-semibold">Click to upload</span></p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">PNG or JPG</p>
-                    </div>
-                    <input id="image-upload" type="file" class="hidden" accept="image/png, image/jpeg" />
-                </label>
-            </div>
-            <div id="customization-section" class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md space-y-6 hidden">
-                <h2 class="text-xl font-semibold flex items-center gap-2"><i class="ph-bold ph-paint-brush text-purple-500"></i> 2. Customize Banner</h2>
-                <div class="space-y-4">
-                    <h3 class="font-semibold text-lg">Event Details</h3>
-                    <div>
-                        <label for="event-selector" class="block mb-2 text-sm font-medium">Event Type</label>
-                        <select id="event-selector" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="wedding">Wedding</option>
-                            <option value="birthday">Birthday</option>
-                            <option value="congratulations">Congratulations</option>
-                            <option value="graduation">Graduation</option>
-                            <option value="baby_shower">Baby Shower</option>
-                            <option value="new_home">New Home</option>
-                            <option value="funeral">In Loving Memory</option>
-                            <option value="get_well">Get Well Soon</option>
-                        </select>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 text-gray-900 dark:text-gray-100 font-sans">
+
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="fixed inset-0 z-50 flex items-center justify-center bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm">
+        <div class="text-center">
+            <div class="spinner mx-auto mb-4"></div>
+            <p class="text-lg font-medium text-gray-700 dark:text-gray-300">Loading FlavorFind...</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Preparing your culinary journey</p>
+        </div>
+    </div>
+
+    <!-- Main Application Container -->
+    <div id="app-container" class="hidden flex flex-col min-h-screen">
+        <!-- Header -->
+        <header class="glass sticky top-0 z-40 p-4 mb-6">
+            <div class="max-w-7xl mx-auto flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-utensils text-white text-lg"></i>
                     </div>
                     <div>
-                        <label for="header-text" class="block mb-2 text-sm font-medium">Header Title</label>
-                        <input type="text" id="header-text" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label for="main-content-text" class="block mb-2 text-sm font-medium">Main Content</label>
-                        <textarea id="main-content-text" rows="3" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"></textarea>
-                    </div>
-                    <div>
-                        <label for="location-text" class="block mb-2 text-sm font-medium">Location</label>
-                        <input type="text" id="location-text" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label for="date-time-picker" class="block mb-2 text-sm font-medium">Date & Time</label>
-                        <input type="datetime-local" id="date-time-picker" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
+                        <h1 class="text-2xl font-display font-bold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">FlavorFind</h1>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Discover Amazing Food</p>
                     </div>
                 </div>
-                <div class="space-y-4">
-                    <h3 class="font-semibold text-lg">Appearance</h3>
-                    <div>
-                        <label for="layout-selector" class="block mb-2 text-sm font-medium">Layout Style</label>
-                        <select id="layout-selector" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="split-left">Text Left, Image Right</option>
-                            <option value="split-right">Text Right, Image Left</option>
-                            <option value="overlay">Overlay Layout</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="font-selector" class="block mb-2 text-sm font-medium">Select a Font</label>
-                        <select id="font-selector" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="Dancing Script">Dancing Script</option>
-                            <option value="Playfair Display">Playfair Display</option>
-                            <option value="Libre Baskerville">Libre Baskerville</option>
-                            <option value="Roboto Slab">Roboto Slab</option>
-                            <option value="Merriweather">Merriweather</option>
-                            <option value="Oswald">Oswald</option>
-                            <option value="Montserrat">Montserrat</option>
-                            <option value="Poppins">Poppins</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="color-theme" class="block mb-2 text-sm font-medium">Color Theme</label>
-                        <select id="color-theme" class="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="classic">Classic White</option>
-                            <option value="gold">Elegant Gold</option>
-                            <option value="rose">Rose Gold</option>
-                            <option value="blue">Ocean Blue</option>
-                            <option value="green">Nature Green</option>
-                            <option value="purple">Royal Purple</option>
-                            <option value="custom">Custom Colors</option>
-                        </select>
-                    </div>
-                    <div id="custom-colors" class="space-y-4 hidden">
-                        <div>
-                            <label for="text-color" class="block mb-2 text-sm font-medium">Text Color</label>
-                            <input type="color" id="text-color" value="#FFFFFF" class="w-full h-10 border border-gray-300 rounded-md">
-                        </div>
-                        <div>
-                            <label for="overlay-color" class="block mb-2 text-sm font-medium">Overlay Color</label>
-                            <input type="color" id="overlay-color" value="#000000" class="w-full h-10 border border-gray-300 rounded-md">
-                        </div>
-                    </div>
-                    <div>
-                        <label for="overlay-opacity" class="block mb-2 text-sm font-medium">Background Opacity</label>
-                        <input type="range" id="overlay-opacity" min="0" max="100" value="50" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
-                        <div class="text-xs text-gray-500 text-center mt-1"><span id="opacity-value">50</span>%</div>
-                    </div>
-                </div>
-                <div class="space-y-4">
-                    <h3 class="font-semibold text-lg">Text Settings</h3>
-                    <div>
-                        <label for="header-size" class="block mb-2 text-sm font-medium">Header Size</label>
-                        <input type="range" id="header-size" min="60" max="200" value="120" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
-                        <div class="text-xs text-gray-500 text-center mt-1"><span id="header-size-value">120</span>px</div>
-                    </div>
-                    <div>
-                        <label for="content-size" class="block mb-2 text-sm font-medium">Content Size</label>
-                        <input type="range" id="content-size" min="30" max="80" value="55" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
-                        <div class="text-xs text-gray-500 text-center mt-1"><span id="content-size-value">55</span>px</div>
-                    </div>
+                <div class="text-right">
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Your ID</p>
+                    <p id="user-id" class="text-sm font-mono font-medium text-gray-700 dark:text-gray-300">Loading...</p>
                 </div>
             </div>
-            <div id="banner-preview-section" class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md space-y-4 hidden">
-                <h2 class="text-xl font-semibold flex items-center gap-2"><i class="ph-bold ph-sparkle text-yellow-500"></i> 3. Preview & Share</h2>
-                <div class="banner-container mx-auto rounded-lg overflow-hidden placeholder-bg relative">
-                    <canvas id="banner-canvas" class="w-full h-full"></canvas>
-                </div>
-                <div class="grid grid-cols-1 gap-2">
-                    <button id="download-button" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out disabled:bg-gray-400 icon-button">
-                        <i class="ph-bold ph-download-simple"></i> Download
-                    </button>
-                    <button id="reset-button" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition duration-300 ease-in-out disabled:bg-gray-400 icon-button">
-                        <i class="ph-bold ph-telegram-logo"></i> Start Over
-                    </button>
+        </header>
+
+        <!-- Message Box -->
+        <div id="message-box" class="message-box info hidden">
+            <!-- Message content will be inserted here -->
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 overflow-y-auto pb-24 px-4">
+            <div class="max-w-7xl mx-auto">
+                <!-- Nearby Service Providers Section (Page 1) -->
+                <section id="nearby-service-providers-page" class="space-y-6">
+                    <div class="card p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-2xl font-display font-bold text-gray-900 dark:text-gray-100">
+                                <i class="fas fa-map-marker-alt text-primary-500 mr-2"></i>
+                                Nearby Flavors
+                            </h2>
+                            <div class="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                                <i class="fas fa-location-dot"></i>
+                                <span id="geolocation-status">Getting location...</span>
+                            </div>
+                        </div>
+
+                        <!-- Search and Filters -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <div class="relative">
+                                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                                <input type="text" id="service-provider-search-input" placeholder="Search restaurants..." class="form-input pl-10">
+                            </div>
+                            <select id="service-provider-distance-filter" class="form-input">
+                                <option value="100">Any Distance</option>
+                                <option value="1">Under 1 km</option>
+                                <option value="2">Under 2 km</option>
+                                <option value="5">Under 5 km</option>
+                                <option value="10">Under 10 km</option>
+                            </select>
+                            <select id="service-provider-price-filter" class="form-input">
+                                <option value="">Any Price Range</option>
+                                <option value="$">$ Budget-Friendly</option>
+                                <option value="$$">$$ Moderate</option>
+                                <option value="$$$">$$$ Premium</option>
+                            </select>
+                        </div>
+
+                        <!-- Category Tags -->
+                        <div class="flex flex-wrap gap-2 mb-6">
+                            <button class="category-tab active" data-category="All">
+                                <i class="fas fa-utensils mr-1"></i>All
+                            </button>
+                            <button class="category-tab" data-category="Restaurant">
+                                <i class="fas fa-building mr-1"></i>Restaurant
+                            </button>
+                            <button class="category-tab" data-category="Cafe">
+                                <i class="fas fa-coffee mr-1"></i>Cafe
+                            </button>
+                            <button class="category-tab" data-category="Bar">
+                                <i class="fas fa-wine-glass mr-1"></i>Bar
+                            </button>
+                            <button class="category-tab" data-category="Bakery">
+                                <i class="fas fa-bread-slice mr-1"></i>Bakery
+                            </button>
+                            <button class="category-tab" data-category="Other">
+                                <i class="fas fa-ellipsis-h mr-1"></i>Other
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="nearby-service-providers-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="col-span-full flex justify-center py-12">
+                            <div class="text-center">
+                                <div class="spinner mx-auto mb-4"></div>
+                                <p class="text-gray-500 dark:text-gray-400">Loading nearby restaurants...</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Service Provider Detail Page (Page 2) -->
+                <section id="service-provider-detail-page" class="hidden space-y-6">
+                    <div class="card p-6">
+                        <button id="back-to-providers-btn" class="btn-secondary mb-6">
+                            <i class="fas fa-arrow-left mr-2"></i>Back to Nearby
+                        </button>
+                        <div id="service-provider-details" class="space-y-6">
+                            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                                <div class="flex-1">
+                                    <div class="flex items-start justify-between mb-3">
+                                        <h2 id="sp-detail-name" class="text-3xl font-display font-bold text-gray-900 dark:text-gray-100"></h2>
+                                        <button id="sp-like-button" class="like-button text-2xl p-2">
+                                            <i class="far fa-heart"></i>
+                                        </button>
+                                    </div>
+                                    <p id="sp-detail-address" class="text-gray-600 dark:text-gray-400 mb-2 flex items-center">
+                                        <i class="fas fa-map-marker-alt mr-2 text-primary-500"></i>
+                                    </p>
+                                    <p id="sp-detail-description" class="text-gray-700 dark:text-gray-300 mb-4"></p>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-3">
+                                <span id="sp-detail-type" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-400"></span>
+                                <span id="sp-detail-price-level" class="price-badge"></span>
+                                <span id="sp-detail-coords" class="distance-badge"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card p-6">
+                        <h3 class="text-2xl font-display font-bold text-gray-900 dark:text-gray-100 mb-6">
+                            <i class="fas fa-utensils text-accent-500 mr-2"></i>
+                            Our Menu
+                        </h3>
+                        
+                        <!-- Menu Category Tabs -->
+                        <div id="menu-category-tabs" class="flex flex-wrap gap-2 mb-6 border-b border-gray-200 dark:border-gray-700 pb-4">
+                            <button class="category-tab active" data-menu-category="All">All Menu</button>
+                        </div>
+                        
+                        <div id="sp-menu-items-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="col-span-full text-center py-8">
+                                <i class="fas fa-utensils text-4xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                                <p class="text-gray-500 dark:text-gray-400">No menu items available</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Menu Item Detail Page (Page 3) -->
+                <section id="menu-item-detail-page" class="hidden space-y-6">
+                    <div class="card p-6">
+                        <button id="back-to-sp-detail-btn" class="btn-secondary mb-6">
+                            <i class="fas fa-arrow-left mr-2"></i>Back to Menu
+                        </button>
+                        <div id="menu-item-details" class="space-y-4">
+                            <h2 id="mi-detail-name" class="text-3xl font-display font-bold text-gray-900 dark:text-gray-100"></h2>
+                            <p id="mi-detail-price" class="text-2xl font-bold text-accent-600"></p>
+                            <p id="mi-detail-description" class="text-gray-700 dark:text-gray-300 text-lg"></p>
+                            <div class="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
+                                <span class="flex items-center">
+                                    <i class="fas fa-tag mr-2"></i>
+                                    <span id="mi-detail-category"></span>
+                                </span>
+                                <span class="flex items-center">
+                                    <i class="fas fa-store mr-2"></i>
+                                    <span id="mi-detail-service-provider" class="font-medium text-primary-600 dark:text-primary-400"></span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Order Section -->
+                        <div class="border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
+                            <h3 class="text-xl font-display font-bold text-gray-900 dark:text-gray-100 mb-4">
+                                <i class="fas fa-shopping-cart text-success-500 mr-2"></i>
+                                Add to Order
+                            </h3>
+                            <div class="flex items-center space-x-4 mb-6">
+                                <button id="decrease-qty-btn" class="btn-secondary w-12 h-12 flex items-center justify-center text-xl">-</button>
+                                <input type="number" id="order-quantity" value="1" min="1" class="w-20 text-center form-input">
+                                <button id="increase-qty-btn" class="btn-secondary w-12 h-12 flex items-center justify-center text-xl">+</button>
+                            </div>
+                            <button id="add-to-cart-detail-btn" class="btn-success w-full">
+                                <i class="fas fa-plus mr-2"></i>Add to Cart
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Reviews Section -->
+                    <div class="card p-6">
+                        <h3 class="text-xl font-display font-bold text-gray-900 dark:text-gray-100 mb-6">
+                            <i class="fas fa-star text-yellow-500 mr-2"></i>
+                            Reviews
+                        </h3>
+                        <div id="reviews-list" class="space-y-4 mb-6">
+                            <div class="text-center py-8">
+                                <i class="fas fa-comments text-4xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                                <p class="text-gray-500 dark:text-gray-400">No reviews yet. Be the first!</p>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <textarea id="review-text-input" placeholder="Share your thoughts about this dish..." rows="3" class="form-input"></textarea>
+                            <button id="submit-review-btn" class="btn-primary w-full">
+                                <i class="fas fa-paper-plane mr-2"></i>Submit Review
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- My Cart Section (Page 4) -->
+                <section id="my-cart-page" class="hidden space-y-6">
+                    <div class="card p-6">
+                        <h2 class="text-2xl font-display font-bold text-gray-900 dark:text-gray-100 mb-6">
+                            <i class="fas fa-shopping-cart text-success-500 mr-2"></i>
+                            Your Cart
+                        </h2>
+                        <div id="cart-items-list" class="space-y-4">
+                            <div class="text-center py-12">
+                                <i class="fas fa-shopping-cart text-6xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                                <p class="text-xl text-gray-500 dark:text-gray-400 mb-2">Your cart is empty</p>
+                                <p class="text-gray-400 dark:text-gray-500">Start adding some delicious items!</p>
+                            </div>
+                        </div>
+                        <div id="cart-summary" class="hidden border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
+                            <div class="flex justify-between items-center text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+                                <span>Total:</span>
+                                <span id="cart-total" class="text-success-600"></span>
+                            </div>
+                            <div class="space-y-3">
+                                <button id="checkout-btn" class="btn-success w-full">
+                                    <i class="fas fa-credit-card mr-2"></i>Proceed to Checkout
+                                </button>
+                                <button id="clear-cart-btn" class="btn-danger w-full">
+                                    <i class="fas fa-trash mr-2"></i>Clear Cart
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Add Service Provider Section (Page 5) -->
+                <section id="add-service-provider-page" class="hidden space-y-6">
+                    <div class="card p-6">
+                        <h2 class="text-2xl font-display font-bold text-gray-900 dark:text-gray-100 mb-6">
+                            <i class="fas fa-plus-circle text-primary-500 mr-2"></i>
+                            Add New Restaurant
+                        </h2>
+                        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
+                            <div class="flex items-start">
+                                <i class="fas fa-info-circle text-blue-500 mr-2 mt-0.5"></i>
+                                <p class="text-sm text-blue-700 dark:text-blue-300">
+                                    Your current location will be automatically filled. You can adjust if needed.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Restaurant Name</label>
+                                <input type="text" id="serviceProviderName" placeholder="e.g., The Gourmet Bistro" class="form-input" required>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Address</label>
+                                <textarea id="serviceProviderAddress" placeholder="e.g., 456 Oak Avenue, Metropolis" rows="2" class="form-input" required></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Latitude</label>
+                                <input type="number" id="serviceProviderLat" placeholder="Auto-filled from GPS" step="0.000001" class="form-input" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Longitude</label>
+                                <input type="number" id="serviceProviderLon" placeholder="Auto-filled from GPS" step="0.000001" class="form-input" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Type</label>
+                                <select id="serviceProviderType" class="form-input" required>
+                                    <option value="">Select Type</option>
+                                    <option value="Restaurant">Restaurant</option>
+                                    <option value="Cafe">Cafe</option>
+                                    <option value="Bar">Bar</option>
+                                    <option value="Bakery">Bakery</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Price Level</label>
+                                <select id="serviceProviderPriceLevel" class="form-input" required>
+                                    <option value="">Select Price Level</option>
+                                    <option value="$">$ Budget-Friendly</option>
+                                    <option value="$$">$$ Moderate</option>
+                                    <option value="$$$">$$$ Premium</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description (Optional)</label>
+                                <textarea id="serviceProviderDescription" placeholder="Tell us what makes this place special..." rows="3" class="form-input"></textarea>
+                            </div>
+                            <div class="md:col-span-2">
+                                <button id="add-service-provider-btn" class="btn-primary w-full">
+                                    <i class="fas fa-plus mr-2"></i>Add Restaurant
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Add Menu Item Section (Page 6) -->
+                <section id="add-menu-item-page" class="hidden space-y-6">
+                    <div class="card p-6">
+                        <h2 class="text-2xl font-display font-bold text-gray-900 dark:text-gray-100 mb-6">
+                            <i class="fas fa-utensils text-accent-500 mr-2"></i>
+                            Add Menu Item
+                        </h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Restaurant</label>
+                                <select id="menuItemServiceProvider" class="form-input" required>
+                                    <option value="">Choose your restaurant</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Item Name</label>
+                                <input type="text" id="menuItemName" placeholder="e.g., Spicy Tuna Roll" class="form-input" required>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description (Optional)</label>
+                                <textarea id="menuItemDescription" placeholder="Describe this delicious item..." rows="3" class="form-input"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Price ($)</label>
+                                <input type="number" id="menuItemPrice" placeholder="18.50" step="0.01" class="form-input" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Main Category</label>
+                                <input type="text" id="menuItemMainCategory" placeholder="e.g., Sushi, Beverages, Desserts" class="form-input" required>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sub Category (Optional)</label>
+                                <input type="text" id="menuItemSubCategory" placeholder="e.g., Rolls, Nigiri, Soft Drinks" class="form-input">
+                            </div>
+                            <div class="md:col-span-2">
+                                <button id="add-menu-item-btn" class="btn-primary w-full">
+                                    <i class="fas fa-plus mr-2"></i>Add Menu Item
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Manage My Data Section (Page 7) -->
+                <section id="manage-my-data-page" class="hidden space-y-6">
+                    <div class="card p-6">
+                        <h2 class="text-2xl font-display font-bold text-gray-900 dark:text-gray-100 mb-6">
+                            <i class="fas fa-cog text-gray-500 mr-2"></i>
+                            Manage Your Data
+                        </h2>
+                        
+                        <div class="space-y-8">
+                            <!-- Your Restaurants -->
+                            <div>
+                                <h3 class="text-xl font-display font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                                    <i class="fas fa-store text-primary-500 mr-2"></i>
+                                    Your Restaurants
+                                </h3>
+                                <div id="managed-service-providers-list" class="space-y-4">
+                                    <div class="text-center py-8">
+                                        <i class="fas fa-store text-4xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                                        <p class="text-gray-500 dark:text-gray-400">No restaurants added yet</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Your Menu Items -->
+                            <div>
+                                <h3 class="text-xl font-display font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                                    <i class="fas fa-utensils text-accent-500 mr-2"></i>
+                                    Your Menu Items
+                                </h3>
+                                <div id="managed-menu-items-list" class="space-y-4">
+                                    <div class="text-center py-8">
+                                        <i class="fas fa-utensils text-4xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                                        <p class="text-gray-500 dark:text-gray-400">No menu items added yet</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Your Orders -->
+                            <div>
+                                <h3 class="text-xl font-display font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                                    <i class="fas fa-receipt text-success-500 mr-2"></i>
+                                    Your Orders
+                                </h3>
+                                <div id="my-orders-list" class="space-y-4">
+                                    <div class="text-center py-8">
+                                        <i class="fas fa-receipt text-4xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                                        <p class="text-gray-500 dark:text-gray-400">No orders placed yet</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- Modals -->
+        <!-- Confirmation Modal -->
+        <div id="confirm-modal" class="fixed inset-0 z-50 hidden">
+            <div class="modal-backdrop"></div>
+            <div class="flex items-center justify-center min-h-screen p-4">
+                <div class="modal-content max-w-md w-full">
+                    <div class="text-center">
+                        <div class="w-16 h-16 mx-auto mb-4 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
+                            <i class="fas fa-exclamation-triangle text-yellow-600 dark:text-yellow-400 text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Confirm Action</h3>
+                        <p id="confirm-modal-message" class="text-gray-600 dark:text-gray-400 mb-6"></p>
+                        <div class="flex space-x-3">
+                            <button id="confirm-modal-cancel" class="btn-secondary flex-1">Cancel</button>
+                            <button id="confirm-modal-confirm" class="btn-primary flex-1">Confirm</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <!-- Checkout Confirmation Modal -->
+        <div id="checkout-confirm-modal" class="fixed inset-0 z-50 hidden">
+            <div class="modal-backdrop"></div>
+            <div class="flex items-center justify-center min-h-screen p-4">
+                <div class="modal-content max-w-md w-full">
+                    <div class="text-center">
+                        <div class="w-16 h-16 mx-auto mb-4 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center">
+                            <i class="fas fa-shopping-cart text-success-600 dark:text-success-400 text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">Confirm Your Order</h3>
+                        <div class="space-y-2 mb-6">
+                            <p class="text-2xl font-bold text-success-600">Total: <span id="checkout-total-display"></span></p>
+                            <p class="text-gray-600 dark:text-gray-400">From: <span id="checkout-service-provider-display" class="font-medium"></span></p>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button id="checkout-confirm-cancel" class="btn-secondary flex-1">Go Back</button>
+                            <button id="checkout-confirm-place-order" class="btn-success flex-1">
+                                <i class="fas fa-check mr-2"></i>Place Order
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Service Provider Modal -->
+        <div id="edit-service-provider-modal" class="fixed inset-0 z-50 hidden">
+            <div class="modal-backdrop"></div>
+            <div class="flex items-center justify-center min-h-screen p-4">
+                <div class="modal-content max-w-2xl w-full">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Edit Restaurant</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Restaurant Name</label>
+                            <input type="text" id="editServiceProviderName" class="form-input">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Address</label>
+                            <textarea id="editServiceProviderAddress" rows="2" class="form-input"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Latitude</label>
+                            <input type="number" id="editServiceProviderLat" step="0.000001" class="form-input" readonly>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Longitude</label>
+                            <input type="number" id="editServiceProviderLon" step="0.000001" class="form-input" readonly>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Type</label>
+                            <select id="editServiceProviderType" class="form-input">
+                                <option value="Restaurant">Restaurant</option>
+                                <option value="Cafe">Cafe</option>
+                                <option value="Bar">Bar</option>
+                                <option value="Bakery">Bakery</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Price Level</label>
+                            <select id="editServiceProviderPriceLevel" class="form-input">
+                                <option value="$">$ Budget-Friendly</option>
+                                <option value="$$">$$ Moderate</option>
+                                <option value="$$$">$$$ Premium</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
+                            <textarea id="editServiceProviderDescription" rows="2" class="form-input"></textarea>
+                        </div>
+                        <div class="md:col-span-2 flex space-x-3 pt-4">
+                            <button id="edit-service-provider-modal-cancel" class="btn-secondary flex-1">Cancel</button>
+                            <button id="edit-service-provider-modal-save" class="btn-primary flex-1">Save Changes</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Menu Item Modal -->
+        <div id="edit-menu-item-modal" class="fixed inset-0 z-50 hidden">
+            <div class="modal-backdrop"></div>
+            <div class="flex items-center justify-center min-h-screen p-4">
+                <div class="modal-content max-w-2xl w-full">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Edit Menu Item</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Item Name</label>
+                            <input type="text" id="editMenuItemName" class="form-input">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
+                            <textarea id="editMenuItemDescription" rows="2" class="form-input"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Price ($)</label>
+                            <input type="number" id="editMenuItemPrice" step="0.01" class="form-input">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Main Category</label>
+                            <input type="text" id="editMenuItemMainCategory" class="form-input">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sub Category</label>
+                            <input type="text" id="editMenuItemSubCategory" class="form-input">
+                        </div>
+                        <div class="md:col-span-2 flex space-x-3 pt-4">
+                            <button id="edit-menu-item-modal-cancel" class="btn-secondary flex-1">Cancel</button>
+                            <button id="edit-menu-item-modal-save" class="btn-primary flex-1">Save Changes</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="glass fixed bottom-0 left-0 right-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 py-2">
+                <div class="flex justify-around items-center">
+                    <button id="tab-nearby-service-providers-page" class="tab-button active">
+                        <i class="fas fa-map-marker-alt text-xl mb-1"></i>
+                        <span class="text-xs font-medium">Nearby</span>
+                    </button>
+                    <button id="tab-my-cart-page" class="tab-button">
+                        <i class="fas fa-shopping-cart text-xl mb-1"></i>
+                        <span class="text-xs font-medium">Cart</span>
+                    </button>
+                    <button id="tab-add-service-provider-page" class="tab-button">
+                        <i class="fas fa-plus-circle text-xl mb-1"></i>
+                        <span class="text-xs font-medium">Add Place</span>
+                    </button>
+                    <button id="tab-add-menu-item-page" class="tab-button">
+                        <i class="fas fa-utensils text-xl mb-1"></i>
+                        <span class="text-xs font-medium">Add Menu</span>
+                    </button>
+                    <button id="tab-manage-my-data-page" class="tab-button">
+                        <i class="fas fa-user text-xl mb-1"></i>
+                        <span class="text-xs font-medium">Manage</span>
+                    </button>
+                </div>
+            </div>
+        </nav>
     </div>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const tg = window.Telegram.WebApp;
-            try {
-                tg.ready();
-                tg.expand();
-                const themeParams = tg.themeParams;
-                document.documentElement.style.setProperty('--tg-bg-color', themeParams.bg_color || '#ffffff');
-                document.documentElement.style.setProperty('--tg-text-color', themeParams.text_color || '#000000');
-                document.documentElement.style.setProperty('--tg-button-color', themeParams.button_color || '#0088cc');
-            } catch (error) {
-                console.warn("Telegram WebApp script not found or failed. Running in standalone mode.");
+
+    <script type="module">
+        // Dark mode support
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        // Initialize Dexie.js database
+        const db = new Dexie('FlavorFindDB');
+        db.version(1).stores({
+            service_providers: '++id, name, type, addedBy, latitude, longitude',
+            menu_items: '++id, serviceProviderId, itemName, mainCategory, addedBy',
+            orders: '++id, serviceProviderId, orderDate, addedBy',
+            liked_service_providers: '++id, serviceProviderId, addedBy'
+        });
+
+        // Global variables for app state
+        let currentUserId = localStorage.getItem('flavorFindUserId');
+        if (!currentUserId) {
+            currentUserId = crypto.randomUUID();
+            localStorage.setItem('flavorFindUserId', currentUserId);
+        }
+
+        let allServiceProviders = [];
+        let allMenuItems = [];
+        let myOrders = [];
+        let likedServiceProviders = [];
+
+        let userLatitude = null;
+        let userLongitude = null;
+
+        let cart = [];
+        let currentCartServiceProviderId = null;
+
+        let messageTimeoutId = null;
+        let confirmModalAction = null;
+        let currentEditingServiceProviderId = null;
+        let currentEditingMenuItemId = null;
+
+        // Current Page/View State
+        let currentPage = 'nearby-service-providers-page';
+        let currentServiceProviderDetailId = null;
+        let currentMenuItemDetailId = null;
+
+        // Filter and Search states
+        let currentServiceProviderSearchQuery = '';
+        let currentServiceProviderTypeFilter = 'All';
+        let currentServiceProviderDistanceFilter = 100;
+        let currentServiceProviderPriceFilter = '';
+        let currentMenuCategoryFilter = 'All';
+
+        // Elements
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const appContainer = document.getElementById('app-container');
+        const userIdDisplay = document.getElementById('user-id');
+        const messageBox = document.getElementById('message-box');
+        const geolocationStatusDisplay = document.getElementById('geolocation-status');
+
+        const appPages = document.querySelectorAll('section');
+
+        // Page elements
+        const nearbyServiceProvidersPage = document.getElementById('nearby-service-providers-page');
+        const serviceProviderSearchInput = document.getElementById('service-provider-search-input');
+        const serviceProviderDistanceFilter = document.getElementById('service-provider-distance-filter');
+        const serviceProviderPriceFilter = document.getElementById('service-provider-price-filter');
+        const nearbyServiceProvidersList = document.getElementById('nearby-service-providers-list');
+
+        const serviceProviderDetailPage = document.getElementById('service-provider-detail-page');
+        const backToProvidersBtn = document.getElementById('back-to-providers-btn');
+        const spDetailName = document.getElementById('sp-detail-name');
+        const spLikeButton = document.getElementById('sp-like-button');
+        const spDetailAddress = document.getElementById('sp-detail-address');
+        const spDetailDescription = document.getElementById('sp-detail-description');
+        const spDetailType = document.getElementById('sp-detail-type');
+        const spDetailPriceLevel = document.getElementById('sp-detail-price-level');
+        const spDetailCoords = document.getElementById('sp-detail-coords');
+        const menuCategoryTabsContainer = document.getElementById('menu-category-tabs');
+        const spMenuItemsList = document.getElementById('sp-menu-items-list');
+
+        const menuItemDetailPage = document.getElementById('menu-item-detail-page');
+        const backToSpDetailBtn = document.getElementById('back-to-sp-detail-btn');
+        const miDetailName = document.getElementById('mi-detail-name');
+        const miDetailPrice = document.getElementById('mi-detail-price');
+        const miDetailDescription = document.getElementById('mi-detail-description');
+        const miDetailCategory = document.getElementById('mi-detail-category');
+        const miDetailServiceProvider = document.getElementById('mi-detail-service-provider');
+        const orderQuantityInput = document.getElementById('order-quantity');
+        const decreaseQtyBtn = document.getElementById('decrease-qty-btn');
+        const increaseQtyBtn = document.getElementById('increase-qty-btn');
+        const addToCartDetailBtn = document.getElementById('add-to-cart-detail-btn');
+        const reviewsList = document.getElementById('reviews-list');
+        const reviewTextInput = document.getElementById('review-text-input');
+        const submitReviewBtn = document.getElementById('submit-review-btn');
+
+        const myCartPage = document.getElementById('my-cart-page');
+        const cartItemsList = document.getElementById('cart-items-list');
+        const cartSummary = document.getElementById('cart-summary');
+        const cartTotalDisplay = document.getElementById('cart-total');
+        const checkoutBtn = document.getElementById('checkout-btn');
+        const clearCartBtn = document.getElementById('clear-cart-btn');
+
+        const addServiceProviderPage = document.getElementById('add-service-provider-page');
+        const serviceProviderNameInput = document.getElementById('serviceProviderName');
+        const serviceProviderAddressInput = document.getElementById('serviceProviderAddress');
+        const serviceProviderLatInput = document.getElementById('serviceProviderLat');
+        const serviceProviderLonInput = document.getElementById('serviceProviderLon');
+        const serviceProviderTypeSelect = document.getElementById('serviceProviderType');
+        const serviceProviderPriceLevelSelect = document.getElementById('serviceProviderPriceLevel');
+        const serviceProviderDescriptionInput = document.getElementById('serviceProviderDescription');
+        const addServiceProviderBtn = document.getElementById('add-service-provider-btn');
+
+        const addMenuItemPage = document.getElementById('add-menu-item-page');
+        const menuItemServiceProviderSelect = document.getElementById('menuItemServiceProvider');
+        const menuItemNameInput = document.getElementById('menuItemName');
+        const menuItemDescriptionInput = document.getElementById('menuItemDescription');
+        const menuItemPriceInput = document.getElementById('menuItemPrice');
+        const menuItemMainCategoryInput = document.getElementById('menuItemMainCategory');
+        const menuItemSubCategoryInput = document.getElementById('menuItemSubCategory');
+        const addMenuItemBtn = document.getElementById('add-menu-item-btn');
+
+        const manageMyDataPage = document.getElementById('manage-my-data-page');
+        const managedServiceProvidersList = document.getElementById('managed-service-providers-list');
+        const managedMenuItemsList = document.getElementById('managed-menu-items-list');
+        const myOrdersList = document.getElementById('my-orders-list');
+
+        // Modal elements
+        const confirmModal = document.getElementById('confirm-modal');
+        const confirmModalMessage = document.getElementById('confirm-modal-message');
+        const confirmModalConfirmBtn = document.getElementById('confirm-modal-confirm');
+        const confirmModalCancelBtn = document.getElementById('confirm-modal-cancel');
+
+        const checkoutConfirmModal = document.getElementById('checkout-confirm-modal');
+        const checkoutTotalDisplay = document.getElementById('checkout-total-display');
+        const checkoutServiceProviderDisplay = document.getElementById('checkout-service-provider-display');
+        const checkoutConfirmCancelBtn = document.getElementById('checkout-confirm-cancel');
+        const checkoutConfirmPlaceOrderBtn = document.getElementById('checkout-confirm-place-order');
+
+        const editServiceProviderModal = document.getElementById('edit-service-provider-modal');
+        const editServiceProviderNameInput = document.getElementById('editServiceProviderName');
+        const editServiceProviderAddressInput = document.getElementById('editServiceProviderAddress');
+        const editServiceProviderLatInput = document.getElementById('editServiceProviderLat');
+        const editServiceProviderLonInput = document.getElementById('editServiceProviderLon');
+        const editServiceProviderTypeSelect = document.getElementById('editServiceProviderType');
+        const editServiceProviderPriceLevelSelect = document.getElementById('editServiceProviderPriceLevel');
+        const editServiceProviderDescriptionInput = document.getElementById('editServiceProviderDescription');
+        const editServiceProviderModalSaveBtn = document.getElementById('edit-service-provider-modal-save');
+        const editServiceProviderModalCancelBtn = document.getElementById('edit-service-provider-modal-cancel');
+
+        const editMenuItemModal = document.getElementById('edit-menu-item-modal');
+        const editMenuItemNameInput = document.getElementById('editMenuItemName');
+        const editMenuItemDescriptionInput = document.getElementById('editMenuItemDescription');
+        const editMenuItemPriceInput = document.getElementById('editMenuItemPrice');
+        const editMenuItemMainCategoryInput = document.getElementById('editMenuItemMainCategory');
+        const editMenuItemSubCategoryInput = document.getElementById('editMenuItemSubCategory');
+        const editMenuItemModalSaveBtn = document.getElementById('edit-menu-item-modal-save');
+        const editMenuItemModalCancelBtn = document.getElementById('edit-menu-item-modal-cancel');
+
+        // Simulated Reviews
+        const simulatedReviews = {};
+
+        // Helper functions
+        const formatDateTime = (dateString) => {
+            if (!dateString) return 'N/A';
+            const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            return new Date(dateString).toLocaleString(undefined, options);
+        };
+
+        const showPage = (pageId) => {
+            appPages.forEach(page => {
+                page.classList.add('hidden');
+            });
+            document.getElementById(pageId).classList.remove('hidden');
+            currentPage = pageId;
+
+            // Update bottom navigation tabs
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(button => {
+                button.classList.remove('active');
+            });
+            const activeButton = document.getElementById(`tab-${pageId}`);
+            if (activeButton) {
+                activeButton.classList.add('active');
             }
 
-            const imageUploadSection = document.getElementById('image-upload-section');
-            const customizationSection = document.getElementById('customization-section');
-            const bannerPreviewSection = document.getElementById('banner-preview-section');
-            const imageUploadInput = document.getElementById('image-upload');
-            const layoutSelector = document.getElementById('layout-selector');
-            const eventSelector = document.getElementById('event-selector');
-            const fontSelector = document.getElementById('font-selector');
-            const colorThemeSelector = document.getElementById('color-theme');
-            const customColorsDiv = document.getElementById('custom-colors');
-            const textColorInput = document.getElementById('text-color');
-            const overlayColorInput = document.getElementById('overlay-color');
-            const overlayOpacitySlider = document.getElementById('overlay-opacity');
-            const opacityValueDisplay = document.getElementById('opacity-value');
-            const headerSizeSlider = document.getElementById('header-size');
-            const headerSizeValue = document.getElementById('header-size-value');
-            const contentSizeSlider = document.getElementById('content-size');
-            const contentSizeValue = document.getElementById('content-size-value');
-            const headerTextInput = document.getElementById('header-text');
-            const mainContentTextInput = document.getElementById('main-content-text');
-            const locationTextInput = document.getElementById('location-text');
-            const dateTimePicker = document.getElementById('date-time-picker');
-            const canvas = document.getElementById('banner-canvas');
-            const ctx = canvas.getContext('2d');
-            const downloadButton = document.getElementById('download-button');
-            const resetButton = document.getElementById('reset-button');
+            // Page-specific refresh logic
+            if (pageId === 'my-cart-page') {
+                renderCart();
+            } else if (pageId === 'add-menu-item-page') {
+                populateMenuItemServiceProviderDropdown();
+            } else if (pageId === 'manage-my-data-page') {
+                renderManagedServiceProviders();
+                renderManagedMenuItems();
+                renderMyOrders();
+            }
+        };
 
-            canvas.width = 1920;
-            canvas.height = 1080;
+        const getGeoLocation = () => {
+            geolocationStatusDisplay.textContent = "Getting your location...";
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        userLatitude = position.coords.latitude;
+                        userLongitude = position.coords.longitude;
+                        geolocationStatusDisplay.textContent = `${userLatitude.toFixed(4)}, ${userLongitude.toFixed(4)}`;
+                        
+                        if (serviceProviderLatInput && serviceProviderLonInput) {
+                            serviceProviderLatInput.value = userLatitude.toFixed(6);
+                            serviceProviderLonInput.value = userLongitude.toFixed(6);
+                        }
+                        fetchAllDataAndRender();
+                    },
+                    (error) => {
+                        console.error("Geolocation error:", error);
+                        let errorMessage = "Location access denied";
+                        if (error.code === error.POSITION_UNAVAILABLE) {
+                            errorMessage = "Location unavailable";
+                        } else if (error.code === error.TIMEOUT) {
+                            errorMessage = "Location timeout";
+                        }
+                        geolocationStatusDisplay.textContent = errorMessage;
+                        userLatitude = null;
+                        userLongitude = null;
+                        fetchAllDataAndRender();
+                    },
+                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+                );
+            } else {
+                geolocationStatusDisplay.textContent = "Geolocation not supported";
+                userLatitude = null;
+                userLongitude = null;
+            }
+        };
 
-            let userImage = null;
+        const calculateDistance = (lat1, lon1, lat2, lon2) => {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        };
 
-            const colorThemes = {
-                classic: { text: '#FFFFFF', overlay: '#000000' },
-                gold: { text: '#FFD700', overlay: '#8B4513' },
-                rose: { text: '#FFB6C1', overlay: '#8B0000' },
-                blue: { text: '#87CEEB', overlay: '#000080' },
-                green: { text: '#98FB98', overlay: '#006400' },
-                purple: { text: '#DDA0DD', overlay: '#4B0082' }
-            };
-            const eventTemplates = {
-                wedding: { header: "Save the Date", content: "Join us to celebrate the wedding of", headerSize: 120, contentSize: 55, defaultFont: 'Dancing Script', color: "#FFFFFF" },
-                birthday: { header: "Happy Birthday!", content: "Wishing you the best on your special day!", headerSize: 130, contentSize: 50, defaultFont: 'Playfair Display', color: "#FFFFFF" },
-                congratulations: { header: "Congratulations!", content: "We're so proud of your amazing achievement!", headerSize: 125, contentSize: 50, defaultFont: 'Roboto Slab', color: "#FFFFFF" },
-                graduation: { header: "The Tassel Was Worth the Hassle", content: "Celebrating the graduation of", headerSize: 110, contentSize: 50, defaultFont: 'Merriweather', color: "#FFFFFF"},
-                baby_shower: { header: "A Little Star is on the Way", content: "Join us for a baby shower honoring", headerSize: 100, contentSize: 50, defaultFont: 'Dancing Script', color: "#FFFFFF" },
-                new_home: { header: "Home Sweet Home", content: "We've moved! Come celebrate with us.", headerSize: 115, contentSize: 50, defaultFont: 'Montserrat', color: "#FFFFFF"},
-                funeral: { header: "In Loving Memory", content: "Forever in our hearts", headerSize: 110, contentSize: 50, defaultFont: 'Libre Baskerville', color: "#FFFFFF" },
-                get_well: { header: "Get Well Soon", content: "Sending our love and support", headerSize: 115, contentSize: 50, defaultFont: 'Playfair Display', color: "#FFFFFF" }
-            };
+        const showTemporaryMessage = (msg, type = 'info', duration = 3000) => {
+            messageBox.textContent = msg;
+            messageBox.className = `message-box ${type}`;
+            messageBox.classList.remove('hidden');
 
-            function updateTemplate() {
-                const selectedEvent = eventSelector.value;
-                const template = eventTemplates[selectedEvent];
-                headerTextInput.value = template.header;
-                mainContentTextInput.value = template.content;
-                fontSelector.value = template.defaultFont;
-                headerSizeSlider.value = template.headerSize;
-                contentSizeSlider.value = template.contentSize;
-                headerSizeValue.textContent = template.headerSize;
-                contentSizeValue.textContent = template.contentSize;
-                locationTextInput.value = 'Addis Ababa, Ethiopia';
-                const now = new Date();
-                now.setDate(now.getDate() + 7);
-                now.setHours(19, 0, 0, 0);
-                const year = now.getFullYear();
-                const month = (now.getMonth() + 1).toString().padStart(2, '0');
-                const day = now.getDate().toString().padStart(2, '0');
-                const hours = now.getHours().toString().padStart(2, '0');
-                const minutes = now.getMinutes().toString().padStart(2, '0');
-                dateTimePicker.value = `${year}-${month}-${day}T${hours}:${minutes}`;
-                drawBanner();
+            if (messageTimeoutId) {
+                clearTimeout(messageTimeoutId);
+            }
+            messageTimeoutId = setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, duration);
+        };
+
+        const showConfirmation = (message, action) => {
+            confirmModalMessage.textContent = message;
+            confirmModalAction = action;
+            confirmModal.classList.remove('hidden');
+            const modalContent = confirmModal.querySelector('.modal-content');
+            modalContent.classList.remove('show');
+            setTimeout(() => modalContent.classList.add('show'), 10);
+        };
+
+        const handleConfirm = () => {
+            if (confirmModalAction) {
+                confirmModalAction();
+            }
+            confirmModal.classList.add('hidden');
+            confirmModalAction = null;
+        };
+
+        const handleCancel = () => {
+            confirmModal.classList.add('hidden');
+            confirmModalAction = null;
+        };
+
+        const setButtonLoading = (button, isLoading) => {
+            if (!button) return;
+            button.disabled = isLoading;
+            if (isLoading) {
+                const originalContent = button.innerHTML;
+                button.setAttribute('data-original-content', originalContent);
+                button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Loading...';
+            } else {
+                const originalContent = button.getAttribute('data-original-content');
+                if (originalContent) {
+                    button.innerHTML = originalContent;
+                    button.removeAttribute('data-original-content');
+                }
+            }
+        };
+
+        const getPriceBadgeClass = (priceLevel) => {
+            switch (priceLevel) {
+                case '$': return 'price-badge low';
+                case '$$': return 'price-badge medium';
+                case '$$$': return 'price-badge high';
+                default: return 'price-badge medium';
+            }
+        };
+
+        const renderNearbyServiceProviders = () => {
+            let displayedServiceProviders = [...allServiceProviders];
+
+            // Calculate distances
+            if (userLatitude !== null && userLongitude !== null) {
+                displayedServiceProviders = displayedServiceProviders.map(sp => {
+                    const distance = calculateDistance(userLatitude, userLongitude, sp.latitude, sp.longitude);
+                    return { ...sp, distance: distance };
+                });
+            } else {
+                displayedServiceProviders = displayedServiceProviders.map(sp => ({ ...sp, distance: Infinity }));
             }
 
-            imageUploadInput.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        userImage = new Image();
-                        userImage.onload = () => {
-                            imageUploadSection.classList.add('hidden');
-                            customizationSection.classList.remove('hidden');
-                            bannerPreviewSection.classList.remove('hidden');
-                            updateTemplate();
-                        };
-                        userImage.src = event.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                }
+            // Apply filters
+            if (currentServiceProviderSearchQuery) {
+                const lowerCaseQuery = currentServiceProviderSearchQuery.toLowerCase();
+                displayedServiceProviders = displayedServiceProviders.filter(sp =>
+                    sp.name.toLowerCase().includes(lowerCaseQuery)
+                );
+            }
+
+            if (currentServiceProviderTypeFilter && currentServiceProviderTypeFilter !== 'All') {
+                displayedServiceProviders = displayedServiceProviders.filter(sp => sp.type === currentServiceProviderTypeFilter);
+            }
+
+            if (currentServiceProviderDistanceFilter !== 100) {
+                displayedServiceProviders = displayedServiceProviders.filter(sp =>
+                    sp.distance <= currentServiceProviderDistanceFilter
+                );
+            }
+
+            if (currentServiceProviderPriceFilter) {
+                displayedServiceProviders = displayedServiceProviders.filter(sp =>
+                    sp.priceLevel === currentServiceProviderPriceFilter
+                );
+            }
+
+            // Sort by distance
+            displayedServiceProviders.sort((a, b) => a.distance - b.distance);
+
+            if (displayedServiceProviders.length === 0) {
+                nearbyServiceProvidersList.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <i class="fas fa-search text-6xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                        <p class="text-xl text-gray-500 dark:text-gray-400 mb-2">No restaurants found</p>
+                        <p class="text-gray-400 dark:text-gray-500">Try adjusting your filters</p>
+                    </div>
+                `;
+                return;
+            }
+
+            nearbyServiceProvidersList.innerHTML = '';
+            displayedServiceProviders.forEach(sp => {
+                const serviceProviderCard = document.createElement('div');
+                serviceProviderCard.classList.add('card', 'card-interactive', 'p-6');
+                serviceProviderCard.dataset.serviceProviderId = sp.id;
+
+                serviceProviderCard.innerHTML = `
+                    <div class="flex items-start justify-between mb-4">
+                        <h3 class="text-xl font-display font-bold text-gray-900 dark:text-gray-100">${sp.name}</h3>
+                        <div class="flex flex-col items-end gap-2">
+                            ${sp.priceLevel ? `<span class="${getPriceBadgeClass(sp.priceLevel)}">${sp.priceLevel}</span>` : ''}
+                            ${userLatitude !== null && userLongitude !== null && sp.distance !== Infinity ?
+                                `<span class="distance-badge">${sp.distance.toFixed(1)} km</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="flex items-center text-gray-600 dark:text-gray-400 mb-3">
+                        <i class="fas fa-map-marker-alt mr-2 text-primary-500"></i>
+                        <p class="text-sm">${sp.address}</p>
+                    </div>
+                    <p class="text-gray-700 dark:text-gray-300 text-sm mb-4">${sp.description ? sp.description.substring(0, 100) + (sp.description.length > 100 ? '...' : '') : 'Discover something amazing at this place.'}</p>
+                    <div class="flex items-center justify-between">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-400">
+                            <i class="fas fa-utensils mr-1"></i>
+                            ${sp.type || 'Restaurant'}
+                        </span>
+                        <div class="flex items-center text-primary-600 dark:text-primary-400">
+                            <span class="text-sm font-medium">View Menu</span>
+                            <i class="fas fa-arrow-right ml-1"></i>
+                        </div>
+                    </div>
+                `;
+                nearbyServiceProvidersList.appendChild(serviceProviderCard);
             });
 
-            colorThemeSelector.addEventListener('change', () => {
-                const selectedTheme = colorThemeSelector.value;
-                customColorsDiv.classList.toggle('hidden', selectedTheme !== 'custom');
-                if (selectedTheme !== 'custom') {
-                    const theme = colorThemes[selectedTheme];
-                    textColorInput.value = theme.text;
-                    overlayColorInput.value = theme.overlay;
-                }
-                drawBanner();
-            });
-
-            overlayOpacitySlider.addEventListener('input', () => {
-                opacityValueDisplay.textContent = overlayOpacitySlider.value;
-                drawBanner();
-            });
-            headerSizeSlider.addEventListener('input', () => {
-                headerSizeValue.textContent = headerSizeSlider.value;
-                drawBanner();
-            });
-            contentSizeSlider.addEventListener('input', () => {
-                contentSizeValue.textContent = contentSizeSlider.value;
-                drawBanner();
-            });
-            [eventSelector, fontSelector, layoutSelector, textColorInput, overlayColorInput,
-             headerTextInput, mainContentTextInput, locationTextInput, dateTimePicker].forEach(el => {
-                el.addEventListener('input', () => {
-                    if (el.id === 'event-selector') updateTemplate();
-                    else drawBanner();
+            // Add click listeners
+            nearbyServiceProvidersList.querySelectorAll('[data-service-provider-id]').forEach(card => {
+                card.addEventListener('click', (event) => {
+                    if (!event.target.closest('button, a, input, select')) {
+                        const spId = card.dataset.serviceProviderId;
+                        showServiceProviderDetailPage(spId);
+                    }
                 });
             });
+        };
 
-            resetButton.addEventListener('click', () => {
-                userImage = null;
-                imageUploadInput.value = '';
-                imageUploadSection.classList.remove('hidden');
-                customizationSection.classList.add('hidden');
-                bannerPreviewSection.classList.add('hidden');
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                shareButton.disabled = true;
-                downloadButton.disabled = true;
-                colorThemeSelector.value = 'classic';
-                customColorsDiv.classList.add('hidden');
-                layoutSelector.value = 'split-left';
-                overlayOpacitySlider.value = 50;
-                opacityValueDisplay.textContent = '50';
-                headerSizeSlider.value = 120;
-                contentSizeSlider.value = 55;
-                headerSizeValue.textContent = '120';
-                contentSizeValue.textContent = '55';
+        const showServiceProviderDetailPage = (serviceProviderId) => {
+            const serviceProvider = allServiceProviders.find(sp => sp.id === serviceProviderId);
+            if (!serviceProvider) {
+                showTemporaryMessage("Restaurant not found", 'error');
+                showPage('nearby-service-providers-page');
+                return;
+            }
+
+            currentServiceProviderDetailId = serviceProviderId;
+            currentMenuCategoryFilter = 'All';
+
+            spDetailName.textContent = serviceProvider.name;
+            spDetailAddress.textContent = serviceProvider.address;
+            spDetailDescription.textContent = serviceProvider.description || 'A wonderful place to enjoy great food.';
+            spDetailType.textContent = serviceProvider.type || 'Restaurant';
+            spDetailPriceLevel.className = getPriceBadgeClass(serviceProvider.priceLevel);
+            spDetailPriceLevel.textContent = serviceProvider.priceLevel || '';
+            spDetailCoords.textContent = `${serviceProvider.latitude.toFixed(4)}, ${serviceProvider.longitude.toFixed(4)}`;
+
+            updateLikeButtonState(serviceProviderId);
+            renderMenuCategoryTabs(serviceProviderId);
+            renderMenuItemsForServiceProvider(serviceProviderId, currentMenuCategoryFilter);
+
+            showPage('service-provider-detail-page');
+        };
+
+        const renderMenuCategoryTabs = (serviceProviderId) => {
+            const menuItemsForProvider = allMenuItems.filter(item => item.serviceProviderId === serviceProviderId);
+            const categories = new Set(menuItemsForProvider.map(item => (item.mainCategory || 'Uncategorized').trim().toUpperCase()));
+
+            let tabsHtml = `<button class="category-tab active" data-menu-category="All">All Menu</button>`;
+            const sortedCategories = Array.from(categories).sort();
+            sortedCategories.forEach(cat => {
+                tabsHtml += `<button class="category-tab" data-menu-category="${cat}">${cat}</button>`;
+            });
+            menuCategoryTabsContainer.innerHTML = tabsHtml;
+
+            menuCategoryTabsContainer.querySelectorAll('.category-tab').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    menuCategoryTabsContainer.querySelectorAll('.category-tab').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    event.target.classList.add('active');
+
+                    currentMenuCategoryFilter = event.target.dataset.menuCategory;
+                    renderMenuItemsForServiceProvider(serviceProviderId, currentMenuCategoryFilter);
+                });
+            });
+        };
+
+        const renderMenuItemsForServiceProvider = (serviceProviderId, categoryFilter = 'All') => {
+            let itemsToDisplay = allMenuItems.filter(item => item.serviceProviderId === serviceProviderId);
+
+            if (categoryFilter !== 'All') {
+                itemsToDisplay = itemsToDisplay.filter(item =>
+                    (item.mainCategory || 'Uncategorized').trim().toUpperCase() === categoryFilter
+                );
+            }
+
+            if (itemsToDisplay.length === 0) {
+                spMenuItemsList.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <i class="fas fa-utensils text-6xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                        <p class="text-xl text-gray-500 dark:text-gray-400 mb-2">No menu items found</p>
+                        <p class="text-gray-400 dark:text-gray-500">Check back later for updates</p>
+                    </div>
+                `;
+                return;
+            }
+
+            spMenuItemsList.innerHTML = '';
+            itemsToDisplay.forEach(item => {
+                const menuItemCard = document.createElement('div');
+                menuItemCard.classList.add('card', 'card-interactive', 'p-4');
+                menuItemCard.dataset.menuItemId = item.id;
+
+                menuItemCard.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <h5 class="font-display font-bold text-gray-900 dark:text-gray-100">${item.itemName}</h5>
+                        <span class="text-lg font-bold text-accent-600">$${item.price.toFixed(2)}</span>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm mb-3">${item.description || 'A delicious item from our menu.'}</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-500 dark:text-gray-400">
+                            ${item.mainCategory || ''} ${item.subCategory ? ` • ${item.subCategory}` : ''}
+                        </span>
+                        <div class="flex items-center text-primary-600 dark:text-primary-400">
+                            <span class="text-sm font-medium">View Details</span>
+                            <i class="fas fa-arrow-right ml-1"></i>
+                        </div>
+                    </div>
+                `;
+                spMenuItemsList.appendChild(menuItemCard);
             });
 
-            downloadButton.addEventListener('click', () => {
-                const link = document.createElement('a');
-                link.href = canvas.toDataURL('image/png');
-                link.download = `${eventSelector.value}-banner.png`;
-                link.click();
+            spMenuItemsList.querySelectorAll('[data-menu-item-id]').forEach(card => {
+                card.addEventListener('click', (event) => {
+                    if (!event.target.closest('button, a, input, select')) {
+                        const itemId = card.dataset.menuItemId;
+                        showMenuItemDetailPage(itemId);
+                    }
+                });
+            });
+        };
+
+        const updateLikeButtonState = (serviceProviderId) => {
+            const isLiked = likedServiceProviders.some(item => item.serviceProviderId === serviceProviderId);
+            spLikeButton.classList.toggle('liked', isLiked);
+            spLikeButton.classList.toggle('not-liked', !isLiked);
+            spLikeButton.querySelector('i').classList.toggle('fas', isLiked);
+            spLikeButton.querySelector('i').classList.toggle('far', !isLiked);
+        };
+
+        const toggleLikeServiceProvider = async () => {
+            if (!currentServiceProviderDetailId) {
+                showTemporaryMessage("No restaurant selected", 'error');
+                return;
+            }
+
+            setButtonLoading(spLikeButton, true);
+
+            const existingLike = likedServiceProviders.find(item => item.serviceProviderId === currentServiceProviderDetailId);
+
+            try {
+                if (existingLike) {
+                    await db.liked_service_providers.delete(existingLike.id);
+                    showTemporaryMessage("Restaurant unliked!", 'success');
+                } else {
+                    await db.liked_service_providers.add({
+                        serviceProviderId: currentServiceProviderDetailId,
+                        addedBy: currentUserId,
+                        timestamp: new Date().toISOString()
+                    });
+                    showTemporaryMessage("Restaurant liked!", 'success');
+                }
+                await fetchAllDataAndRender();
+            } catch (e) {
+                console.error("Error toggling like:", e);
+                showTemporaryMessage("Failed to toggle like", 'error');
+            } finally {
+                setButtonLoading(spLikeButton, false);
+            }
+        };
+
+        const showMenuItemDetailPage = (menuItemId) => {
+            const menuItem = allMenuItems.find(item => item.id === menuItemId);
+            if (!menuItem) {
+                showTemporaryMessage("Menu item not found", 'error');
+                if (currentServiceProviderDetailId) {
+                    showServiceProviderDetailPage(currentServiceProviderDetailId);
+                } else {
+                    showPage('nearby-service-providers-page');
+                }
+                return;
+            }
+
+            currentMenuItemDetailId = menuItemId;
+            orderQuantityInput.value = 1;
+
+            const serviceProvider = allServiceProviders.find(sp => sp.id === menuItem.serviceProviderId);
+            const serviceProviderName = serviceProvider ? serviceProvider.name : 'Unknown Restaurant';
+
+            miDetailName.textContent = menuItem.itemName;
+            miDetailPrice.textContent = `$${menuItem.price.toFixed(2)}`;
+            miDetailDescription.textContent = menuItem.description || 'A delicious item from our menu.';
+            miDetailCategory.textContent = `${menuItem.mainCategory || 'N/A'} ${menuItem.subCategory ? ` • ${menuItem.subCategory}` : ''}`;
+            miDetailServiceProvider.textContent = serviceProviderName;
+
+            renderReviewsForMenuItem(menuItemId);
+            reviewTextInput.value = '';
+
+            showPage('menu-item-detail-page');
+        };
+
+        const renderReviewsForMenuItem = (menuItemId) => {
+            const reviews = simulatedReviews[menuItemId] || [];
+            reviewsList.innerHTML = '';
+            
+            if (reviews.length === 0) {
+                reviewsList.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fas fa-comments text-4xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                        <p class="text-gray-500 dark:text-gray-400">No reviews yet. Be the first!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            reviews.forEach(review => {
+                const reviewDiv = document.createElement('div');
+                reviewDiv.classList.add('card', 'p-4');
+                reviewDiv.innerHTML = `
+                    <div class="flex items-start space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-primary-500 to-primary-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-white"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-gray-900 dark:text-gray-100 mb-2">${review.text}</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">By ${review.userId.substring(0, 8)}... • ${formatDateTime(review.timestamp)}</p>
+                        </div>
+                    </div>
+                `;
+                reviewsList.appendChild(reviewDiv);
+            });
+        };
+
+        const handleSubmitReview = async () => {
+            if (!currentMenuItemDetailId || !currentUserId) {
+                showTemporaryMessage("Please select a menu item first", 'error');
+                return;
+            }
+            const reviewText = reviewTextInput.value.trim();
+            if (!reviewText) {
+                showTemporaryMessage("Review cannot be empty", 'error');
+                return;
+            }
+
+            setButtonLoading(submitReviewBtn, true);
+
+            try {
+                if (!simulatedReviews[currentMenuItemDetailId]) {
+                    simulatedReviews[currentMenuItemDetailId] = [];
+                }
+                simulatedReviews[currentMenuItemDetailId].push({
+                    text: reviewText,
+                    userId: currentUserId,
+                    timestamp: new Date().toISOString()
+                });
+
+                showTemporaryMessage("Review submitted successfully!", 'success');
+                reviewTextInput.value = '';
+                renderReviewsForMenuItem(currentMenuItemDetailId);
+            } catch (e) {
+                console.error("Error submitting review:", e);
+                showTemporaryMessage("Failed to submit review", 'error');
+            } finally {
+                setButtonLoading(submitReviewBtn, false);
+            }
+        };
+
+        const addToCart = (itemId, quantity = 1) => {
+            const itemToAdd = allMenuItems.find(item => item.id === itemId);
+            if (!itemToAdd) {
+                showTemporaryMessage("Menu item not found", 'error');
+                return;
+            }
+
+            const serviceProviderOfItem = allServiceProviders.find(sp => sp.id === itemToAdd.serviceProviderId);
+            if (!serviceProviderOfItem) {
+                showTemporaryMessage("Restaurant not found", 'error');
+                return;
+            }
+
+            if (cart.length > 0 && currentCartServiceProviderId !== itemToAdd.serviceProviderId) {
+                const currentCartServiceProvider = allServiceProviders.find(sp => sp.id === currentCartServiceProviderId);
+                showConfirmation(
+                    `Your cart has items from "${currentCartServiceProvider?.name || 'another restaurant'}". Adding this item from "${serviceProviderOfItem.name}" will clear your current cart. Continue?`,
+                    () => {
+                        cart = [];
+                        currentCartServiceProviderId = null;
+                        addToCartConfirmed(itemToAdd, serviceProviderOfItem, quantity);
+                    }
+                );
+            } else {
+                addToCartConfirmed(itemToAdd, serviceProviderOfItem, quantity);
+            }
+        };
+
+        const addToCartConfirmed = (itemToAdd, serviceProviderOfItem, quantity) => {
+            const existingItemInCart = cart.find(cartItem => cartItem.id === itemToAdd.id);
+
+            if (existingItemInCart) {
+                existingItemInCart.quantity += quantity;
+            } else {
+                cart.push({
+                    id: itemToAdd.id,
+                    itemName: itemToAdd.itemName,
+                    price: itemToAdd.price,
+                    mainCategory: itemToAdd.mainCategory,
+                    subCategory: itemToAdd.subCategory,
+                    quantity: quantity,
+                    serviceProviderId: itemToAdd.serviceProviderId,
+                    serviceProviderName: serviceProviderOfItem.name
+                });
+            }
+            currentCartServiceProviderId = itemToAdd.serviceProviderId;
+
+            showTemporaryMessage(`${quantity}x ${itemToAdd.itemName} added to cart!`, 'success');
+            renderCart();
+        };
+
+        const updateCartItemQuantity = (itemId, change) => {
+            const itemIndex = cart.findIndex(item => item.id === itemId);
+            if (itemIndex > -1) {
+                cart[itemIndex].quantity += change;
+                if (cart[itemIndex].quantity <= 0) {
+                    cart.splice(itemIndex, 1);
+                }
+            }
+            if (cart.length === 0) {
+                currentCartServiceProviderId = null;
+            }
+            renderCart();
+        };
+
+        const removeCartItem = (itemId) => {
+            cart = cart.filter(item => item.id !== itemId);
+            if (cart.length === 0) {
+                currentCartServiceProviderId = null;
+            }
+            showTemporaryMessage("Item removed from cart", 'success');
+            renderCart();
+        };
+
+        const clearCart = () => {
+            showConfirmation("Are you sure you want to clear your entire cart?", () => {
+                cart = [];
+                currentCartServiceProviderId = null;
+                showTemporaryMessage("Cart cleared", 'success');
+                renderCart();
+            });
+        };
+
+        const renderCart = () => {
+            if (cart.length === 0) {
+                cartItemsList.innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="fas fa-shopping-cart text-6xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                        <p class="text-xl text-gray-500 dark:text-gray-400 mb-2">Your cart is empty</p>
+                        <p class="text-gray-400 dark:text-gray-500">Start adding some delicious items!</p>
+                    </div>
+                `;
+                cartSummary.classList.add('hidden');
+                return;
+            }
+
+            cartItemsList.innerHTML = '';
+            cart.forEach(item => {
+                const cartItemDiv = document.createElement('div');
+                cartItemDiv.classList.add('card', 'p-4');
+                cartItemDiv.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <h4 class="font-display font-bold text-gray-900 dark:text-gray-100">${item.itemName}</h4>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">From ${item.serviceProviderName}</p>
+                            <p class="text-lg font-bold text-accent-600">$${item.price.toFixed(2)} each</p>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <button class="btn-secondary w-8 h-8 flex items-center justify-center" onclick="updateCartItemQuantity('${item.id}', -1)">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <span class="font-bold text-lg w-8 text-center">${item.quantity}</span>
+                            <button class="btn-secondary w-8 h-8 flex items-center justify-center" onclick="updateCartItemQuantity('${item.id}', 1)">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            <button class="btn-danger text-sm px-3 py-1" onclick="removeCartItem('${item.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                cartItemsList.appendChild(cartItemDiv);
             });
 
-            function formatDateTime(dateTimeString) {
-                if (!dateTimeString) return "";
-                const date = new Date(dateTimeString);
-                const optionsDate = { year: 'numeric', month: 'long', day: 'numeric' };
-                const optionsTime = { hour: 'numeric', minute: '2-digit', hour12: true };
-                return `${date.toLocaleDateString('en-US', optionsDate)} at ${date.toLocaleTimeString('en-US', optionsTime)}`;
+            const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+            cartTotalDisplay.textContent = `$${total.toFixed(2)}`;
+            cartSummary.classList.remove('hidden');
+
+            // Make functions global for onclick handlers
+            window.updateCartItemQuantity = updateCartItemQuantity;
+            window.removeCartItem = removeCartItem;
+        };
+
+        const handleCheckout = async () => {
+            if (cart.length === 0) {
+                showTemporaryMessage("Your cart is empty", 'error');
+                return;
             }
 
-            function wrapText(context, text, x, y, maxWidth, lineHeight, maxY) {
-                const lines = text.split('\n');
-                let currentY = y;
-                let truncated = false;
-                for (const lineText of lines) {
-                    const words = lineText.split(' ');
-                    let line = '';
-                    for (let n = 0; n < words.length; n++) {
-                        const testLine = line + words[n] + ' ';
-                        const metrics = context.measureText(testLine);
-                        if (metrics.width > maxWidth && n > 0) {
-                            if (currentY + lineHeight > maxY) {
-                                truncated = true;
-                                break;
-                            }
-                            context.fillText(line.trim(), x, currentY);
-                            line = words[n] + ' ';
-                            currentY += lineHeight;
-                        } else {
-                            line = testLine;
+            const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+            const serviceProviderName = cart[0].serviceProviderName;
+
+            checkoutTotalDisplay.textContent = `$${total.toFixed(2)}`;
+            checkoutServiceProviderDisplay.textContent = serviceProviderName;
+            checkoutConfirmModal.classList.remove('hidden');
+            const modalContent = checkoutConfirmModal.querySelector('.modal-content');
+            modalContent.classList.remove('show');
+            setTimeout(() => modalContent.classList.add('show'), 10);
+        };
+
+        const placeOrder = async () => {
+            checkoutConfirmModal.classList.add('hidden');
+
+            const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+            const orderServiceProviderId = currentCartServiceProviderId;
+            const orderServiceProviderName = cart[0].serviceProviderName;
+
+            setButtonLoading(checkoutConfirmPlaceOrderBtn, true);
+
+            try {
+                await db.orders.add({
+                    items: cart,
+                    totalPrice: total,
+                    serviceProviderId: orderServiceProviderId,
+                    serviceProviderName: orderServiceProviderName,
+                    orderDate: new Date().toISOString(),
+                    status: 'Pending',
+                    addedBy: currentUserId
+                });
+                showTemporaryMessage("Order placed successfully!", 'success');
+                cart = [];
+                currentCartServiceProviderId = null;
+                renderCart();
+                await fetchAllDataAndRender();
+            } catch (e) {
+                console.error("Error placing order:", e);
+                showTemporaryMessage("Error placing order", 'error');
+            } finally {
+                setButtonLoading(checkoutConfirmPlaceOrderBtn, false);
+            }
+        };
+
+        const renderManagedServiceProviders = () => {
+            const managedServiceProviders = allServiceProviders.filter(sp => sp.addedBy === currentUserId);
+
+            if (managedServiceProviders.length === 0) {
+                managedServiceProvidersList.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fas fa-store text-4xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                        <p class="text-gray-500 dark:text-gray-400">No restaurants added yet</p>
+                    </div>
+                `;
+                return;
+            }
+
+            managedServiceProvidersList.innerHTML = '';
+            managedServiceProviders.forEach(sp => {
+                const serviceProviderDiv = document.createElement('div');
+                serviceProviderDiv.classList.add('card', 'p-4');
+                serviceProviderDiv.innerHTML = `
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-display font-bold text-gray-900 dark:text-gray-100">${sp.name}</h3>
+                            <p class="text-gray-600 dark:text-gray-400 text-sm mb-1">${sp.address}</p>
+                            <div class="flex items-center space-x-2 mb-2">
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-400">
+                                    ${sp.type || 'Restaurant'}
+                                </span>
+                                ${sp.priceLevel ? `<span class="${getPriceBadgeClass(sp.priceLevel)}">${sp.priceLevel}</span>` : ''}
+                            </div>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">
+                                ${sp.latitude.toFixed(4)}, ${sp.longitude.toFixed(4)}
+                            </p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button class="btn-secondary text-sm" onclick="editServiceProvider('${sp.id}')">
+                                <i class="fas fa-edit mr-1"></i>Edit
+                            </button>
+                            <button class="btn-danger text-sm" onclick="handleDeleteServiceProvider('${sp.id}')">
+                                <i class="fas fa-trash mr-1"></i>Delete
+                            </button>
+                        </div>
+                    </div>
+                `;
+                managedServiceProvidersList.appendChild(serviceProviderDiv);
+            });
+
+            // Make functions global
+            window.editServiceProvider = editServiceProvider;
+            window.handleDeleteServiceProvider = handleDeleteServiceProvider;
+        };
+
+        const renderManagedMenuItems = () => {
+            const managedMenuItems = allMenuItems.filter(item => item.addedBy === currentUserId);
+
+            if (managedMenuItems.length === 0) {
+                managedMenuItemsList.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fas fa-utensils text-4xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                        <p class="text-gray-500 dark:text-gray-400">No menu items added yet</p>
+                    </div>
+                `;
+                return;
+            }
+
+            managedMenuItemsList.innerHTML = '';
+            managedMenuItems.forEach(item => {
+                const parentServiceProvider = allServiceProviders.find(sp => sp.id === item.serviceProviderId);
+                const serviceProviderName = parentServiceProvider ? parentServiceProvider.name : 'Unknown Restaurant';
+
+                const menuItemDiv = document.createElement('div');
+                menuItemDiv.classList.add('card', 'p-4');
+                menuItemDiv.innerHTML = `
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-display font-bold text-gray-900 dark:text-gray-100">${item.itemName}</h3>
+                            <p class="text-xl font-bold text-accent-600 mb-2">$${item.price.toFixed(2)}</p>
+                            <p class="text-gray-600 dark:text-gray-400 text-sm mb-2">At: ${serviceProviderName}</p>
+                            <p class="text-gray-600 dark:text-gray-400 text-sm mb-2">
+                                Category: ${item.mainCategory || 'N/A'} ${item.subCategory ? ` • ${item.subCategory}` : ''}
+                            </p>
+                            ${item.description ? `<p class="text-gray-700 dark:text-gray-300 text-sm">${item.description}</p>` : ''}
+                        </div>
+                        <div class="flex space-x-2">
+                            <button class="btn-secondary text-sm" onclick="editMenuItem('${item.id}')">
+                                <i class="fas fa-edit mr-1"></i>Edit
+                            </button>
+                            <button class="btn-danger text-sm" onclick="handleDeleteMenuItem('${item.id}')">
+                                <i class="fas fa-trash mr-1"></i>Delete
+                            </button>
+                        </div>
+                    </div>
+                `;
+                managedMenuItemsList.appendChild(menuItemDiv);
+            });
+
+            // Make functions global
+            window.editMenuItem = editMenuItem;
+            window.handleDeleteMenuItem = handleDeleteMenuItem;
+        };
+
+        const renderMyOrders = () => {
+            if (myOrders.length === 0) {
+                myOrdersList.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fas fa-receipt text-4xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                        <p class="text-gray-500 dark:text-gray-400">No orders placed yet</p>
+                    </div>
+                `;
+                return;
+            }
+
+            myOrdersList.innerHTML = '';
+            myOrders.forEach(order => {
+                const orderDiv = document.createElement('div');
+                orderDiv.classList.add('card', 'p-4');
+                orderDiv.innerHTML = `
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-display font-bold text-gray-900 dark:text-gray-100">Order from ${order.serviceProviderName}</h3>
+                            <p class="text-gray-600 dark:text-gray-400 text-sm mb-2">Ordered: ${formatDateTime(order.orderDate)}</p>
+                            <span class="status-indicator ${order.status.toLowerCase()}">${order.status}</span>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-2xl font-bold text-success-600">$${order.totalPrice.toFixed(2)}</p>
+                            <button class="btn-danger text-sm mt-2" onclick="handleDeleteOrder('${order.id}')">
+                                <i class="fas fa-trash mr-1"></i>Delete
+                            </button>
+                        </div>
+                    </div>
+                    <div class="border-t border-gray-200 dark:border-gray-700 pt-3">
+                        <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">Items:</h4>
+                        <ul class="space-y-1">
+                            ${order.items.map(item => `
+                                <li class="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                                    <span>${item.itemName} × ${item.quantity}</span>
+                                    <span>$${(item.price * item.quantity).toFixed(2)}</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+                myOrdersList.appendChild(orderDiv);
+            });
+
+            // Make function global
+            window.handleDeleteOrder = handleDeleteOrder;
+        };
+
+        const fetchAllDataAndRender = async () => {
+            try {
+                allServiceProviders = await db.service_providers.toArray();
+                allMenuItems = await db.menu_items.toArray();
+                myOrders = await db.orders.where('addedBy').equals(currentUserId).toArray();
+                likedServiceProviders = await db.liked_service_providers.where('addedBy').equals(currentUserId).toArray();
+
+                renderNearbyServiceProviders();
+                renderManagedServiceProviders();
+                renderManagedMenuItems();
+                renderMyOrders();
+                populateMenuItemServiceProviderDropdown();
+
+                if (currentPage === 'service-provider-detail-page' && currentServiceProviderDetailId) {
+                    showServiceProviderDetailPage(currentServiceProviderDetailId);
+                }
+                if (currentPage === 'menu-item-detail-page' && currentMenuItemDetailId) {
+                    showMenuItemDetailPage(currentMenuItemDetailId);
+                }
+
+                console.log("All data fetched and UI updated");
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                showTemporaryMessage("Failed to load data", 'error');
+            }
+        };
+
+        const handleAddServiceProvider = async () => {
+            if (!currentUserId) {
+                showTemporaryMessage("User ID required", 'error');
+                return;
+            }
+            if (!serviceProviderNameInput.value.trim() || !serviceProviderAddressInput.value.trim() || 
+                !serviceProviderTypeSelect.value || !serviceProviderLatInput.value || 
+                !serviceProviderLonInput.value || !serviceProviderPriceLevelSelect.value) {
+                showTemporaryMessage("Please fill all required fields", 'error');
+                return;
+            }
+
+            const latitude = parseFloat(serviceProviderLatInput.value);
+            const longitude = parseFloat(serviceProviderLonInput.value);
+
+            if (isNaN(latitude) || isNaN(longitude)) {
+                showTemporaryMessage("Invalid coordinates", 'error');
+                return;
+            }
+
+            setButtonLoading(addServiceProviderBtn, true);
+
+            try {
+                await db.service_providers.add({
+                    name: serviceProviderNameInput.value.trim(),
+                    address: serviceProviderAddressInput.value.trim(),
+                    latitude: latitude,
+                    longitude: longitude,
+                    type: serviceProviderTypeSelect.value,
+                    priceLevel: serviceProviderPriceLevelSelect.value,
+                    description: serviceProviderDescriptionInput.value.trim(),
+                    addedBy: currentUserId,
+                    createdAt: new Date().toISOString(),
+                });
+                showTemporaryMessage("Restaurant added successfully!", 'success');
+                
+                // Clear form
+                serviceProviderNameInput.value = '';
+                serviceProviderAddressInput.value = '';
+                serviceProviderTypeSelect.value = '';
+                serviceProviderPriceLevelSelect.value = '';
+                serviceProviderDescriptionInput.value = '';
+                getGeoLocation();
+                await fetchAllDataAndRender();
+            } catch (e) {
+                console.error("Error adding service provider:", e);
+                showTemporaryMessage("Error adding restaurant", 'error');
+            } finally {
+                setButtonLoading(addServiceProviderBtn, false);
+            }
+        };
+
+        const populateMenuItemServiceProviderDropdown = () => {
+            menuItemServiceProviderSelect.innerHTML = '<option value="">Choose your restaurant</option>';
+            const userServiceProviders = allServiceProviders.filter(sp => sp.addedBy === currentUserId);
+            
+            if (userServiceProviders.length === 0) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No restaurants added yet. Add one first!';
+                option.disabled = true;
+                menuItemServiceProviderSelect.appendChild(option);
+            } else {
+                userServiceProviders.forEach(sp => {
+                    const option = document.createElement('option');
+                    option.value = sp.id;
+                    option.textContent = sp.name;
+                    menuItemServiceProviderSelect.appendChild(option);
+                });
+            }
+        };
+
+        const handleAddMenuItem = async () => {
+            if (!currentUserId) {
+                showTemporaryMessage("User ID required", 'error');
+                return;
+            }
+            if (!menuItemServiceProviderSelect.value || !menuItemNameInput.value.trim() || 
+                menuItemPriceInput.value === '' || !menuItemMainCategoryInput.value.trim()) {
+                showTemporaryMessage("Please fill all required fields", 'error');
+                return;
+            }
+
+            const price = parseFloat(menuItemPriceInput.value);
+            if (isNaN(price) || price <= 0) {
+                showTemporaryMessage("Please enter a valid price", 'error');
+                return;
+            }
+
+            setButtonLoading(addMenuItemBtn, true);
+
+            try {
+                await db.menu_items.add({
+                    serviceProviderId: menuItemServiceProviderSelect.value,
+                    itemName: menuItemNameInput.value.trim(),
+                    description: menuItemDescriptionInput.value.trim(),
+                    price: price,
+                    mainCategory: menuItemMainCategoryInput.value.trim(),
+                    subCategory: menuItemSubCategoryInput.value.trim() || null,
+                    addedBy: currentUserId,
+                    createdAt: new Date().toISOString(),
+                });
+                showTemporaryMessage("Menu item added successfully!", 'success');
+                
+                // Clear form
+                menuItemServiceProviderSelect.value = '';
+                menuItemNameInput.value = '';
+                menuItemDescriptionInput.value = '';
+                menuItemPriceInput.value = '';
+                menuItemMainCategoryInput.value = '';
+                menuItemSubCategoryInput.value = '';
+                await fetchAllDataAndRender();
+            } catch (e) {
+                console.error("Error adding menu item:", e);
+                showTemporaryMessage("Error adding menu item", 'error');
+            } finally {
+                setButtonLoading(addMenuItemBtn, false);
+            }
+        };
+
+        const editServiceProvider = (serviceProviderId) => {
+            const serviceProviderToEdit = allServiceProviders.find(sp => sp.id === serviceProviderId);
+            if (!serviceProviderToEdit || serviceProviderToEdit.addedBy !== currentUserId) {
+                showTemporaryMessage("You can only edit your own restaurants", 'error');
+                return;
+            }
+
+            currentEditingServiceProviderId = serviceProviderId;
+            editServiceProviderNameInput.value = serviceProviderToEdit.name;
+            editServiceProviderAddressInput.value = serviceProviderToEdit.address || '';
+            editServiceProviderLatInput.value = serviceProviderToEdit.latitude;
+            editServiceProviderLonInput.value = serviceProviderToEdit.longitude;
+            editServiceProviderTypeSelect.value = serviceProviderToEdit.type || 'Other';
+            editServiceProviderPriceLevelSelect.value = serviceProviderToEdit.priceLevel || '$';
+            editServiceProviderDescriptionInput.value = serviceProviderToEdit.description || '';
+            editServiceProviderModal.classList.remove('hidden');
+            const modalContent = editServiceProviderModal.querySelector('.modal-content');
+            modalContent.classList.remove('show');
+            setTimeout(() => modalContent.classList.add('show'), 10);
+        };
+
+        const handleSaveServiceProviderChanges = async () => {
+            if (!currentUserId || !currentEditingServiceProviderId) {
+                showTemporaryMessage("Cannot save changes", 'error');
+                return;
+            }
+
+            const updatedName = editServiceProviderNameInput.value.trim();
+            const updatedAddress = editServiceProviderAddressInput.value.trim();
+            const updatedType = editServiceProviderTypeSelect.value;
+            const updatedPriceLevel = editServiceProviderPriceLevelSelect.value;
+            const updatedDescription = editServiceProviderDescriptionInput.value.trim();
+
+            if (!updatedName || !updatedAddress || !updatedType || !updatedPriceLevel) {
+                showTemporaryMessage("Please fill all required fields", 'error');
+                return;
+            }
+
+            setButtonLoading(editServiceProviderModalSaveBtn, true);
+
+            try {
+                await db.service_providers.update(currentEditingServiceProviderId, {
+                    name: updatedName,
+                    address: updatedAddress,
+                    type: updatedType,
+                    priceLevel: updatedPriceLevel,
+                    description: updatedDescription,
+                });
+                showTemporaryMessage("Restaurant updated successfully!", 'success');
+                editServiceProviderModal.classList.add('hidden');
+                currentEditingServiceProviderId = null;
+                await fetchAllDataAndRender();
+            } catch (e) {
+                console.error("Error updating service provider:", e);
+                showTemporaryMessage("Error updating restaurant", 'error');
+            } finally {
+                setButtonLoading(editServiceProviderModalSaveBtn, false);
+            }
+        };
+
+        const handleDeleteServiceProvider = (serviceProviderId) => {
+            const serviceProviderToDelete = allServiceProviders.find(sp => sp.id === serviceProviderId);
+            if (!serviceProviderToDelete || serviceProviderToDelete.addedBy !== currentUserId) {
+                showTemporaryMessage("You can only delete your own restaurants", 'error');
+                return;
+            }
+
+            showConfirmation(
+                `Delete "${serviceProviderToDelete.name}" and all its menu items and orders? This cannot be undone.`,
+                async () => {
+                    try {
+                        await db.service_providers.delete(serviceProviderId);
+
+                        const menuItemsToDelete = await db.menu_items.where('serviceProviderId').equals(serviceProviderId).toArray();
+                        for (const item of menuItemsToDelete) {
+                            await db.menu_items.delete(item.id);
                         }
-                    }
-                    if (!truncated) {
-                        if (currentY + lineHeight > maxY) {
-                            truncated = true;
-                        } else {
-                            context.fillText(line.trim(), x, currentY);
-                            currentY += lineHeight;
+
+                        const likedItemToDelete = await db.liked_service_providers.where({ serviceProviderId: serviceProviderId, addedBy: currentUserId }).toArray();
+                        if (likedItemToDelete.length > 0) {
+                            await db.liked_service_providers.delete(likedItemToDelete[0].id);
                         }
-                    } else {
-                        break;
+
+                        const ordersToDelete = await db.orders.where({ serviceProviderId: serviceProviderId, addedBy: currentUserId }).toArray();
+                        for (const order of ordersToDelete) {
+                            await db.orders.delete(order.id);
+                        }
+
+                        showTemporaryMessage("Restaurant and associated data deleted!", 'success');
+                        await fetchAllDataAndRender();
+                    } catch (e) {
+                        console.error("Error deleting service provider:", e);
+                        showTemporaryMessage("Error deleting restaurant", 'error');
                     }
                 }
-                if (truncated && currentY - lineHeight <= maxY) {
-                    context.fillText('...', x, currentY - lineHeight);
-                }
-                return { nextY: currentY, truncated };
+            );
+        };
+
+        const editMenuItem = (itemId) => {
+            const itemToEdit = allMenuItems.find(item => item.id === itemId);
+            if (!itemToEdit || itemToEdit.addedBy !== currentUserId) {
+                showTemporaryMessage("You can only edit your own menu items", 'error');
+                return;
             }
 
-            function drawBanner() {
-                if (!userImage) return;
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                const selectedFont = fontSelector.value;
-                const layout = layoutSelector.value;
-                const textColor = textColorInput.value;
-                const overlayColor = overlayColorInput.value;
-                const overlayOpacity = overlayOpacitySlider.value / 100;
-                const headerSize = parseInt(headerSizeSlider.value);
-                const contentSize = parseInt(contentSizeSlider.value);
-                const padding = 100;
+            currentEditingMenuItemId = itemId;
+            editMenuItemNameInput.value = itemToEdit.itemName;
+            editMenuItemDescriptionInput.value = itemToEdit.description || '';
+            editMenuItemPriceInput.value = itemToEdit.price;
+            editMenuItemMainCategoryInput.value = itemToEdit.mainCategory || '';
+            editMenuItemSubCategoryInput.value = itemToEdit.subCategory || '';
+            editMenuItemModal.classList.remove('hidden');
+            const modalContent = editMenuItemModal.querySelector('.modal-content');
+            modalContent.classList.remove('show');
+            setTimeout(() => modalContent.classList.add('show'), 10);
+        };
 
-                if (layout.startsWith('split')) drawSplitLayout(layout === 'split-left' ? 'left' : 'right');
-                else if (layout === 'overlay') drawOverlayLayout();
-
-                function drawSplitLayout(textSide) {
-                    const textPanelWidth = canvas.width * 0.5;
-                    const textAreaX = textSide === 'left' ? 0 : canvas.width - textPanelWidth;
-                    const imagePanelX = textSide === 'left' ? textPanelWidth : 0;
-                    const imagePanelWidth = canvas.width - textPanelWidth;
-
-                    ctx.save();
-                    const coverRatio = Math.max(canvas.width / userImage.width, canvas.height / userImage.height);
-                    const coverWidth = userImage.width * coverRatio;
-                    const coverHeight = userImage.height * coverRatio;
-                    const coverX = (canvas.width - coverWidth) / 2;
-                    const coverY = (canvas.height - coverHeight) / 2;
-                    ctx.filter = `blur(20px) brightness(${overlayOpacity})`;
-                    ctx.drawImage(userImage, coverX, coverY, coverWidth, coverHeight);
-                    ctx.restore();
-
-                    ctx.save();
-                    ctx.fillStyle = overlayColor;
-                    ctx.globalAlpha = overlayOpacity * 0.3;
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    ctx.restore();
-
-                    ctx.save();
-                    const imageMargin = 30;
-                    const fitRatio = Math.min((imagePanelWidth - imageMargin * 2) / userImage.width, (canvas.height - imageMargin * 2) / userImage.height);
-                    const imgNewWidth = userImage.width * fitRatio;
-                    const imgNewHeight = userImage.height * fitRatio;
-                    const centerShiftX = imagePanelX + (imagePanelWidth - imgNewWidth) / 2;
-                    const centerShiftY = (canvas.height - imgNewHeight) / 2;
-                    ctx.drawImage(userImage, centerShiftX, centerShiftY, imgNewWidth, imgNewHeight);
-                    ctx.restore();
-
-                    drawTextContent(textAreaX + textPanelWidth / 2, textPanelWidth - padding * 2, 0, canvas.height);
-                }
-
-                function drawOverlayLayout() {
-                    ctx.save();
-                    const coverRatio = Math.max(canvas.width / userImage.width, canvas.height / userImage.height);
-                    const coverWidth = userImage.width * coverRatio;
-                    const coverHeight = userImage.height * coverRatio;
-                    const coverX = (canvas.width - coverWidth) / 2;
-                    const coverY = (canvas.height - coverHeight) / 2;
-                    ctx.drawImage(userImage, coverX, coverY, coverWidth, coverHeight);
-                    ctx.restore();
-
-                    ctx.save();
-                    ctx.fillStyle = overlayColor;
-                    ctx.globalAlpha = overlayOpacity;
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    ctx.restore();
-
-                    drawTextContent(canvas.width / 2, canvas.width - padding * 2, 0, canvas.height);
-                }
-
-                function drawTextContent(centerX, maxWidth, startY, maxY) {
-                    const padding = 100;
-                    const spacing = 50;
-                    let currentY = startY + padding;
-                    const maxTextY = maxY - padding;
-
-                    ctx.fillStyle = textColor;
-                    ctx.textAlign = 'center';
-
-                    // Draw header
-                    ctx.font = `bold ${headerSize}px '${selectedFont}'`;
-                    const headerResult = wrapText(ctx, headerTextInput.value, centerX, currentY, maxWidth, headerSize * 1.2, maxTextY);
-                    currentY = headerResult.nextY + spacing;
-
-                    // Draw content
-                    if (currentY < maxTextY) {
-                        ctx.font = `${contentSize}px '${selectedFont}'`;
-                        const contentResult = wrapText(ctx, mainContentTextInput.value, centerX, currentY, maxWidth, contentSize * 1.4, maxTextY);
-                        currentY = contentResult.nextY + spacing;
-                    }
-
-                    // Draw footer
-                    if (currentY < maxTextY) {
-                        const detailSize = Math.max(24, contentSize * 0.6);
-                        const footerText = `Location: ${locationTextInput.value}\nDate: ${formatDateTime(dateTimePicker.value)}`;
-                        ctx.font = `${detailSize}px 'Poppins'`;
-                        wrapText(ctx, footerText, centerX, currentY, maxWidth, detailSize * 1.5, maxTextY);
-                    }
-                }
-
-                shareButton.disabled = false;
-                downloadButton.disabled = false;
+        const handleSaveMenuItemChanges = async () => {
+            if (!currentUserId || !currentEditingMenuItemId) {
+                showTemporaryMessage("Cannot save changes", 'error');
+                return;
             }
+
+            const updatedName = editMenuItemNameInput.value.trim();
+            const updatedDescription = editMenuItemDescriptionInput.value.trim();
+            const updatedPrice = parseFloat(editMenuItemPriceInput.value);
+            const updatedMainCategory = editMenuItemMainCategoryInput.value.trim();
+            const updatedSubCategory = editMenuItemSubCategoryInput.value.trim() || null;
+
+            if (!updatedName || isNaN(updatedPrice) || updatedPrice <= 0 || !updatedMainCategory) {
+                showTemporaryMessage("Please fill all required fields with valid values", 'error');
+                return;
+            }
+
+            setButtonLoading(editMenuItemModalSaveBtn, true);
+
+            try {
+                await db.menu_items.update(currentEditingMenuItemId, {
+                    itemName: updatedName,
+                    description: updatedDescription,
+                    price: updatedPrice,
+                    mainCategory: updatedMainCategory,
+                    subCategory: updatedSubCategory,
+                });
+                showTemporaryMessage("Menu item updated successfully!", 'success');
+                editMenuItemModal.classList.add('hidden');
+                currentEditingMenuItemId = null;
+                await fetchAllDataAndRender();
+            } catch (e) {
+                console.error("Error updating menu item:", e);
+                showTemporaryMessage("Error updating menu item", 'error');
+            } finally {
+                setButtonLoading(editMenuItemModalSaveBtn, false);
+            }
+        };
+
+        const handleDeleteMenuItem = (itemId) => {
+            const itemToDelete = allMenuItems.find(item => item.id === itemId);
+            if (!itemToDelete || itemToDelete.addedBy !== currentUserId) {
+                showTemporaryMessage("You can only delete your own menu items", 'error');
+                return;
+            }
+
+            showConfirmation(
+                `Delete "${itemToDelete.itemName}"? This cannot be undone.`,
+                async () => {
+                    try {
+                        await db.menu_items.delete(itemId);
+                        showTemporaryMessage("Menu item deleted successfully!", 'success');
+                        await fetchAllDataAndRender();
+                    } catch (e) {
+                        console.error("Error deleting menu item:", e);
+                        showTemporaryMessage("Error deleting menu item", 'error');
+                    }
+                }
+            );
+        };
+
+        const handleDeleteOrder = (orderId) => {
+            showConfirmation(
+                "Delete this order from your history?",
+                async () => {
+                    try {
+                        await db.orders.delete(orderId);
+                        showTemporaryMessage("Order deleted successfully!", 'success');
+                        await fetchAllDataAndRender();
+                    } catch (e) {
+                        console.error("Error deleting order:", e);
+                        showTemporaryMessage("Error deleting order", 'error');
+                    }
+                }
+            );
+        };
+
+        const initializeApp = async () => {
+            userIdDisplay.textContent = currentUserId;
+
+            try {
+                await db.open();
+                console.log("Database opened successfully");
+                await fetchAllDataAndRender();
+            } catch (error) {
+                console.error("Error opening database:", error);
+                showTemporaryMessage("Failed to initialize database", 'error');
+            } finally {
+                loadingSpinner.classList.add('hidden');
+                appContainer.classList.remove('hidden');
+                showPage('nearby-service-providers-page');
+                getGeoLocation();
+            }
+        };
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', initializeApp);
+
+        // Navigation
+        document.getElementById('tab-nearby-service-providers-page').addEventListener('click', () => showPage('nearby-service-providers-page'));
+        document.getElementById('tab-my-cart-page').addEventListener('click', () => showPage('my-cart-page'));
+        document.getElementById('tab-add-service-provider-page').addEventListener('click', () => showPage('add-service-provider-page'));
+        document.getElementById('tab-add-menu-item-page').addEventListener('click', () => showPage('add-menu-item-page'));
+        document.getElementById('tab-manage-my-data-page').addEventListener('click', () => showPage('manage-my-data-page'));
+
+        // Search and filters
+        serviceProviderSearchInput.addEventListener('input', () => {
+            currentServiceProviderSearchQuery = serviceProviderSearchInput.value;
+            renderNearbyServiceProviders();
+        });
+        serviceProviderDistanceFilter.addEventListener('change', (event) => {
+            currentServiceProviderDistanceFilter = parseFloat(event.target.value);
+            renderNearbyServiceProviders();
+        });
+        serviceProviderPriceFilter.addEventListener('change', (event) => {
+            currentServiceProviderPriceFilter = event.target.value;
+            renderNearbyServiceProviders();
+        });
+
+        // Category tabs
+        nearbyServiceProvidersPage.addEventListener('click', (event) => {
+            if (event.target.classList.contains('category-tab')) {
+                nearbyServiceProvidersPage.querySelectorAll('.category-tab').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                event.target.classList.add('active');
+                currentServiceProviderTypeFilter = event.target.dataset.category;
+                renderNearbyServiceProviders();
+            }
+        });
+
+        // Page navigation
+        backToProvidersBtn.addEventListener('click', () => showPage('nearby-service-providers-page'));
+        spLikeButton.addEventListener('click', toggleLikeServiceProvider);
+        backToSpDetailBtn.addEventListener('click', () => {
+            if (currentServiceProviderDetailId) {
+                showServiceProviderDetailPage(currentServiceProviderDetailId);
+            } else {
+                showPage('nearby-service-providers-page');
+            }
+        });
+
+        // Cart functionality
+        increaseQtyBtn.addEventListener('click', () => {
+            orderQuantityInput.value = parseInt(orderQuantityInput.value) + 1;
+        });
+        decreaseQtyBtn.addEventListener('click', () => {
+            const currentQty = parseInt(orderQuantityInput.value);
+            if (currentQty > 1) {
+                orderQuantityInput.value = currentQty - 1;
+            }
+        });
+        addToCartDetailBtn.addEventListener('click', () => {
+            if (currentMenuItemDetailId) {
+                const quantity = parseInt(orderQuantityInput.value);
+                if (quantity > 0) {
+                    addToCart(currentMenuItemDetailId, quantity);
+                } else {
+                    showTemporaryMessage("Quantity must be at least 1", 'error');
+                }
+            }
+        });
+        submitReviewBtn.addEventListener('click', handleSubmitReview);
+
+        // Form submissions
+        addServiceProviderBtn.addEventListener('click', handleAddServiceProvider);
+        addMenuItemBtn.addEventListener('click', handleAddMenuItem);
+
+        // Modal controls
+        confirmModalConfirmBtn.addEventListener('click', handleConfirm);
+        confirmModalCancelBtn.addEventListener('click', handleCancel);
+
+        checkoutBtn.addEventListener('click', handleCheckout);
+        clearCartBtn.addEventListener('click', clearCart);
+        checkoutConfirmPlaceOrderBtn.addEventListener('click', placeOrder);
+        checkoutConfirmCancelBtn.addEventListener('click', () => {
+            checkoutConfirmModal.classList.add('hidden');
+        });
+
+        editServiceProviderModalSaveBtn.addEventListener('click', handleSaveServiceProviderChanges);
+        editServiceProviderModalCancelBtn.addEventListener('click', () => {
+            editServiceProviderModal.classList.add('hidden');
+            currentEditingServiceProviderId = null;
+        });
+
+        editMenuItemModalSaveBtn.addEventListener('click', handleSaveMenuItemChanges);
+        editMenuItemModalCancelBtn.addEventListener('click', () => {
+            editMenuItemModal.classList.add('hidden');
+            currentEditingMenuItemId = null;
+        });
+
+        // Close modals when clicking backdrop
+        [confirmModal, checkoutConfirmModal, editServiceProviderModal, editMenuItemModal].forEach(modal => {
+            modal.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    modal.classList.add('hidden');
+                    if (modal === editServiceProviderModal) currentEditingServiceProviderId = null;
+                    if (modal === editMenuItemModal) currentEditingMenuItemId = null;
+                }
+            });
         });
     </script>
 </body>
