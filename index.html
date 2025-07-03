@@ -108,6 +108,8 @@
         .crud-button.edit:hover { background-color: #d97706; }
         .crud-button.add { background-color: #22c55e; }
         .crud-button.add:hover { background-color: #16a34a; }
+        .crud-button.view-map { background-color: #3b82f6; } 
+        .crud-button.view-map:hover { background-color: #2563eb; }
         
         .profile-tab-button {
             flex: 1;
@@ -159,6 +161,27 @@
             border-color: var(--tg-theme-link-color);
         }
 
+        /* Form specific styles */
+        .form-group label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 500;
+            color: var(--tg-theme-text-color); /* Ensure label color is readable */
+            font-size: 0.9rem;
+        }
+        .form-group input, .form-group textarea, .form-group select {
+            margin-bottom: 12px; /* Space between fields */
+        }
+        .form-section-header {
+            font-weight: 600;
+            color: var(--tg-theme-link-color);
+            margin-top: 16px;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid var(--tg-theme-secondary-bg-color);
+        }
+
+
         /* Mobile First: Profile Header */
         .profile-header {
             display: flex;
@@ -179,6 +202,8 @@
             border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
+
+        
     </style>
 </head>
 <body class="antialiased">
@@ -415,6 +440,9 @@
             },
             (error) => {
                 locationStatusEl.textContent = 'Location access denied.';
+                // Optionally, disable nearby filter if location is denied
+                const nearbyTab = document.querySelector('.filter-tab[data-filter="nearby"]');
+                if (nearbyTab) nearbyTab.disabled = true;
             }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
         );
     }
@@ -448,8 +476,20 @@
             },
             nearby: () => {
                 taskListHeader.textContent = 'Local Operations';
-                const localTasks = availableTasks.filter(t => t.category === 'nearby' || t.category === 'scavenger');
-                return userLocation.lat ? localTasks.filter(t => calculateDistance(userLocation.lat, userLocation.lon, t.latitude, t.longitude) <= maxDistance) : localTasks;
+                if (!userLocation.lat || !userLocation.lon) {
+                    document.getElementById('location-status').textContent = 'Location not available for nearby filter. Grant permission or refresh.';
+                    return []; // Return empty if location is not available
+                }
+                const localTasks = availableTasks.filter(t => 
+                    (t.category === 'nearby' || t.category === 'scavenger') &&
+                    t.latitude !== null && t.longitude !== null
+                ).map(task => { // Calculate distance and add it to the task object
+                    const dist = calculateDistance(userLocation.lat, userLocation.lon, task.latitude, task.longitude);
+                    return { ...task, distance: dist };
+                }).filter(task => task.distance <= maxDistance) // Filter by distance
+                .sort((a,b) => a.distance - b.distance); // Sort by distance
+                
+                return localTasks;
             }
         };
         filteredTasks = filterMap[filter]();
@@ -460,8 +500,9 @@
         }
 
         taskList.innerHTML = filteredTasks.map(task => {
-            const dist = calculateDistance(userLocation.lat, userLocation.lon, task.latitude, task.longitude);
-            const distanceInfo = dist !== Infinity ? `<span class="text-xs ml-2" style="color: var(--tg-theme-hint-color);">(${dist.toFixed(1)} km)</span>` : '';
+            const distanceInfo = (task.distance !== undefined && task.distance !== Infinity) ? `<span class="text-xs ml-2" style="color: var(--tg-theme-hint-color);">(${task.distance.toFixed(1)} km)</span>` : '';
+            
+            // Removed the "View on Map" button from here
             return `
             <div class="task-card rounded-lg p-4 shadow-sm cursor-pointer" style="background-color: var(--tg-theme-secondary-bg-color);" data-task-id="${task.id}">
                 <div class="flex justify-between items-start">
@@ -474,8 +515,11 @@
                         <div class="text-xs flex items-center" style="color: var(--tg-theme-hint-color);">PTS ${distanceInfo}</div>
                     </div>
                 </div>
-            </div>`}).join('');
-        document.querySelectorAll('.task-card').forEach(card => card.addEventListener('click', () => showTaskModal(card.dataset.taskId)));
+            </div>`;
+        }).join('');
+        document.querySelectorAll('.task-card').forEach(card => card.addEventListener('click', (e) => {
+            showTaskModal(card.dataset.taskId);
+        }));
     }
     
     async function renderLeaderboard() {
@@ -567,17 +611,22 @@
         modal.classList.remove('hidden');
         modal.classList.add('flex');
         const closeModal = () => modal.classList.add('hidden');
-        modal.addEventListener('click', e => { if (e.target.id === 'modal' || e.target.classList.contains('close-modal-btn')) closeModal(); });
+        modal.addEventListener('click', e => { 
+            // Only close if clicking on the overlay or a specific close button
+            if (e.target.id === 'modal' || e.target.classList.contains('close-modal-btn')) {
+                closeModal();
+            }
+        });
     }
     const hideModal = () => document.getElementById('modal').classList.add('hidden');
 
     function showNotification(message, type = 'success') {
         try {
-            window.Telegram.WebApp.HapticFeedback.notificationOccurred(type);
-            window.Telegram.WebApp.showPopup({ title: 'Success', message: message, buttons: [{type: 'ok'}] });
+            window.Telegram.WebApp.HapticFeedback.notificationOccurred(type === 'success' ? 'success' : 'error');
+            window.Telegram.WebApp.showPopup({ title: type.charAt(0).toUpperCase() + type.slice(1), message: message, buttons: [{type: 'ok'}] });
         } catch (e) {
             const notif = document.createElement('div');
-            notif.className = 'fixed top-5 left-1/2 -translate-x-1/2 bg-green-500 text-white py-2 px-4 rounded-full shadow-lg text-sm z-50';
+            notif.className = `fixed top-5 left-1/2 -translate-x-1/2 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white py-2 px-4 rounded-full shadow-lg text-sm z-50`;
             notif.textContent = message;
             document.body.appendChild(notif);
             setTimeout(() => notif.remove(), 3000);
@@ -587,6 +636,10 @@
     async function showTaskModal(taskId) {
         const task = await getObject('tasks', parseInt(taskId));
         if (!task) return;
+
+        const viewMapButtonModal = (task.latitude !== null && task.longitude !== null) ? 
+            `<button id="modal-view-map-btn" class="w-1/3 py-2 px-4 rounded-lg font-semibold crud-button view-map">View on Map</button>` : '';
+
         const modalHTML = `
             <div id="modal-body">
                 <h2 class="text-xl font-bold mb-2">${task.title}</h2>
@@ -596,11 +649,18 @@
             <div class="mt-auto p-4 bg-opacity-50 border-t" style="border-color: var(--tg-theme-secondary-bg-color);">
                 <div class="flex space-x-2">
                     <button class="close-modal-btn w-1/3 py-2 px-4 rounded-lg font-semibold" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color-on-secondary);">Cancel</button>
-                    <button id="complete-task-btn" data-task-id="${task.id}" data-points="${task.points}" class="w-2/3 crud-button add">Complete (+${task.points} PTS)</button>
+                    ${viewMapButtonModal}
+                    <button id="complete-task-btn" data-task-id="${task.id}" data-points="${task.points}" class="${viewMapButtonModal ? 'w-1/3' : 'w-2/3'} crud-button add">Complete (+${task.points} PTS)</button>
                 </div>
             </div>`;
         showModal(modalHTML);
         document.getElementById('complete-task-btn').addEventListener('click', completeTask);
+        if (task.latitude !== null && task.longitude !== null) {
+            document.getElementById('modal-view-map-btn').addEventListener('click', () => {
+                // Use task.latitude and task.longitude directly, not from dataset
+                window.open(`https://www.google.com/maps/search/?api=1&query=${task.latitude},${task.longitude}`, '_blank');
+            });
+        }
     }
     
     async function completeTask(event) {
@@ -616,7 +676,7 @@
 
         hideModal();
         showNotification(`Task completed! +${points} points!`);
-        await renderTasks(document.querySelector('.filter-tab.active').dataset.filter);
+        await renderTasks(document.querySelector('.filter-tab.active').dataset.filter, parseInt(document.getElementById('distance-range').value));
         await renderProfile();
     }
 
@@ -630,7 +690,7 @@
         
         await renderProfile();
         if (document.querySelector('.filter-tab.active')?.dataset.filter === 'foryou') {
-            await renderTasks('foryou');
+            await renderTasks('foryou', parseInt(document.getElementById('distance-range').value));
         }
     }
 
@@ -651,7 +711,7 @@
         const modalHTML = `
             <div id="modal-body" class="text-center">
                 <h2 class="text-xl font-bold mb-4">Partner Recommendation</h2>
-                <img src="https://placehold.co/80x80/EFEFEF/AAAAAA?text=${partner.name.charAt(0)}" class="w-20 h-20 rounded-full mx-auto mb-4 border-2" style="border-color: var(--tg-theme-secondary-bg-color);">
+                <img src="https://placehold.co/80x80/EFEFEF/AAAAAA?text=${partner.name.charAt(0).toUpperCase()}" class="w-20 h-20 rounded-full mx-auto mb-4 border-2" style="border-color: var(--tg-theme-secondary-bg-color);">
                 <p>Consider teaming up with</p>
                 <p class="text-lg font-bold">${partner.name}</p>
                 <p class="text-sm" style="color: var(--tg-theme-hint-color);">${partner.score} Service Points</p>
@@ -679,21 +739,99 @@
         const task = taskId ? await getObject('tasks', taskId) : { title: '', description: '', points: 10, category: 'nearby', interest_tag: ALL_INTERESTS[0], latitude: userLocation.lat || '', longitude: userLocation.lon || '', hint: '', missionName: '' };
         
         const formHtml = `
-            <div id="modal-body">
-                <h2 class="text-xl font-bold mb-4">${taskId ? 'Edit Task' : 'Create New Task'}</h2>
-                <form id="task-form" class="space-y-4">
-                    <input type="text" id="task-title" placeholder="Title" value="${task.title}" required>
-                    <textarea id="task-description" placeholder="Description" rows="3" required>${task.description}</textarea>
-                    <input type="number" id="task-points" placeholder="Points" value="${task.points}" min="1" required>
-                    <select id="task-category">${ALL_CATEGORIES.map(c => `<option value="${c}" ${task.category === c ? 'selected' : ''}>${c.charAt(0).toUpperCase() + c.slice(1)}</option>`).join('')}</select>
-                    <div id="additional-fields" class="space-y-4"></div>
-                    <select id="task-interest-tag">${ALL_INTERESTS.map(i => `<option value="${i}" ${task.interest_tag === i ? 'selected' : ''}>${i}</option>`).join('')}</select>
-                </form>
+        <div id="modal-body" class="p-6 sm:p-8 bg-white rounded-2xl shadow-2xl max-w-lg mx-auto my-8 border border-gray-100">
+    <h2 class="text-2xl sm:text-3xl font-extrabold mb-6 text-gray-900 text-center">
+        ${taskId ? 'Edit Task' : 'Create New Task'}
+    </h2>
+    <form id="task-form" class="space-y-6">
+        <div>
+            <label for="task-title" class="block text-sm font-medium text-gray-700 mb-1">Task Title</label>
+            <input
+                type="text"
+                id="task-title"
+                placeholder="e.g., Finish project report"
+                value="${task.title}"
+                required
+                class="block w-full px-4 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 transition duration-200 ease-in-out text-gray-800 placeholder-gray-400 text-base"
+            >
+        </div>
+        <div>
+            <label for="task-description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <textarea
+                id="task-description"
+                placeholder="Provide a detailed description of the task..."
+                rows="4"
+                required
+                class="block w-full px-4 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 transition duration-200 ease-in-out text-gray-800 placeholder-gray-400 resize-y text-base"
+            >${task.description}</textarea>
+        </div>
+        <div>
+            <label for="task-points" class="block text-sm font-medium text-gray-700 mb-1">Points</label>
+            <input
+                type="number"
+                id="task-points"
+                placeholder="e.g., 10"
+                value="${task.points}"
+                min="1"
+                required
+                class="block w-full px-4 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 transition duration-200 ease-in-out text-gray-800 placeholder-gray-400 text-base"
+            >
+        </div>
+        <div>
+            <label for="task-category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <div class="relative">
+                <select
+                    id="task-category"
+                    class="block w-full px-4 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 transition duration-200 ease-in-out text-gray-800 bg-white appearance-none pr-10 text-base"
+                >
+                    ${ALL_CATEGORIES.map(c => `<option value="${c}" ${task.category === c ? 'selected' : ''}>${c.charAt(0).toUpperCase() + c.slice(1)}</option>`).join('')}
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
+                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </div>
             </div>
-            <div class="mt-auto p-4 border-t" style="border-color: var(--tg-theme-secondary-bg-color);"><div class="flex justify-end space-x-2">
-                <button type="button" class="close-modal-btn py-2 px-4 rounded-lg font-semibold" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color-on-secondary);">Cancel</button>
-                <button type="submit" form="task-form" class="crud-button add">${taskId ? 'Save' : 'Create'}</button>
-            </div></div>`;
+        </div>
+        <div id="additional-fields" class="space-y-6"></div>
+        <div>
+            <label for="task-interest-tag" class="block text-sm font-medium text-gray-700 mb-1">Interest Tag</label>
+            <div class="relative">
+                <select
+                    id="task-interest-tag"
+                    class="block w-full px-4 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 transition duration-200 ease-in-out text-gray-800 bg-white appearance-none pr-10 text-base"
+                >
+                    ${ALL_INTERESTS.map(i => `<option value="${i}" ${task.interest_tag === i ? 'selected' : ''}>${i}</option>`).join('')}
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
+                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </form>
+    <div class="mt-8 p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+        <div class="flex justify-end space-x-3">
+            <button
+                type="button"
+                class="close-modal-btn py-2.5 px-6 rounded-xl font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 transition duration-200 ease-in-out shadow-sm hover:shadow-md"
+                style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color-on-secondary);"
+            >
+                Cancel
+            </button>
+            <button
+                type="submit"
+                form="task-form"
+                class="crud-button add py-2.5 px-6 rounded-xl font-semibold bg-blue-600 text-white hover:bg-blue-700 transition duration-200 ease-in-out shadow-md hover:shadow-lg"
+            >
+                ${taskId ? 'Save Changes' : 'Create Task'}
+            </button>
+        </div>
+    </div>
+</div>
+        
+        `;
         showModal(formHtml);
 
         const catSelect = document.getElementById('task-category');
@@ -702,15 +840,20 @@
             const cat = catSelect.value;
             let html = '';
             if (cat === 'nearby' || cat === 'scavenger') {
-                html += `<input type="number" step="any" id="task-latitude" placeholder="Latitude" value="${document.getElementById('task-latitude')?.value || task.latitude}">`;
-                html += `<input type="number" step="any" id="task-longitude" placeholder="Longitude" value="${document.getElementById('task-longitude')?.value || task.longitude}">`;
+                html += `<h3 class="form-section-header">Location Details</h3>`;
+                html += `<div class="form-group"><label for="task-latitude">Latitude</label><input type="number" step="any" id="task-latitude" placeholder="e.g., 9.02" value="${document.getElementById('task-latitude')?.value || task.latitude || ''}"></div>`;
+                html += `<div class="form-group"><label for="task-longitude">Longitude</label><input type="number" step="any" id="task-longitude" placeholder="e.g., 38.77" value="${document.getElementById('task-longitude')?.value || task.longitude || ''}"></div>`;
             }
-            if (cat === 'scavenger') html += `<textarea id="task-hint" placeholder="Hint">${document.getElementById('task-hint')?.value || task.hint || ''}</textarea>`;
-            if (cat === 'mission') html += `<input type="text" id="task-mission-name" placeholder="Mission Name" value="${document.getElementById('task-mission-name')?.value || task.missionName || ''}">`;
+            if (cat === 'scavenger') {
+                html += `<div class="form-group"><label for="task-hint">Hint (for Scavenger)</label><textarea id="task-hint" placeholder="A clue to find the task location.">${document.getElementById('task-hint')?.value || task.hint || ''}</textarea></div>`;
+            }
+            if (cat === 'mission') {
+                html += `<div class="form-group"><label for="task-mission-name">Mission Name</label><input type="text" id="task-mission-name" placeholder="Name of the mission (e.g., Operation Green City)" value="${document.getElementById('task-mission-name')?.value || task.missionName || ''}"></div>`;
+            }
             additionalFields.innerHTML = html;
         };
         catSelect.addEventListener('change', updateFields);
-        updateFields();
+        updateFields(); // Initial call to set fields based on default/existing category
         document.getElementById('task-form').addEventListener('submit', (e) => { e.preventDefault(); saveTask(taskId); });
     }
 
@@ -720,9 +863,18 @@
             title: document.getElementById('task-title').value, description: document.getElementById('task-description').value,
             points: parseInt(document.getElementById('task-points').value), category: document.getElementById('task-category').value,
             interest_tag: document.getElementById('task-interest-tag').value, status: 'available', createdBy: user.id,
-            latitude: parseFloat(document.getElementById('task-latitude')?.value) || null, longitude: parseFloat(document.getElementById('task-longitude')?.value) || null,
-            hint: document.getElementById('task-hint')?.value || '', missionName: document.getElementById('task-mission-name')?.value || ''
+            latitude: parseFloat(document.getElementById('task-latitude')?.value) || null, 
+            longitude: parseFloat(document.getElementById('task-longitude')?.value) || null,
+            hint: document.getElementById('task-hint')?.value || '', 
+            missionName: document.getElementById('task-mission-name')?.value || ''
         };
+        
+        // Basic validation for lat/lon if category requires it
+        if ((data.category === 'nearby' || data.category === 'scavenger') && (data.latitude === null || data.longitude === null || isNaN(data.latitude) || isNaN(data.longitude))) {
+            showNotification('Latitude and Longitude are required for Nearby/Scavenger tasks.', 'error');
+            return;
+        }
+
         if (taskId) {
             const existing = await getObject('tasks', taskId);
             await updateObject('tasks', { ...existing, ...data });
@@ -730,8 +882,10 @@
             await addObject('tasks', data);
         }
         hideModal();
-        showNotification(`Task ${taskId ? 'updated' : 'created'}!`);
+        showNotification(`Task ${taskId ? 'updated' : 'created'} successfully!`);
         await renderMyTasks();
+        // Refresh home screen tasks after adding/editing/deleting
+        await renderTasks(document.querySelector('.filter-tab.active').dataset.filter, parseInt(document.getElementById('distance-range').value));
     }
 
     function confirmDeleteTask(taskId) {
@@ -749,6 +903,8 @@
             hideModal();
             showNotification('Task deleted.');
             await renderMyTasks();
+            // Refresh home screen tasks after deletion
+            await renderTasks(document.querySelector('.filter-tab.active').dataset.filter, parseInt(document.getElementById('distance-range').value));
         };
     }
 
@@ -760,6 +916,7 @@
                 document.querySelectorAll('.nav-button').forEach(b => b.classList.toggle('active', b.dataset.screen === screenId));
                 if (screenId === 'profile-screen') renderProfile();
                 else if (screenId === 'leaderboard-screen') renderLeaderboard();
+                else if (screenId === 'home-screen') renderTasks(document.querySelector('.filter-tab.active').dataset.filter, parseInt(document.getElementById('distance-range').value));
             });
         });
         
@@ -789,6 +946,7 @@
         const distanceRange = document.getElementById('distance-range');
         distanceRange.addEventListener('input', () => {
             document.getElementById('distance-value').textContent = distanceRange.value;
+            // Only re-render if 'Local Ops' (nearby) is the active filter
             if (document.querySelector('.filter-tab.active')?.dataset.filter === 'nearby') {
                 renderTasks('nearby', parseInt(distanceRange.value));
             }
@@ -799,8 +957,9 @@
         try {
             await initDB();
             await populateInitialData();
-            getUserLocation();
-            await renderTasks('foryou');
+            getUserLocation(); // Initiate location retrieval
+            // Pass default distance to initial renderTasks call
+            await renderTasks('foryou', parseInt(document.getElementById('distance-range').value)); 
             setupEventListeners();
         } catch (error) {
             console.error("Failed to initialize the app:", error);
