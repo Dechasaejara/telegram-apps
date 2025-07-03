@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Community Connect</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
     <style>
-        /* Base Telegram theme variables, will be overridden by Telegram.WebApp.themeParams */
+        /* Base Telegram theme variables */
         :root {
             --tg-theme-bg-color: #ffffff;
             --tg-theme-text-color: #000000;
@@ -18,6 +18,7 @@
             --tg-theme-button-color: #2481cc;
             --tg-theme-button-text-color: #ffffff;
             --tg-theme-secondary-bg-color: #f4f4f5;
+            --tg-theme-text-color-on-secondary: #000000; 
         }
         body {
             font-family: 'Inter', sans-serif;
@@ -38,37 +39,45 @@
         .main-content {
             flex-grow: 1;
             overflow-y: auto;
-            padding-bottom: 70px; /* Space for nav bar */
+            padding: 1rem;
+            padding-bottom: 80px; /* Space for nav bar */
         }
         .nav-bar {
             border-top: 1px solid var(--tg-theme-secondary-bg-color);
             background-color: var(--tg-theme-bg-color);
+            height: 65px;
         }
         .nav-button.active svg, .nav-button.active span {
             color: var(--tg-theme-link-color);
         }
         .task-card {
-            border: 1px solid #e5e7eb;
-            transition: transform 0.2s ease-in-out;
+            border: 1px solid transparent;
+            border-color: var(--tg-theme-secondary-bg-color);
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            color: var(--tg-theme-text-color-on-secondary);
         }
         .task-card:active {
             transform: scale(0.98);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
-        /* Achievement level styling */
         .achievement-level {
             font-size: 0.9rem;
             font-weight: 600;
-            padding: 4px 8px;
-            border-radius: 9999px; /* Full rounded corners */
+            padding: 4px 12px;
+            border-radius: 9999px;
             background-color: var(--tg-theme-link-color);
             color: var(--tg-theme-button-text-color);
             display: inline-block;
-            margin-top: 4px;
+            margin-top: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .filter-tab {
+            transition: all 0.2s ease-in-out;
         }
         .filter-tab.active {
             background-color: var(--tg-theme-button-color);
             color: var(--tg-theme-button-text-color);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
         }
         .interest-chip.selected {
             background-color: var(--tg-theme-link-color);
@@ -77,102 +86,117 @@
         }
         .action-button {
             background-color: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-text-color-on-secondary);
             transition: background-color 0.2s;
         }
         .action-button:active {
              background-color: #e5e7eb;
         }
-        /* Styles for CRUD buttons */
         .crud-button {
             background-color: var(--tg-theme-button-color);
             color: var(--tg-theme-button-text-color);
-            padding: 8px 16px;
+            padding: 10px 16px;
             border-radius: 8px;
             font-weight: 600;
-            transition: background-color 0.2s ease-in-out;
+            transition: background-color 0.2s ease-in-out, filter 0.2s;
+            text-align: center;
         }
-        .crud-button:hover {
-            filter: brightness(1.1);
-        }
-        .crud-button.delete {
-            background-color: #ef4444; /* Red for delete */
-        }
-        .crud-button.delete:hover {
-            background-color: #dc2626;
-        }
-        .crud-button.edit {
-            background-color: #f59e0b; /* Amber for edit */
-        }
-        .crud-button.edit:hover {
-            background-color: #d97706;
-        }
-        .crud-button.add {
-            background-color: #22c55e; /* Green for add */
-        }
-        .crud-button.add:hover {
-            background-color: #16a34a;
-        }
-        /* Profile Tabs */
+        .crud-button:hover { filter: brightness(1.1); }
+        .crud-button.delete { background-color: #ef4444; }
+        .crud-button.delete:hover { background-color: #dc2626; }
+        .crud-button.edit { background-color: #f59e0b; }
+        .crud-button.edit:hover { background-color: #d97706; }
+        .crud-button.add { background-color: #22c55e; }
+        .crud-button.add:hover { background-color: #16a34a; }
+        
         .profile-tab-button {
             flex: 1;
-            padding: 10px 0;
+            padding: 12px 0;
             text-align: center;
             font-weight: 600;
-            border-bottom: 2px solid transparent;
+            border-bottom: 3px solid transparent;
             color: var(--tg-theme-hint-color);
             transition: all 0.2s ease-in-out;
-            cursor: pointer;
         }
         .profile-tab-button.active {
             border-color: var(--tg-theme-link-color);
             color: var(--tg-theme-link-color);
         }
-        .profile-tab-content {
-            padding-top: 16px;
-        }
+        .profile-tab-content { padding-top: 16px; }
 
-        /* Responsive adjustments for profile page */
-        @media (min-width: 640px) {
-            .profile-header {
-                flex-direction: row;
-                align-items: center;
-            }
-            .profile-info {
-                text-align: left;
-            }
-        }
-
-        /* Ensure better contrast for text on secondary background */
-        .text-on-secondary-bg {
-            color: var(--tg-theme-text-color); /* Use main text color for better contrast */
-        }
-        /* Brand styling */
         .brand-header {
             background: linear-gradient(90deg, var(--tg-theme-link-color) 0%, var(--tg-theme-button-color) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        #modal-content-wrapper {
+            background-color: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 480px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+        #modal-body {
+            padding: 24px;
+            overflow-y: auto;
+        }
+        input, textarea, select {
+            background-color: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-text-color-on-secondary);
+            border: 1px solid var(--tg-theme-hint-color);
+            border-radius: 8px;
+            padding: 10px;
+            width: 100%;
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--tg-theme-link-color);
+        }
+
+        /* Mobile First: Profile Header */
+        .profile-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .profile-image-container {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+        .profile-qr-container {
+            position: absolute;
+            bottom: -10px;
+            right: -10px;
+            background-color: white;
+            padding: 4px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
     </style>
 </head>
 <body class="antialiased">
 
     <div id="app" class="app-container">
-        <!-- Main Content Area -->
         <main class="main-content">
-            <!-- Home Screen -->
-            <div id="home-screen" class="p-4">
+            <div id="home-screen">
                 <header class="flex justify-between items-center mb-4">
                     <div>
-                        <h1 class="text-2xl font-bold brand-header">Community Connect</h1>
+                        <h1 class="text-3xl brand-header">Community Connect</h1>
                         <p class="text-sm" style="color: var(--tg-theme-hint-color);">Ready for deployment?</p>
                     </div>
-                    <div class="text-right">
+                    <div class="text-right flex-shrink-0">
                         <div class="text-lg font-bold" id="user-score">0 PTS</div>
                         <div class="text-xs" style="color: var(--tg-theme-hint-color);">Service Score</div>
                     </div>
                 </header>
 
-                <!-- Action Buttons -->
                 <div class="grid grid-cols-2 gap-3 mb-4">
                     <button id="random-service-btn" class="action-button p-3 rounded-lg flex items-center justify-center text-sm font-semibold">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M3 7.9l4.1 4.1-4.1 4.1M21 7.9l-4.1 4.1 4.1 4.1M12 4v16"/></svg>
@@ -184,129 +208,105 @@
                     </button>
                 </div>
                 
-                <!-- Task Filters -->
                 <div class="flex space-x-2 mb-4 overflow-x-auto pb-2">
                     <button class="filter-tab active whitespace-nowrap text-sm font-medium py-2 px-4 rounded-full" data-filter="foryou">For You</button>
                     <button class="filter-tab whitespace-nowrap text-sm font-medium py-2 px-4 rounded-full" data-filter="missions">Missions</button>
                     <button class="filter-tab whitespace-nowrap text-sm font-medium py-2 px-4 rounded-full" data-filter="nearby">Local Ops</button>
                 </div>
 
-                <!-- Distance Filter (New) -->
-                <div id="distance-filter-section" class="mb-4 p-3 rounded-lg text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color);">
-                    <label for="distance-range" class="block text-sm font-medium mb-2" style="color: var(--tg-theme-text-color);">Max Distance: <span id="distance-value">50</span> km</label>
-                    <input type="range" id="distance-range" min="1" max="500" value="50" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                <div id="distance-filter-section" class="mb-4 p-3 rounded-lg" style="background-color: var(--tg-theme-secondary-bg-color);">
+                    <label for="distance-range" class="block text-sm font-medium mb-2" style="color: var(--tg-theme-text-color-on-secondary);">Max Distance: <span id="distance-value">50</span> km</label>
+                    <input type="range" id="distance-range" min="1" max="500" value="50" class="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer" style="accent-color: var(--tg-theme-link-color);">
                     <p id="location-status" class="text-xs mt-2" style="color: var(--tg-theme-hint-color);">Getting your location...</p>
                 </div>
 
                 <div class="mb-4">
                     <h2 id="task-list-header" class="text-lg font-semibold mb-2">Recommended Tasks</h2>
-                    <div id="task-list" class="space-y-3">
-                        <!-- Tasks will be dynamically inserted here -->
-                    </div>
+                    <div id="task-list" class="space-y-3"></div>
                 </div>
             </div>
 
-            <!-- Leaderboard Screen -->
-            <div id="leaderboard-screen" class="hidden p-4">
-                <h1 class="text-2xl font-bold mb-4 brand-header">Service Leaderboard</h1>
+            <div id="leaderboard-screen" class="hidden">
+                <h1 class="text-3xl brand-header mb-4">Service Leaderboard</h1>
                 <div id="leaderboard-list" class="space-y-2"></div>
             </div>
 
-            <!-- Profile Screen -->
-            <div id="profile-screen" class="hidden p-4 flex flex-col gap-6" style="color: var(--tg-theme-text-color);">
-                <!-- Profile Header -->
-                <div class="profile-header flex flex-col sm:flex-row items-center sm:items-start mb-6 text-center sm:text-left ">
-                    <img id="profile-image" src="https://placehold.co/80x80/EFEFEF/AAAAAA?text=V" class="w-20 h-20 rounded-full mb-4 sm:mb-0 sm:mr-4 border-2" style="border-color: var(--tg-theme-secondary-bg-color);">
-                    <div class="profile-info flex-grow">
+            <div id="profile-screen" class="hidden">
+                <div class="profile-header mb-6">
+                    <div class="profile-image-container">
+                        <img id="profile-image" src="https://placehold.co/120x120/EFEFEF/AAAAAA?text=V" class="w-32 h-32 rounded-full border-4" style="border-color: var(--tg-theme-secondary-bg-color);">
+                        <div class="profile-qr-container cursor-pointer" id="qrcode-container-wrapper" title="Tap to enlarge QR code">
+                             <div id="qrcode-container" class="w-10 h-10"></div>
+                        </div>
+                    </div>
+                    <div class="profile-info">
                         <h1 id="profile-name" class="text-2xl font-bold">Volunteer</h1>
                         <p id="profile-username" class="text-sm" style="color: var(--tg-theme-hint-color);"></p>
-                        <p id="profile-score" class="text-lg" style="color: var(--tg-theme-link-color);">0 PTS</p>
+                        <p id="profile-score" class="text-lg font-semibold" style="color: var(--tg-theme-link-color);">0 PTS</p>
                         <div id="achievement-level" class="achievement-level">Rookie</div>
                     </div>
-                    <div id="qrcode-container" class="w-16 h-16 cursor-pointer mt-4" title="Tap to enlarge QR code">
-                        <!-- QR Code will be generated here -->
-                    </div>
                 </div>
-
-                <div class="mb-6 mt-3 ">
-                    <h2 class="text-lg font-semibold mb-2">My Interests</h2>
+                
+                <div class="mb-6">
+                    <h2 class="text-lg font-semibold mb-3">My Interests</h2>
                     <div id="interest-chips" class="flex flex-wrap gap-2"></div>
                 </div>
 
-                <!-- Removed Service Medals section as per request -->
-                <!-- <div>
-                    <h2 class="text-lg font-semibold mb-2">Service Medals</h2>
-                    <div id="badge-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-4 text-center"></div>
-                </div> -->
-
-                <!-- Profile Tabs for My Tasks and Done History -->
-                <div class="mt-6 border-b" style="border-color: var(--tg-theme-secondary-bg-color);">
+                <div class="border-b" style="border-color: var(--tg-theme-secondary-bg-color);">
                     <div class="flex">
                         <button class="profile-tab-button active" data-tab="my-tasks">My Tasks</button>
                         <button class="profile-tab-button" data-tab="done-history">Done History</button>
                     </div>
                 </div>
 
-                <div id="profile-tab-contents" class="profile-tab-contents">
+                <div id="profile-tab-contents">
                     <div id="my-tasks-tab-content" class="profile-tab-content">
-                        <button id="add-task-btn" class="crud-button add mb-4 mt-4 flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 mr-1">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                            </svg>
+                        <button id="add-task-btn" class="crud-button add mb-4 mt-2 flex items-center justify-center w-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 mr-1"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                             Add New Task
                         </button>
-                        <div id="my-task-list" class="space-y-3">
-                            <!-- User's created tasks will be dynamically inserted here -->
-                        </div>
+                        <div id="my-task-list" class="space-y-3"></div>
                     </div>
-
                     <div id="done-history-tab-content" class="profile-tab-content hidden">
-                        <div id="done-task-list" class="space-y-3">
-                            <!-- User's completed tasks will be dynamically inserted here -->
-                        </div>
+                        <div id="done-task-list" class="space-y-3"></div>
                     </div>
                 </div>
             </div>
         </main>
 
-        <!-- Bottom Navigation Bar -->
-        <nav class="nav-bar fixed bottom-0 left-0 right-0 h-[65px] flex justify-around items-center" style="background-color: var(--tg-theme-bg-color);">
+        <nav class="nav-bar fixed bottom-0 left-0 right-0 flex justify-around items-center">
             <button data-screen="home-screen" class="nav-button active flex flex-col items-center justify-center text-gray-500 w-full h-full">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                <span class="text-xs">Home</span>
+                <span class="text-xs font-medium">Home</span>
             </button>
             <button data-screen="leaderboard-screen" class="nav-button flex flex-col items-center justify-center text-gray-500 w-full h-full">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 012-2h2a2 2 0 012 2v6m-6 0h6m-6 0H6a2 2 0 01-2-2v-6a2 2 0 012-2h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                <span class="text-xs">Leaders</span>
+                <span class="text-xs font-medium">Leaders</span>
             </button>
             <button data-screen="profile-screen" class="nav-button flex flex-col items-center justify-center text-gray-500 w-full h-full">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 4 0 00-7-7z"/></svg>
-                <span class="text-xs">Profile</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                <span class="text-xs font-medium">Profile</span>
             </button>
         </nav>
     </div>
 
-    <!-- Generic Modal -->
     <div id="modal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center p-4 z-50">
-        <div id="modal-content" class="bg-white rounded-lg shadow-xl w-full max-w-md p-6" style="background-color: var(--tg-theme-bg-color);">
-            <!-- Modal content will be injected here -->
-        </div>
+        <div id="modal-content-wrapper">
+            </div>
     </div>
 
 
     <script>
-    // --- GLOBAL VARIABLES ---
     let db;
-    let userLocation = { lat: null, lon: null }; // Stores user's current location
-    const DEFAULT_DISTANCE_KM = 50; // Default max distance for filtering
-
-    // --- TELEGRAM WEB APP INITIALIZATION ---
+    let userLocation = { lat: null, lon: null };
+    const DEFAULT_DISTANCE_KM = 50;
     let telegramUser = null;
+
     try {
         const tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
-        // Apply Telegram theme parameters
+        
         document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#ffffff');
         document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#000000');
         document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color || '#999999');
@@ -315,18 +315,26 @@
         document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color || '#ffffff');
         document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color || '#f4f4f5');
 
+        const secondaryBg = tg.themeParams.secondary_bg_color || '#f4f4f5';
+        const r = parseInt(secondaryBg.substr(1, 2), 16), g = parseInt(secondaryBg.substr(3, 2), 16), b = parseInt(secondaryBg.substr(5, 2), 16);
+        const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+        document.documentElement.style.setProperty('--tg-theme-text-color-on-secondary', (yiq >= 128) ? '#000000' : '#ffffff');
+
         if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
             telegramUser = tg.initDataUnsafe.user;
-            console.log("Telegram User Data:", telegramUser);
         }
     } catch (e) {
-        console.error("Telegram Web App script not found or error initializing, running in browser mode.", e);
+        console.error("Telegram Web App script not found or error initializing.", e);
     }
 
-
-    // --- DATABASE SETUP (IndexedDB) ---
-    const DB_NAME = 'CommunityConnectDB_V3';
-    const DB_VERSION = 1; // Increment version if schema changes
+    const DB_NAME = 'CommunityConnectDB_V5';
+    const DB_VERSION = 1;
+    const ALL_INTERESTS = ['Environment', 'Animals', 'Community', 'Seniors', 'Education', 'Arts'];
+    const ALL_CATEGORIES = ['nearby', 'scavenger', 'mission'];
+    const ACHIEVEMENT_LEVELS = [
+        { name: 'Rookie', minScore: 0 }, { name: 'Apprentice', minScore: 50 }, { name: 'Journeyman', minScore: 150 },
+        { name: 'Veteran', minScore: 300 }, { name: 'Master', minScore: 500 }, { name: 'Legend', minScore: 1000 }
+    ];
 
     function initDB() {
         return new Promise((resolve, reject) => {
@@ -336,54 +344,38 @@
                 if (!db.objectStoreNames.contains('tasks')) {
                     const taskStore = db.createObjectStore('tasks', { keyPath: 'id', autoIncrement: true });
                     taskStore.createIndex('category', 'category', { unique: false });
-                    taskStore.createIndex('createdBy', 'createdBy', { unique: false }); // Index for tasks created by user
-                    taskStore.createIndex('status', 'status', { unique: false }); // Index for task status
+                    taskStore.createIndex('createdBy', 'createdBy', { unique: false });
+                    taskStore.createIndex('status', 'status', { unique: false });
                 }
                 if (!db.objectStoreNames.contains('users')) db.createObjectStore('users', { keyPath: 'id' });
                 if (!db.objectStoreNames.contains('leaderboard')) db.createObjectStore('leaderboard', { keyPath: 'id' });
             };
-            request.onsuccess = (event) => { db = event.target.result; console.log('Database initialized'); resolve(db); };
-            request.onerror = (event) => { console.error('Database error:', event.target.errorCode); reject(event.target.errorCode); };
+            request.onsuccess = (event) => { db = event.target.result; resolve(db); };
+            request.onerror = (event) => { console.error('DB error:', event.target.errorCode); reject(event.target.errorCode); };
         });
     }
 
-    // --- MOCK DATA & INITIALIZATION ---
-    // Achievement levels based on score
-    const ACHIEVEMENT_LEVELS = [
-        { name: 'Rookie', minScore: 0 },
-        { name: 'Apprentice', minScore: 50 },
-        { name: 'Journeyman', minScore: 150 },
-        { name: 'Veteran', minScore: 300 },
-        { name: 'Master', minScore: 500 },
-        { name: 'Legend', minScore: 1000 }
-    ];
-    
-    const ALL_INTERESTS = ['Environment', 'Animals', 'Community', 'Seniors', 'Education', 'Arts'];
-    const ALL_CATEGORIES = ['nearby', 'scavenger', 'mission']; // For task creation form
-
     async function populateInitialData() {
-        let user = await getObject('users', 'currentUser');
+        const userId = telegramUser?.id ? `tg_${telegramUser.id}` : 'currentUser';
+        let user = await getObject('users', userId);
+
+        const userName = (telegramUser ? `${telegramUser.first_name || ''} ${telegramUser.last_name || ''}`.trim() : 'Volunteer') || 'Volunteer';
+        const userUsername = telegramUser?.username || '';
+        
         if (!user) {
-            const userName = telegramUser ? `${telegramUser.first_name || ''} ${telegramUser.last_name || ''}`.trim() || 'Volunteer' : 'Volunteer';
-            const userUsername = telegramUser?.username || '';
-            const userId = telegramUser?.id ? `tg_${telegramUser.id}` : 'currentUser'; // Use Telegram ID if available
-
-            user = { 
-                id: userId, 
-                name: userName, 
-                username: userUsername,
-                score: 0, 
-                completedTasks: [], 
-                interests: ['Environment', 'Community'] 
-            };
+            user = { id: userId, name: userName, username: userUsername, score: 0, completedTasks: [], interests: ['Environment', 'Community'] };
             await addObject('users', user);
-            console.log("Initial user created:", user);
-
-            // Add mock leaderboard users if they don't exist
-            const existingLeaderboardUsers = await getAllObjects('leaderboard');
-            if (!existingLeaderboardUsers.some(u => u.id === 'user1')) await addObject('leaderboard', {id: 'user1', name: 'Alex', score: 150});
-            if (!existingLeaderboardUsers.some(u => u.id === 'user2')) await addObject('leaderboard', {id: 'user2', name: 'Bravo', score: 120});
-            if (!existingLeaderboardUsers.some(u => u.id === 'user3')) await addObject('leaderboard', {id: 'user3', name: 'Charlie', score: 95});
+        } else if (user.name !== userName || user.username !== userUsername) {
+            user.name = userName;
+            user.username = userUsername;
+            await updateObject('users', user);
+        }
+        
+        const leaderboardUsers = await getAllObjects('leaderboard');
+        if (leaderboardUsers.length === 0) {
+            await addObject('leaderboard', {id: 'user1', name: 'Alex', score: 150});
+            await addObject('leaderboard', {id: 'user2', name: 'Bravo', score: 120});
+            await addObject('leaderboard', {id: 'user3', name: 'Charlie', score: 95});
         }
         
         const tasks = await getAllObjects('tasks');
@@ -391,154 +383,87 @@
             const initialTasks = [
                 { title: 'Community Garden Cleanup', description: 'Help clear out weeds from the local community garden.', latitude: 9.02, longitude: 38.77, points: 20, status: 'available', category: 'nearby', interest_tag: 'Environment', createdBy: 'system' },
                 { title: 'Park Patrol', description: 'Join a group to pick up litter at Meskel Square Park.', latitude: 9.01, longitude: 38.76, points: 15, status: 'available', category: 'nearby', interest_tag: 'Environment', createdBy: 'system' },
-                { title: 'Senior Support Run', description: 'Help an elderly resident with their weekly grocery shopping.', latitude: 9.03, longitude: 38.75, points: 25, status: 'available', category: 'nearby', interest_tag: 'Seniors', createdBy: 'system' },
-                { title: 'Intel Drop: Book Donation', description: 'Find the hidden drop-off point for book donations.', latitude: 9.00, longitude: 38.78, points: 30, status: 'available', category: 'scavenger', interest_tag: 'Education', hint: 'Intel suggests a location near the large statue at the national museum. Box is concealed.', createdBy: 'system' },
-                { title: 'Animal Shelter Support', description: 'Assist at the city animal shelter.', latitude: 9.04, longitude: 38.79, points: 20, status: 'available', category: 'nearby', interest_tag: 'Animals', createdBy: 'system' },
+                { title: 'Intel Drop: Book Donation', description: 'Find the hidden drop-off point for book donations.', latitude: 9.00, longitude: 38.78, points: 30, status: 'available', category: 'scavenger', interest_tag: 'Education', hint: 'Intel suggests a location near the large statue at the national museum.', createdBy: 'system' },
                 { title: 'Operation Green City', description: 'Part of a major initiative to plant 100 trees this month.', latitude: 9.05, longitude: 38.74, points: 35, status: 'available', category: 'mission', interest_tag: 'Environment', missionName: 'Operation Green City', createdBy: 'system' },
             ];
             for (const task of initialTasks) await addObject('tasks', task);
         }
     }
 
+    const getUserId = () => telegramUser?.id ? `tg_${telegramUser.id}` : 'currentUser';
+    function getObject(storeName, key) { return new Promise((resolve, reject) => { const req = db.transaction(storeName, 'readonly').objectStore(storeName).get(key); req.onsuccess = () => resolve(req.result); req.onerror = (e) => reject(e.target.error); }); }
+    function getAllObjects(storeName) { return new Promise((resolve, reject) => { const req = db.transaction(storeName, 'readonly').objectStore(storeName).getAll(); req.onsuccess = () => resolve(req.result); req.onerror = (e) => reject(e.target.error); }); }
+    function addObject(storeName, object) { return new Promise((resolve, reject) => { const req = db.transaction(storeName, 'readwrite').objectStore(storeName).add(object); req.onsuccess = () => resolve(req.result); req.onerror = (e) => reject(e.target.error); }); }
+    function updateObject(storeName, object) { return new Promise((resolve, reject) => { const req = db.transaction(storeName, 'readwrite').objectStore(storeName).put(object); req.onsuccess = () => resolve(req.result); req.onerror = (e) => reject(e.target.error); }); }
+    function deleteObject(storeName, key) { return new Promise((resolve, reject) => { const req = db.transaction(storeName, 'readwrite').objectStore(storeName).delete(key); req.onsuccess = () => resolve(); req.onerror = (e) => reject(e.target.error); }); }
+    function getObjectsByIndex(storeName, indexName, key) { return new Promise((resolve, reject) => { const req = db.transaction(storeName, 'readonly').objectStore(storeName).index(indexName).getAll(key); req.onsuccess = () => resolve(req.result); req.onerror = (e) => reject(e.target.error); }); }
 
-    // --- DB HELPER FUNCTIONS ---
-    function getObject(storeName, key) { return new Promise((resolve, reject) => { const req = db.transaction(storeName, 'readonly').objectStore(storeName).get(key); req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); }); }
-    function getAllObjects(storeName) { return new Promise((resolve, reject) => { const req = db.transaction(storeName, 'readonly').objectStore(storeName).getAll(); req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); }); }
-    function addObject(storeName, object) { return new Promise((resolve, reject) => { const req = db.transaction(storeName, 'readwrite').objectStore(storeName).add(object); req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); }); }
-    function updateObject(storeName, object) { return new Promise((resolve, reject) => { const req = db.transaction(storeName, 'readwrite').objectStore(storeName).put(object); req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); }); }
-    function deleteObject(storeName, key) { return new Promise((resolve, reject) => { const req = db.transaction(storeName, 'readwrite').objectStore(storeName).delete(key); req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); }); }
-    
-    // Function to get objects by index
-    function getObjectsByIndex(storeName, indexName, key) {
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction(storeName, 'readonly');
-            const store = transaction.objectStore(storeName);
-            const index = store.index(indexName);
-            const request = index.getAll(key);
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        });
-    }
-
-    // --- GEOLOCATION HELPER ---
     function getUserLocation() {
         const locationStatusEl = document.getElementById('location-status');
         if (!navigator.geolocation) {
-            locationStatusEl.textContent = 'Geolocation is not supported by your browser.';
+            locationStatusEl.textContent = 'Geolocation is not supported.';
             return;
         }
-
         locationStatusEl.textContent = 'Getting your location...';
         navigator.geolocation.getCurrentPosition(
             (position) => {
-                userLocation.lat = position.coords.latitude;
-                userLocation.lon = position.coords.longitude;
-                locationStatusEl.textContent = `Location: ${userLocation.lat.toFixed(3)}, ${userLocation.lon.toFixed(3)}`;
-                // Re-render tasks with updated location if on home screen
-                if (document.getElementById('home-screen').classList.contains('hidden') === false) {
+                userLocation = { lat: position.coords.latitude, lon: position.coords.longitude };
+                locationStatusEl.textContent = `Location acquired.`;
+                if (document.getElementById('home-screen').offsetParent !== null) {
                     renderTasks(document.querySelector('.filter-tab.active').dataset.filter, parseInt(document.getElementById('distance-range').value));
                 }
             },
             (error) => {
-                console.error('Geolocation error:', error);
-                switch(error.code) {
-                    case error.PERMISSION_DENIED:
-                        locationStatusEl.textContent = 'Location access denied. Please enable in browser settings for distance filtering.';
-                        break;
-                    case error.POSITION_UNAVAILABLE:
-                        locationStatusEl.textContent = 'Location information is unavailable.';
-                        break;
-                    case error.TIMEOUT:
-                        locationStatusEl.textContent = 'The request to get user location timed out.';
-                        break;
-                    default:
-                        locationStatusEl.textContent = 'An unknown error occurred while getting location.';
-                        break;
-                }
-            },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+                locationStatusEl.textContent = 'Location access denied.';
+            }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
         );
     }
 
-    // Haversine formula to calculate distance between two lat/lon points in km
     function calculateDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371; // Radius of Earth in kilometers
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = 
-            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        const distance = R * c; // Distance in km
-        return distance;
-    }
-
-
-    // --- UI RENDERING ---
-    async function renderAll(activeFilter = 'foryou') {
-        await renderTasks(activeFilter, parseInt(document.getElementById('distance-range').value));
-        await renderLeaderboard();
-        await renderProfile();
-        // My Tasks and Done History will be rendered by renderProfile's tab logic
+        if (lat1 === null || lon1 === null || lat2 === null || lon2 === null) return Infinity;
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180, dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
     async function renderTasks(filter = 'foryou', maxDistance = DEFAULT_DISTANCE_KM) {
         const taskList = document.getElementById('task-list');
         const taskListHeader = document.getElementById('task-list-header');
+        const user = await getObject('users', getUserId());
         const allTasks = await getAllObjects('tasks');
-        const user = await getObject('users', 'currentUser');
         
-        // Filter out tasks created by the current user from the main task list
         let availableTasks = allTasks.filter(t => t.status === 'available' && t.createdBy !== user.id);
+        let filteredTasks;
 
-        let filteredTasks = [];
-        switch(filter) {
-            case 'foryou': 
-                taskListHeader.textContent = 'Recommended Tasks'; 
-                filteredTasks = availableTasks.filter(t => user.interests.includes(t.interest_tag)); 
-                if (filteredTasks.length === 0) filteredTasks = availableTasks.slice(0, 5); // Fallback if no interest-matched tasks
-                break;
-            case 'missions': 
-                taskListHeader.textContent = 'Active Missions'; 
-                filteredTasks = availableTasks.filter(t => t.category === 'mission'); 
-                break;
-            case 'nearby': 
-            default: 
-                taskListHeader.textContent = 'Local Operations'; 
-                filteredTasks = availableTasks.filter(t => t.category === 'nearby' || t.category === 'scavenger'); 
-                break;
-        }
-
-        // Apply distance filter if user location is available and filter is active
-        if (userLocation.lat !== null && userLocation.lon !== null && filter === 'nearby') {
-            filteredTasks = filteredTasks.filter(task => {
-                if (task.latitude && task.longitude) {
-                    const dist = calculateDistance(userLocation.lat, userLocation.lon, task.latitude, task.longitude);
-                    return dist <= maxDistance;
-                }
-                return false; // Task has no location, so it's not "nearby"
-            });
-        }
-
-
+        const filterMap = {
+            foryou: () => {
+                taskListHeader.textContent = 'Recommended Tasks';
+                const tasks = availableTasks.filter(t => user.interests.includes(t.interest_tag));
+                return tasks.length > 0 ? tasks : availableTasks.slice(0,5);
+            },
+            missions: () => {
+                taskListHeader.textContent = 'Active Missions';
+                return availableTasks.filter(t => t.category === 'mission');
+            },
+            nearby: () => {
+                taskListHeader.textContent = 'Local Operations';
+                const localTasks = availableTasks.filter(t => t.category === 'nearby' || t.category === 'scavenger');
+                return userLocation.lat ? localTasks.filter(t => calculateDistance(userLocation.lat, userLocation.lon, t.latitude, t.longitude) <= maxDistance) : localTasks;
+            }
+        };
+        filteredTasks = filterMap[filter]();
+        
         if (filteredTasks.length === 0) {
-            taskList.innerHTML = `<div class="text-center p-8 border-2 border-dashed rounded-lg" style="border-color: var(--tg-theme-hint-color);"><p style="color: var(--tg-theme-hint-color);">No tasks available in this category or within the selected distance.</p></div>`;
+            taskList.innerHTML = `<div class="text-center p-8 border-2 border-dashed rounded-lg" style="border-color: var(--tg-theme-hint-color);"><p style="color: var(--tg-theme-hint-color);">No tasks found.</p></div>`;
             return;
         }
 
         taskList.innerHTML = filteredTasks.map(task => {
-            let tag = '';
-            if (task.category === 'mission') tag = `<div class="mt-2 text-xs font-semibold" style="color: var(--tg-theme-link-color);">${task.missionName}</div>`;
-            else if (task.category === 'scavenger') tag = `<div class="mt-2 text-xs font-semibold text-yellow-600">Recon Op</div>`;
-            
-            let distanceInfo = '';
-            if (userLocation.lat !== null && userLocation.lon !== null && task.latitude && task.longitude) {
-                const dist = calculateDistance(userLocation.lat, userLocation.lon, task.latitude, task.longitude);
-                distanceInfo = `<span class="text-xs ml-2" style="color: var(--tg-theme-hint-color);">(${dist.toFixed(1)} km)</span>`;
-            }
-
+            const dist = calculateDistance(userLocation.lat, userLocation.lon, task.latitude, task.longitude);
+            const distanceInfo = dist !== Infinity ? `<span class="text-xs ml-2" style="color: var(--tg-theme-hint-color);">(${dist.toFixed(1)} km)</span>` : '';
             return `
-            <div class="task-card rounded-lg p-4 shadow-sm cursor-pointer text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color);" data-task-id="${task.id}">
+            <div class="task-card rounded-lg p-4 shadow-sm cursor-pointer" style="background-color: var(--tg-theme-secondary-bg-color);" data-task-id="${task.id}">
                 <div class="flex justify-between items-start">
                     <div>
                         <h3 class="font-bold text-md">${task.title}</h3>
@@ -549,286 +474,106 @@
                         <div class="text-xs flex items-center" style="color: var(--tg-theme-hint-color);">PTS ${distanceInfo}</div>
                     </div>
                 </div>
-                ${tag}
             </div>`}).join('');
-
         document.querySelectorAll('.task-card').forEach(card => card.addEventListener('click', () => showTaskModal(card.dataset.taskId)));
     }
-
+    
     async function renderLeaderboard() {
         const list = document.getElementById('leaderboard-list');
-        const currentUser = await getObject('users', 'currentUser');
+        const currentUser = await getObject('users', getUserId());
         let otherUsers = await getAllObjects('leaderboard');
         
-        // Ensure the current user is always in the leaderboard list
         const allUsers = [...otherUsers.filter(u => u.id !== currentUser.id), {id: currentUser.id, name: currentUser.name, score: currentUser.score}];
         allUsers.sort((a, b) => b.score - a.score);
 
         list.innerHTML = allUsers.map((user, index) => `
-            <div class="flex items-center p-3 rounded-lg ${user.id === currentUser.id ? 'font-bold' : ''} text-on-secondary-bg" style="background-color: ${user.id === currentUser.id ? 'rgba(36, 129, 204, 0.1)' : 'var(--tg-theme-secondary-bg-color)'};">
+            <div class="flex items-center p-3 rounded-lg ${user.id === currentUser.id ? 'font-bold' : ''}" style="background-color: ${user.id === currentUser.id ? 'rgba(36, 129, 204, 0.1)' : 'var(--tg-theme-secondary-bg-color)'}; color: var(--tg-theme-text-color-on-secondary);">
                 <div class="w-8 text-lg font-bold" style="color: var(--tg-theme-hint-color);">${index + 1}</div>
-                <img src="https://placehold.co/40x40/EFEFEF/AAAAAA?text=${user.name.charAt(0)}" class="w-10 h-10 rounded-full mr-4">
+                <img src="https://placehold.co/40x40/EFEFEF/AAAAAA?text=${user.name.charAt(0).toUpperCase()}" class="w-10 h-10 rounded-full mr-4">
                 <div class="flex-grow">${user.name}</div>
                 <div class="font-bold" style="color: var(--tg-theme-link-color);">${user.score} PTS</div>
             </div>`).join('');
     }
-
-    function getAchievementLevel(score) {
-        let level = ACHIEVEMENT_LEVELS[0].name; // Default to Rookie
-        for (let i = 0; i < ACHIEVEMENT_LEVELS.length; i++) {
-            if (score >= ACHIEVEMENT_LEVELS[i].minScore) {
-                level = ACHIEVEMENT_LEVELS[i].name;
-            } else {
-                break; // Scores are sorted, so we can stop
-            }
-        }
-        return level;
-    }
+    
+    const getAchievementLevel = (score) => ACHIEVEMENT_LEVELS.slice().reverse().find(l => score >= l.minScore)?.name || 'Rookie';
 
     async function renderProfile() {
-        const user = await getObject('users', 'currentUser');
+        const user = await getObject('users', getUserId());
         if (!user) return;
 
-        // Update profile header with Telegram InitData
         document.getElementById('user-score').textContent = `${user.score} PTS`;
         document.getElementById('profile-name').textContent = user.name;
-        document.getElementById('profile-username').textContent = user.username ? `@${user.username}` : ''; // Display username if available
+        document.getElementById('profile-image').src = `https://placehold.co/120x120/EFEFEF/AAAAAA?text=${user.name.charAt(0).toUpperCase()}`;
+        document.getElementById('profile-username').textContent = user.username ? `@${user.username}` : 'No username';
         document.getElementById('profile-score').textContent = `${user.score} PTS`;
         document.getElementById('achievement-level').textContent = getAchievementLevel(user.score);
-        // Update profile image if Telegram user photo is available (Telegram Web App doesn't directly provide user photo URL)
-        // For now, keep placeholder or implement a way to upload/set user image.
-
-        const interestChips = document.getElementById('interest-chips');
-        interestChips.innerHTML = ALL_INTERESTS.map(interest => `<button class="interest-chip text-sm py-1 px-3 rounded-full border ${user.interests.includes(interest) ? 'selected' : ''} text-on-secondary-bg" style="border-color: var(--tg-theme-hint-color);" data-interest="${interest}">${interest}</button>`).join('');
+        
+        document.getElementById('interest-chips').innerHTML = ALL_INTERESTS.map(interest => `<button class="interest-chip text-sm py-1 px-3 rounded-full border ${user.interests.includes(interest) ? 'selected' : ''}" style="border-color: var(--tg-theme-hint-color); color: var(--tg-theme-text-color);" data-interest="${interest}">${interest}</button>`).join('');
         document.querySelectorAll('.interest-chip').forEach(chip => chip.addEventListener('click', toggleInterest));
         
         generateQRCode(`community-connect-user-${user.id}`);
-
-        // Initialize profile tabs
-        const profileTabButtons = document.querySelectorAll('.profile-tab-button');
-        const profileTabContents = document.querySelectorAll('.profile-tab-content');
-
-        // Remove existing listeners to prevent duplicates
-        profileTabButtons.forEach(button => {
-            const newButton = button.cloneNode(true);
-            button.parentNode.replaceChild(newButton, button);
-        });
-
-        document.querySelectorAll('.profile-tab-button').forEach(button => {
-            button.addEventListener('click', () => {
-                const targetTab = button.dataset.tab;
-
-                document.querySelectorAll('.profile-tab-button').forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-
-                profileTabContents.forEach(content => content.classList.add('hidden'));
-                document.getElementById(`${targetTab}-tab-content`).classList.remove('hidden');
-
-                // Render content specific to the active tab
-                if (targetTab === 'my-tasks') {
-                    renderMyTasks();
-                } else if (targetTab === 'done-history') {
-                    renderDoneHistory();
-                }
-            });
-        });
-
-        // Initially render the default active tab (My Tasks)
-        // Check if there's an active tab already, otherwise default to 'my-tasks'
-        const currentActiveTab = document.querySelector('.profile-tab-button.active');
-        if (currentActiveTab) {
-            const targetTab = currentActiveTab.dataset.tab;
-            if (targetTab === 'my-tasks') {
-                renderMyTasks();
-            } else if (targetTab === 'done-history') {
-                renderDoneHistory();
-            }
-        } else {
-            // Default to 'my-tasks' if no tab is active (e.g., on first load)
-            document.querySelector('.profile-tab-button[data-tab="my-tasks"]').classList.add('active');
-            document.getElementById('my-tasks-tab-content').classList.remove('hidden');
-            renderMyTasks();
-        }
+        
+        const activeTab = document.querySelector('.profile-tab-button.active')?.dataset.tab || 'my-tasks';
+        if (activeTab === 'my-tasks') renderMyTasks(); else renderDoneHistory();
     }
 
     async function renderMyTasks() {
         const myTaskList = document.getElementById('my-task-list');
-        const user = await getObject('users', 'currentUser');
+        const user = await getObject('users', getUserId());
         const myTasks = await getObjectsByIndex('tasks', 'createdBy', user.id);
 
         if (myTasks.length === 0) {
             myTaskList.innerHTML = `<div class="text-center p-8 border-2 border-dashed rounded-lg" style="border-color: var(--tg-theme-hint-color);"><p style="color: var(--tg-theme-hint-color);">You haven't created any tasks yet.</p></div>`;
             return;
         }
-
         myTaskList.innerHTML = myTasks.map(task => `
-            <div class="task-card rounded-lg p-4 shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color);">
+            <div class="rounded-lg p-4 shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color);">
                 <div class="flex justify-between items-start mb-2">
                     <div>
                         <h3 class="font-bold text-md">${task.title}</h3>
-                        <p class="text-sm mt-1" style="color: var(--tg-theme-hint-color);">${task.description.substring(0, 50)}...</p>
-                        <p class="text-xs mt-1" style="color: var(--tg-theme-hint-color);">Category: ${task.category}</p>
-                        <p class="text-xs mt-1" style="color: var(--tg-theme-hint-color);">Points: ${task.points}</p>
+                        <p class="text-xs mt-1" style="color: var(--tg-theme-hint-color);">Status: ${task.status}</p>
                     </div>
-                    <div class="text-right ml-2 flex-shrink-0">
-                        <div class="font-bold text-lg" style="color: var(--tg-theme-link-color);">${task.points}</div>
-                        <div class="text-xs" style="color: var(--tg-theme-hint-color);">PTS</div>
-                    </div>
+                    <div class="text-right ml-2 flex-shrink-0 font-bold text-lg" style="color: var(--tg-theme-link-color);">${task.points} PTS</div>
                 </div>
                 <div class="flex justify-end space-x-2 mt-4">
-                    <button class="crud-button edit" data-task-id="${task.id}" data-action="edit">Edit</button>
-                    <button class="crud-button delete" data-task-id="${task.id}" data-action="delete">Delete</button>
+                    <button class="crud-button edit" data-task-id="${task.id}">Edit</button>
+                    <button class="crud-button delete" data-task-id="${task.id}">Delete</button>
                 </div>
             </div>`).join('');
-
-        document.querySelectorAll('#my-task-list .crud-button').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const taskId = parseInt(e.currentTarget.dataset.taskId);
-                const action = e.currentTarget.dataset.action;
-                if (action === 'edit') showTaskFormModal(taskId);
-                else if (action === 'delete') confirmDeleteTask(taskId);
-            });
-        });
+        myTaskList.querySelectorAll('.crud-button.edit').forEach(b => b.addEventListener('click', e => showTaskFormModal(parseInt(e.target.dataset.taskId))));
+        myTaskList.querySelectorAll('.crud-button.delete').forEach(b => b.addEventListener('click', e => confirmDeleteTask(parseInt(e.target.dataset.taskId))));
     }
 
     async function renderDoneHistory() {
         const doneTaskList = document.getElementById('done-task-list');
-        const user = await getObject('users', 'currentUser');
+        const user = await getObject('users', getUserId());
         const allTasks = await getAllObjects('tasks');
-        
-        // Filter tasks that are completed AND are in the user's completedTasks array
-        const completedTasks = allTasks.filter(task => 
-            task.status === 'completed' && user.completedTasks.includes(task.id)
-        );
+        const completedTasks = allTasks.filter(task => user.completedTasks.includes(task.id));
 
         if (completedTasks.length === 0) {
-            doneTaskList.innerHTML = `<div class="text-center p-8 border-2 border-dashed rounded-lg" style="border-color: var(--tg-theme-hint-color);"><p style="color: var(--tg-theme-hint-color);">You haven't completed any tasks yet.</p></div>`;
+            doneTaskList.innerHTML = `<div class="text-center p-8 border-2 border-dashed rounded-lg" style="border-color: var(--tg-theme-hint-color);"><p style="color: var(--tg-theme-hint-color);">No completed tasks.</p></div>`;
             return;
         }
-
         doneTaskList.innerHTML = completedTasks.map(task => `
-            <div class="task-card rounded-lg p-4 shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color);">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <h3 class="font-bold text-md">${task.title}</h3>
-                        <p class="text-sm mt-1" style="color: var(--tg-theme-hint-color);">${task.description.substring(0, 50)}...</p>
-                        <p class="text-xs mt-1" style="color: var(--tg-theme-hint-color);">Completed: ${new Date().toLocaleDateString()}</p> <!-- Placeholder for actual completion date -->
-                    </div>
-                    <div class="text-right ml-2 flex-shrink-0">
-                        <div class="font-bold text-lg" style="color: var(--tg-theme-link-color);">${task.points}</div>
-                        <div class="text-xs" style="color: var(--tg-theme-hint-color);">PTS</div>
-                    </div>
-                </div>
+            <div class="rounded-lg p-4 shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color);">
+                <h3 class="font-bold text-md">${task.title}</h3>
+                <p class="text-right font-bold" style="color: var(--tg-theme-link-color);">${task.points} PTS</p>
             </div>`).join('');
     }
-    
-    // --- TASK & MODAL LOGIC ---
+
     function showModal(innerHTML) {
+        document.getElementById('modal-content-wrapper').innerHTML = innerHTML;
         const modal = document.getElementById('modal');
-        const modalContent = document.getElementById('modal-content');
-        modalContent.innerHTML = innerHTML;
         modal.classList.remove('hidden');
         modal.classList.add('flex');
-        // Add event listener to close modal when clicking outside or on close button
-        modal.addEventListener('click', (e) => {
-            if (e.target.id === 'modal' || e.target.classList.contains('close-modal-btn')) {
-                hideModal();
-            }
-        });
+        const closeModal = () => modal.classList.add('hidden');
+        modal.addEventListener('click', e => { if (e.target.id === 'modal' || e.target.classList.contains('close-modal-btn')) closeModal(); });
     }
+    const hideModal = () => document.getElementById('modal').classList.add('hidden');
 
-    function hideModal() {
-        const modal = document.getElementById('modal');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    }
-
-    async function showTaskModal(taskId) {
-        const task = await getObject('tasks', parseInt(taskId));
-        if (!task) return;
-
-        // Prevent completing tasks created by the current user from the main list
-        const user = await getObject('users', 'currentUser');
-        const isUserCreatedTask = task.createdBy === user.id;
-
-        const isPartnerTask = Math.random() > 0.5; // This logic for partner task seems generic, keep as is.
-        let partnerMessage = '';
-        if (isPartnerTask) {
-             const baseShare = task.points / 2;
-             const synergyBonus = Math.ceil(baseShare * 0.2);
-             const totalPerPerson = Math.round(baseShare + synergyBonus);
-             partnerMessage = `<div class="mt-4 p-3 rounded-lg text-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color);">
-                <span class="font-bold">🤝 Joint Operation!</span> You've been matched with <span class="font-bold">Alex</span>.
-                <div class="mt-2 pt-2 border-t" style="border-color: var(--tg-theme-hint-color);">
-                    <p class="font-semibold">Point Distribution:</p>
-                    <p>Each operative earns ${totalPerPerson} points (${Math.round(baseShare)} base + ${synergyBonus} synergy bonus).</p>
-                </div>
-             </div>`;
-        }
-        
-        const completeButton = isUserCreatedTask 
-            ? `<button class="w-2/3 py-2 px-4 rounded-lg font-bold opacity-50 cursor-not-allowed" style="background-color: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color);" disabled>Cannot Complete Your Own Task</button>`
-            : `<button id="complete-task-btn" data-task-id="${task.id}" data-task-points="${task.points}" data-is-partner="${isPartnerTask}" data-task-category="${task.category}" class="w-2/3 py-2 px-4 rounded-lg font-bold" style="background-color: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color);">Mark as Complete</button>`;
-
-
-        const modalHTML = `
-            <h2 class="text-xl font-bold mb-2">${task.title}</h2>
-            <p class="mb-4" style="color: var(--tg-theme-hint-color);">${task.description}</p>
-            ${task.category === 'scavenger' ? `<div class="mb-4 p-3 bg-yellow-100 text-yellow-800 rounded-lg text-sm text-on-secondary-bg"><span class="font-bold">Intel:</span> ${task.hint}</div>` : ''}
-            <div class="flex justify-between items-center mb-4">
-                <span class="font-bold text-lg" style="color: var(--tg-theme-link-color);">${task.points} Points</span>
-                <span class="text-sm" style="color: var(--tg-theme-hint-color);"><a href="https://maps.google.com/?q=${task.latitude},${task.longitude}" target="_blank" style="color: var(--tg-theme-link-color);">View on Map</a></span>
-            </div>
-            ${partnerMessage}
-            <div class="mt-6 flex space-x-2">
-                <button class="close-modal-btn w-1/3 py-2 px-4 rounded-lg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">Abort</button>
-                ${completeButton}
-            </div>`;
-        showModal(modalHTML);
-        if (!isUserCreatedTask) {
-            document.getElementById('complete-task-btn').addEventListener('click', completeTask);
-        }
-    }
-
-    async function completeTask(event) {
-        const button = event.currentTarget;
-        const taskId = parseInt(button.dataset.taskId);
-        const basePoints = parseInt(button.dataset.taskPoints);
-        const isPartnerTask = button.dataset.isPartner === 'true';
-        const taskCategory = button.dataset.taskCategory;
-
-        let pointsEarned = basePoints;
-        let notificationMessage = `Task completed! +${basePoints} points!`;
-
-        if (isPartnerTask) {
-            const baseShare = basePoints / 2;
-            const synergyBonus = Math.ceil(baseShare * 0.2);
-            pointsEarned = Math.round(baseShare + synergyBonus);
-            notificationMessage = `Joint Op success! You earned ${pointsEarned} points!`;
-        }
-
-        const task = await getObject('tasks', taskId);
-        task.status = 'completed';
-        await updateObject('tasks', task);
-
-        const user = await getObject('users', 'currentUser');
-        user.score += pointsEarned;
-        // Only add to completedTasks if not already present (to prevent duplicates if user somehow completes same task multiple times)
-        if (!user.completedTasks.includes(taskId)) {
-            user.completedTasks.push(taskId);
-        }
-
-        await updateObject('users', user);
-
-        hideModal();
-        showNotification(notificationMessage);
-        const activeFilter = document.querySelector('.filter-tab.active').dataset.filter;
-        await renderAll(activeFilter); // Re-render all sections including profile tabs
-    }
-    
-    function showNotification(message) {
+    function showNotification(message, type = 'success') {
         try {
-            window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+            window.Telegram.WebApp.HapticFeedback.notificationOccurred(type);
             window.Telegram.WebApp.showPopup({ title: 'Success', message: message, buttons: [{type: 'ok'}] });
         } catch (e) {
             const notif = document.createElement('div');
@@ -839,356 +584,182 @@
         }
     }
 
+    async function showTaskModal(taskId) {
+        const task = await getObject('tasks', parseInt(taskId));
+        if (!task) return;
+        const modalHTML = `
+            <div id="modal-body">
+                <h2 class="text-xl font-bold mb-2">${task.title}</h2>
+                <p class="mb-4" style="color: var(--tg-theme-hint-color);">${task.description}</p>
+                ${task.category === 'scavenger' && task.hint ? `<div class="mb-4 p-3 bg-yellow-100 text-yellow-800 rounded-lg text-sm"><b class="font-bold">Intel:</b> ${task.hint}</div>` : ''}
+            </div>
+            <div class="mt-auto p-4 bg-opacity-50 border-t" style="border-color: var(--tg-theme-secondary-bg-color);">
+                <div class="flex space-x-2">
+                    <button class="close-modal-btn w-1/3 py-2 px-4 rounded-lg font-semibold" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color-on-secondary);">Cancel</button>
+                    <button id="complete-task-btn" data-task-id="${task.id}" data-points="${task.points}" class="w-2/3 crud-button add">Complete (+${task.points} PTS)</button>
+                </div>
+            </div>`;
+        showModal(modalHTML);
+        document.getElementById('complete-task-btn').addEventListener('click', completeTask);
+    }
+    
+    async function completeTask(event) {
+        const { taskId, points } = event.currentTarget.dataset;
+        const task = await getObject('tasks', parseInt(taskId));
+        task.status = 'completed';
+        await updateObject('tasks', task);
+
+        const user = await getObject('users', getUserId());
+        user.score += parseInt(points);
+        if (!user.completedTasks.includes(task.id)) user.completedTasks.push(task.id);
+        await updateObject('users', user);
+
+        hideModal();
+        showNotification(`Task completed! +${points} points!`);
+        await renderTasks(document.querySelector('.filter-tab.active').dataset.filter);
+        await renderProfile();
+    }
+
     async function toggleInterest(event) {
-        const chip = event.currentTarget;
-        const interest = chip.dataset.interest;
-        const user = await getObject('users', 'currentUser');
+        const { interest } = event.target.dataset;
+        const user = await getObject('users', getUserId());
         const index = user.interests.indexOf(interest);
         if (index > -1) user.interests.splice(index, 1);
         else user.interests.push(interest);
         await updateObject('users', user);
-        chip.classList.toggle('selected');
-        if(document.getElementById('home-screen').offsetParent !== null && document.querySelector('.filter-tab.active').dataset.filter === 'foryou') {
-            await renderTasks('foryou', parseInt(document.getElementById('distance-range').value));
+        
+        await renderProfile();
+        if (document.querySelector('.filter-tab.active')?.dataset.filter === 'foryou') {
+            await renderTasks('foryou');
         }
-    }
-    
-    // --- NEW FEATURE LOGIC ---
-    async function getRandomService() {
-        const availableTasks = (await getAllObjects('tasks')).filter(t => t.status === 'available');
-        if (availableTasks.length === 0) {
-            showNotification("No available services to assign.");
-            return;
-        }
-        const randomTask = availableTasks[Math.floor(Math.random() * availableTasks.length)];
-        showTaskModal(randomTask.id);
     }
 
+    async function getRandomService() {
+        const user = await getObject('users', getUserId());
+        const availableTasks = (await getAllObjects('tasks')).filter(t => t.status === 'available' && t.createdBy !== user.id);
+        if (availableTasks.length === 0) { showNotification("No available services.", "error"); return; }
+        showTaskModal(availableTasks[Math.floor(Math.random() * availableTasks.length)].id);
+    }
+    
     async function findRandomPartner() {
-        const partners = (await getAllObjects('leaderboard')).filter(p => p.id !== 'currentUser');
+        const partners = (await getAllObjects('leaderboard')).filter(p => p.id !== getUserId());
         if (partners.length === 0) {
-            showNotification("No other volunteers available right now.");
+            showNotification("No other volunteers available right now.", "error");
             return;
         }
         const partner = partners[Math.floor(Math.random() * partners.length)];
         const modalHTML = `
-            <div class="text-center">
+            <div id="modal-body" class="text-center">
                 <h2 class="text-xl font-bold mb-4">Partner Recommendation</h2>
                 <img src="https://placehold.co/80x80/EFEFEF/AAAAAA?text=${partner.name.charAt(0)}" class="w-20 h-20 rounded-full mx-auto mb-4 border-2" style="border-color: var(--tg-theme-secondary-bg-color);">
                 <p>Consider teaming up with</p>
                 <p class="text-lg font-bold">${partner.name}</p>
                 <p class="text-sm" style="color: var(--tg-theme-hint-color);">${partner.score} Service Points</p>
-                <button class="close-modal-btn mt-6 w-full py-2 px-4 rounded-lg font-bold" style="background-color: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color);">Awesome!</button>
+                <button class="close-modal-btn mt-6 w-full crud-button">Awesome!</button>
             </div>`;
         showModal(modalHTML);
     }
 
     function generateQRCode(text) {
         const container = document.getElementById('qrcode-container');
-        container.innerHTML = ''; // Clear previous QR code
-
+        container.innerHTML = '';
         try {
             const canvas = document.createElement('canvas');
-            canvas.width = 128; // Adjust size as needed
-            canvas.height = 128; // Adjust size as needed
+            new QRious({ element: canvas, value: text, size: 40, backgroundAlpha: 0 });
             container.appendChild(canvas);
-
-            new QRious({
-                element: canvas,
-                value: text,
-                size: 128,
-                background: 'white',
-                backgroundAlpha: 1,
-                foreground: 'black',
-                foregroundAlpha: 1,
-                level: 'L'
-            });
-
-            // Make the QR code clickable to show in a larger modal
-            container.onclick = () => {
-                showModal(`<div class="p-4"><img src="${canvas.toDataURL()}" class="w-full max-w-xs mx-auto" alt="Profile QR Code"></div>`);
+            document.getElementById('qrcode-container-wrapper').onclick = () => {
+                const largeCanvas = document.createElement('canvas');
+                new QRious({ element: largeCanvas, value: text, size: 256 });
+                showModal(`<div class="p-4"><img src="${largeCanvas.toDataURL()}" class="w-full max-w-xs mx-auto" alt="Profile QR Code"></div>`);
             };
-
-        } catch (e) {
-            console.error("Error generating QR code:", e);
-            container.innerHTML = '<p class="text-red-500 text-xs">QR Code Error</p>';
-        }
+        } catch (e) { console.error("QR code error:", e); }
     }
 
-    // --- TASK CRUD OPERATIONS ---
-
-    // Show form to add/edit a task
     async function showTaskFormModal(taskId = null) {
-        let task = {
-            title: '', description: '', points: 10, category: 'nearby', interest_tag: ALL_INTERESTS[0],
-            latitude: '', longitude: '', hint: '', missionName: ''
-        };
-        let modalTitle = 'Create New Task';
-        if (taskId !== null) {
-            task = await getObject('tasks', taskId);
-            modalTitle = 'Edit Task';
-        } else {
-            // For new tasks, try to pre-fill with current location
-            if (userLocation.lat !== null && userLocation.lon !== null) {
-                task.latitude = userLocation.lat;
-                task.longitude = userLocation.lon;
-            }
-        }
-
-        const categoryOptions = ALL_CATEGORIES.map(cat => 
-            `<option value="${cat}" ${task.category === cat ? 'selected' : ''}>${cat.charAt(0).toUpperCase() + cat.slice(1)}</option>`
-        ).join('');
-
-        const interestOptions = ALL_INTERESTS.map(interest => 
-            `<option value="${interest}" ${task.interest_tag === interest ? 'selected' : ''}>${interest}</option>`
-        ).join('');
-
+        const task = taskId ? await getObject('tasks', taskId) : { title: '', description: '', points: 10, category: 'nearby', interest_tag: ALL_INTERESTS[0], latitude: userLocation.lat || '', longitude: userLocation.lon || '', hint: '', missionName: '' };
+        
         const formHtml = `
-        <div class="modal-content h-[80%] overflow-y-auto p-6 bg-white rounded-lg shadow-lg" style="color: var(--tg-theme-text-color);">
-            <h2 class="text-xl font-bold mb-4 overflow-y-auto">${modalTitle}</h2>
-            <form id="task-form" class="space-y-4">
-                <div>
-                    <label for="task-title" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Title</label>
-                    <input type="text" id="task-title" value="${task.title}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);" required>
-                </div>
-                <div>
-                    <label for="task-description" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Description</label>
-                    <textarea id="task-description" rows="3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);" required>${task.description}</textarea>
-                </div>
-                <div>
-                    <label for="task-points" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Points</label>
-                    <input type="number" id="task-points" value="${task.points}" min="1" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);" required>
-                </div>
-                <div>
-                    <label for="task-category" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Category</label>
-                    <select id="task-category" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);" required>
-                        ${categoryOptions}
-                    </select>
-                </div>
-                <div id="additional-fields">
-                    ${task.category === 'nearby' || task.category === 'scavenger' ? `
-                        <div>
-                            <label for="task-latitude" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Latitude</label>
-                            <input type="number" step="0.000001" id="task-latitude" value="${task.latitude}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
-                        </div>
-                        <div>
-                            <label for="task-longitude" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Longitude</label>
-                            <input type="number" step="0.000001" id="task-longitude" value="${task.longitude}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
-                        </div>
-                        <button type="button" id="get-current-location-btn" class="action-button text-sm mt-2 py-2 px-4 rounded-md w-full">Get Current Location</button>
-                    ` : ''}
-                    ${task.category === 'scavenger' ? `
-                        <div>
-                            <label for="task-hint" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Hint</label>
-                            <textarea id="task-hint" rows="2" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">${task.hint}</textarea>
-                        </div>
-                    ` : ''}
-                    ${task.category === 'mission' ? `
-                        <div>
-                            <label for="task-mission-name" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Mission Name</label>
-                            <input type="text" id="task-mission-name" value="${task.missionName}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
-                        </div>
-                    ` : ''}
-                </div>
-                <div>
-                    <label for="task-interest-tag" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Interest Tag</label>
-                    <select id="task-interest-tag" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
-                        ${interestOptions}
-                    </select>
-                </div>
-                <div class="flex justify-end space-x-2 mt-6">
-                    <button type="button" class="close-modal-btn py-2 px-4 rounded-lg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">Cancel</button>
-                    <button type="submit" id="save-task-btn" data-task-id="${taskId || ''}" class="crud-button py-2 px-4 rounded-lg">${taskId !== null ? 'Save Changes' : 'Create Task'}</button>
-                </div>
-            </form>
-           </div>  
-        `;
+            <div id="modal-body">
+                <h2 class="text-xl font-bold mb-4">${taskId ? 'Edit Task' : 'Create New Task'}</h2>
+                <form id="task-form" class="space-y-4">
+                    <input type="text" id="task-title" placeholder="Title" value="${task.title}" required>
+                    <textarea id="task-description" placeholder="Description" rows="3" required>${task.description}</textarea>
+                    <input type="number" id="task-points" placeholder="Points" value="${task.points}" min="1" required>
+                    <select id="task-category">${ALL_CATEGORIES.map(c => `<option value="${c}" ${task.category === c ? 'selected' : ''}>${c.charAt(0).toUpperCase() + c.slice(1)}</option>`).join('')}</select>
+                    <div id="additional-fields" class="space-y-4"></div>
+                    <select id="task-interest-tag">${ALL_INTERESTS.map(i => `<option value="${i}" ${task.interest_tag === i ? 'selected' : ''}>${i}</option>`).join('')}</select>
+                </form>
+            </div>
+            <div class="mt-auto p-4 border-t" style="border-color: var(--tg-theme-secondary-bg-color);"><div class="flex justify-end space-x-2">
+                <button type="button" class="close-modal-btn py-2 px-4 rounded-lg font-semibold" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color-on-secondary);">Cancel</button>
+                <button type="submit" form="task-form" class="crud-button add">${taskId ? 'Save' : 'Create'}</button>
+            </div></div>`;
         showModal(formHtml);
 
-        const taskCategorySelect = document.getElementById('task-category');
-        const additionalFieldsDiv = document.getElementById('additional-fields');
-
-        const updateAdditionalFields = () => {
-            const selectedCategory = taskCategorySelect.value;
-            let newFieldsHtml = '';
-
-            // Retain current values if available, for a smoother UX when switching categories
-            const currentLatitude = document.getElementById('task-latitude')?.value || task.latitude;
-            const currentLongitude = document.getElementById('task-longitude')?.value || task.longitude;
-            const currentHint = document.getElementById('task-hint')?.value || task.hint;
-            const currentMissionName = document.getElementById('task-mission-name')?.value || task.missionName;
-
-            if (selectedCategory === 'nearby' || selectedCategory === 'scavenger') {
-                newFieldsHtml += `
-                    <div>
-                        <label for="task-latitude" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Latitude</label>
-                        <input type="number" step="0.000001" id="task-latitude" value="${currentLatitude}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
-                    </div>
-                    <div>
-                        <label for="task-longitude" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Longitude</label>
-                        <input type="number" step="0.000001" id="task-longitude" value="${currentLongitude}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
-                    </div>
-                    <button type="button" id="get-current-location-btn" class="action-button text-sm mt-2 py-2 px-4 rounded-md w-full">Get Current Location</button>
-                `;
+        const catSelect = document.getElementById('task-category');
+        const additionalFields = document.getElementById('additional-fields');
+        const updateFields = () => {
+            const cat = catSelect.value;
+            let html = '';
+            if (cat === 'nearby' || cat === 'scavenger') {
+                html += `<input type="number" step="any" id="task-latitude" placeholder="Latitude" value="${document.getElementById('task-latitude')?.value || task.latitude}">`;
+                html += `<input type="number" step="any" id="task-longitude" placeholder="Longitude" value="${document.getElementById('task-longitude')?.value || task.longitude}">`;
             }
-            if (selectedCategory === 'scavenger') {
-                newFieldsHtml += `
-                    <div>
-                        <label for="task-hint" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Hint</label>
-                        <textarea id="task-hint" rows="2" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">${currentHint}</textarea>
-                    </div>
-                `;
-            }
-            if (selectedCategory === 'mission') {
-                newFieldsHtml += `
-                    <div>
-                        <label for="task-mission-name" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Mission Name</label>
-                        <input type="text" id="task-mission-name" value="${currentMissionName}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
-                    </div>
-                `;
-            }
-            additionalFieldsDiv.innerHTML = newFieldsHtml;
-
-            // Add event listener for Get Current Location button if it exists
-            const getCurrentLocationBtn = document.getElementById('get-current-location-btn');
-            if (getCurrentLocationBtn) {
-                getCurrentLocationBtn.addEventListener('click', () => {
-                    if (navigator.geolocation) {
-                        getCurrentLocationBtn.textContent = 'Fetching...';
-                        navigator.geolocation.getCurrentPosition(
-                            (position) => {
-                                document.getElementById('task-latitude').value = position.coords.latitude;
-                                document.getElementById('task-longitude').value = position.coords.longitude;
-                                getCurrentLocationBtn.textContent = 'Location Set!';
-                                setTimeout(() => getCurrentLocationBtn.textContent = 'Get Current Location', 2000);
-                            },
-                            (error) => {
-                                console.error('Geolocation error:', error);
-                                showNotification('Failed to get location. Please allow location access.');
-                                getCurrentLocationBtn.textContent = 'Get Current Location';
-                            },
-                            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-                        );
-                    } else {
-                        showNotification('Geolocation is not supported by your browser.');
-                    }
-                });
-            }
+            if (cat === 'scavenger') html += `<textarea id="task-hint" placeholder="Hint">${document.getElementById('task-hint')?.value || task.hint || ''}</textarea>`;
+            if (cat === 'mission') html += `<input type="text" id="task-mission-name" placeholder="Mission Name" value="${document.getElementById('task-mission-name')?.value || task.missionName || ''}">`;
+            additionalFields.innerHTML = html;
         };
-
-        taskCategorySelect.addEventListener('change', updateAdditionalFields);
-        updateAdditionalFields(); // Call initially to set up fields based on default/existing category
-
-
-        document.getElementById('task-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            saveTask(taskId);
-        });
+        catSelect.addEventListener('change', updateFields);
+        updateFields();
+        document.getElementById('task-form').addEventListener('submit', (e) => { e.preventDefault(); saveTask(taskId); });
     }
 
-    // Save (Create/Update) Task
     async function saveTask(taskId = null) {
-        const user = await getObject('users', 'currentUser');
-        const title = document.getElementById('task-title').value;
-        const description = document.getElementById('task-description').value;
-        const points = parseInt(document.getElementById('task-points').value);
-        const category = document.getElementById('task-category').value;
-        const interest_tag = document.getElementById('task-interest-tag').value;
-
-        let newTaskData = {
-            title,
-            description,
-            points,
-            category,
-            interest_tag,
-            status: 'available',
-            createdBy: user.id // Mark task as created by the current user
+        const user = await getObject('users', getUserId());
+        const data = {
+            title: document.getElementById('task-title').value, description: document.getElementById('task-description').value,
+            points: parseInt(document.getElementById('task-points').value), category: document.getElementById('task-category').value,
+            interest_tag: document.getElementById('task-interest-tag').value, status: 'available', createdBy: user.id,
+            latitude: parseFloat(document.getElementById('task-latitude')?.value) || null, longitude: parseFloat(document.getElementById('task-longitude')?.value) || null,
+            hint: document.getElementById('task-hint')?.value || '', missionName: document.getElementById('task-mission-name')?.value || ''
         };
-
-        // Add category-specific fields
-        if (category === 'nearby' || category === 'scavenger') {
-            newTaskData.latitude = parseFloat(document.getElementById('task-latitude')?.value) || null;
-            newTaskData.longitude = parseFloat(document.getElementById('task-longitude')?.value) || null;
-        } else {
-            newTaskData.latitude = null; // Clear if category doesn't need it
-            newTaskData.longitude = null; // Clear if category doesn't need it
-        }
-        if (category === 'scavenger') {
-            newTaskData.hint = document.getElementById('task-hint')?.value || '';
-        } else {
-            newTaskData.hint = ''; // Clear if category doesn't need it
-        }
-        if (category === 'mission') {
-            newTaskData.missionName = document.getElementById('task-mission-name')?.value || '';
-        } else {
-            newTaskData.missionName = ''; // Clear if category doesn't need it
-        }
-
         if (taskId) {
-            // Update existing task
-            const existingTask = await getObject('tasks', taskId);
-            Object.assign(existingTask, newTaskData);
-            await updateObject('tasks', existingTask);
-            showNotification('Task updated successfully!');
+            const existing = await getObject('tasks', taskId);
+            await updateObject('tasks', { ...existing, ...data });
         } else {
-            // Add new task
-            await addObject('tasks', newTaskData);
-            showNotification('Task created successfully!');
+            await addObject('tasks', data);
         }
         hideModal();
-        // Re-render the active profile tab
-        const activeProfileTab = document.querySelector('.profile-tab-button.active')?.dataset.tab;
-        if (activeProfileTab === 'my-tasks') {
-            await renderMyTasks();
-        } else if (activeProfileTab === 'done-history') {
-            await renderDoneHistory();
-        }
-        await renderTasks(document.querySelector('.filter-tab.active').dataset.filter, parseInt(document.getElementById('distance-range').value)); // Re-render main task list
+        showNotification(`Task ${taskId ? 'updated' : 'created'}!`);
+        await renderMyTasks();
     }
 
-    // Confirm Delete Task
     function confirmDeleteTask(taskId) {
-        const modalHtml = `
-            <h2 class="text-xl font-bold mb-4">Confirm Deletion</h2>
-            <p class="mb-6">Are you sure you want to delete this task? This action cannot be undone.</p>
-            <div class="flex justify-end space-x-2">
-                <button type="button" class="close-modal-btn py-2 px-4 rounded-lg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">Cancel</button>
-                <button type="button" id="delete-task-confirm-btn" data-task-id="${taskId}" class="crud-button delete py-2 px-4 rounded-lg">Delete</button>
+        showModal(`
+            <div id="modal-body" class="text-center">
+                <h2 class="text-xl font-bold mb-4">Confirm Deletion</h2>
+                <p>Are you sure you want to delete this task?</p>
             </div>
-        `;
-        showModal(modalHtml);
-        document.getElementById('delete-task-confirm-btn').addEventListener('click', deleteTask);
-    }
-
-    // Delete Task
-    async function deleteTask(event) {
-        const taskId = parseInt(event.currentTarget.dataset.taskId);
-        await deleteObject('tasks', taskId);
-        showNotification('Task deleted successfully!');
-        hideModal();
-        // Re-render the active profile tab
-        const activeProfileTab = document.querySelector('.profile-tab-button.active')?.dataset.tab;
-        if (activeProfileTab === 'my-tasks') {
+            <div class="mt-auto p-4 flex justify-end space-x-2 border-t" style="border-color: var(--tg-theme-secondary-bg-color);">
+                <button class="close-modal-btn py-2 px-4 rounded-lg font-semibold" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color-on-secondary);">Cancel</button>
+                <button id="delete-confirm-btn" class="crud-button delete">Delete</button>
+            </div>`);
+        document.getElementById('delete-confirm-btn').onclick = async () => {
+            await deleteObject('tasks', taskId);
+            hideModal();
+            showNotification('Task deleted.');
             await renderMyTasks();
-        } else if (activeProfileTab === 'done-history') {
-            await renderDoneHistory();
-        }
-        await renderTasks(document.querySelector('.filter-tab.active').dataset.filter, parseInt(document.getElementById('distance-range').value)); // Re-render main task list
+        };
     }
 
-
-    // --- NAVIGATION & EVENT LISTENERS ---
     function setupEventListeners() {
         document.querySelectorAll('.nav-button').forEach(button => {
             button.addEventListener('click', () => {
-                const targetScreenId = button.dataset.screen;
-                document.querySelectorAll('.main-content > div').forEach(screen => screen.classList.toggle('hidden', screen.id !== targetScreenId));
-                document.querySelectorAll('.nav-button').forEach(btn => btn.classList.toggle('active', btn.dataset.screen === targetScreenId));
-                document.querySelector('.main-content').scrollTop = 0;
-                // If navigating to Profile, ensure profile tabs are rendered
-                if (targetScreenId === 'profile-screen') {
-                    renderProfile(); // This will handle rendering the default tab (My Tasks)
-                }
+                const screenId = button.dataset.screen;
+                document.querySelectorAll('.main-content > div').forEach(s => s.classList.toggle('hidden', s.id !== screenId));
+                document.querySelectorAll('.nav-button').forEach(b => b.classList.toggle('active', b.dataset.screen === screenId));
+                if (screenId === 'profile-screen') renderProfile();
+                else if (screenId === 'leaderboard-screen') renderLeaderboard();
             });
         });
         
@@ -1200,41 +771,42 @@
             });
         });
 
+        document.querySelectorAll('.profile-tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.profile-tab-button').forEach(b => b.classList.remove('active'));
+                button.classList.add('active');
+                const tab = button.dataset.tab;
+                document.getElementById('my-tasks-tab-content').classList.toggle('hidden', tab !== 'my-tasks');
+                document.getElementById('done-history-tab-content').classList.toggle('hidden', tab !== 'done-history');
+                if (tab === 'my-tasks') renderMyTasks(); else renderDoneHistory();
+            });
+        });
+        
         document.getElementById('random-service-btn').addEventListener('click', getRandomService);
         document.getElementById('find-partner-btn').addEventListener('click', findRandomPartner);
-        // The add-task-btn is now inside the profile screen, its listener will be set up by renderMyTasks
-        // This listener needs to be set up once, not every time renderMyTasks is called.
-        // It's better to put it here in setupEventListeners.
-        document.getElementById('add-task-btn').addEventListener('click', () => showTaskFormModal()); 
+        document.getElementById('add-task-btn').addEventListener('click', () => showTaskFormModal());
 
-        // Distance filter event listener
         const distanceRange = document.getElementById('distance-range');
-        const distanceValue = document.getElementById('distance-value');
         distanceRange.addEventListener('input', () => {
-            distanceValue.textContent = distanceRange.value;
-            // Only re-render tasks if the 'nearby' filter is active
+            document.getElementById('distance-value').textContent = distanceRange.value;
             if (document.querySelector('.filter-tab.active')?.dataset.filter === 'nearby') {
                 renderTasks('nearby', parseInt(distanceRange.value));
             }
         });
-        // Initial set for distance value
-        distanceValue.textContent = distanceRange.value;
     }
 
-    // --- APP START ---
     document.addEventListener('DOMContentLoaded', async () => {
         try {
             await initDB();
             await populateInitialData();
-            getUserLocation(); // Attempt to get user location on app start
-            await renderAll();
+            getUserLocation();
+            await renderTasks('foryou');
             setupEventListeners();
         } catch (error) {
             console.error("Failed to initialize the app:", error);
-            document.getElementById('task-list').innerHTML = `<div class="text-center p-8 border-2 border-dashed rounded-lg text-red-500"><p>Could not load app data. Please try again.</p></div>`;
+            document.body.innerHTML = `<p class="text-red-500 p-4">Could not load app data. Please try again later.</p>`;
         }
     });
-
     </script>
 </body>
 </html>
