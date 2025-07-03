@@ -9,6 +9,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
     <style>
+        /* Base Telegram theme variables, will be overridden by Telegram.WebApp.themeParams */
         :root {
             --tg-theme-bg-color: #ffffff;
             --tg-theme-text-color: #000000;
@@ -53,13 +54,17 @@
         .task-card:active {
             transform: scale(0.98);
         }
-        .badge-icon {
-            filter: grayscale(1);
-            opacity: 0.4;
-        }
-        .badge-icon.unlocked {
-            filter: none;
-            opacity: 1;
+        /* Achievement level styling */
+        .achievement-level {
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 9999px; /* Full rounded corners */
+            background-color: var(--tg-theme-link-color);
+            color: var(--tg-theme-button-text-color);
+            display: inline-block;
+            margin-top: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .filter-tab.active {
             background-color: var(--tg-theme-button-color);
@@ -136,6 +141,17 @@
                 text-align: left;
             }
         }
+
+        /* Ensure better contrast for text on secondary background */
+        .text-on-secondary-bg {
+            color: var(--tg-theme-text-color); /* Use main text color for better contrast */
+        }
+        /* Brand styling */
+        .brand-header {
+            background: linear-gradient(90deg, var(--tg-theme-link-color) 0%, var(--tg-theme-button-color) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -147,7 +163,7 @@
             <div id="home-screen" class="p-4">
                 <header class="flex justify-between items-center mb-4">
                     <div>
-                        <h1 class="text-2xl font-bold">Volunteer HQ</h1>
+                        <h1 class="text-2xl font-bold brand-header">Community Connect</h1>
                         <p class="text-sm" style="color: var(--tg-theme-hint-color);">Ready for deployment?</p>
                     </div>
                     <div class="text-right">
@@ -176,7 +192,7 @@
                 </div>
 
                 <!-- Distance Filter (New) -->
-                <div id="distance-filter-section" class="mb-4 p-3 rounded-lg" style="background-color: var(--tg-theme-secondary-bg-color);">
+                <div id="distance-filter-section" class="mb-4 p-3 rounded-lg text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color);">
                     <label for="distance-range" class="block text-sm font-medium mb-2" style="color: var(--tg-theme-text-color);">Max Distance: <span id="distance-value">50</span> km</label>
                     <input type="range" id="distance-range" min="1" max="500" value="50" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
                     <p id="location-status" class="text-xs mt-2" style="color: var(--tg-theme-hint-color);">Getting your location...</p>
@@ -192,7 +208,7 @@
 
             <!-- Leaderboard Screen -->
             <div id="leaderboard-screen" class="hidden p-4">
-                <h1 class="text-2xl font-bold mb-4">Service Leaderboard</h1>
+                <h1 class="text-2xl font-bold mb-4 brand-header">Service Leaderboard</h1>
                 <div id="leaderboard-list" class="space-y-2"></div>
             </div>
 
@@ -205,6 +221,7 @@
                         <h1 id="profile-name" class="text-2xl font-bold">Volunteer</h1>
                         <p id="profile-username" class="text-sm" style="color: var(--tg-theme-hint-color);"></p>
                         <p id="profile-score" class="text-lg" style="color: var(--tg-theme-link-color);">0 PTS</p>
+                        <div id="achievement-level" class="achievement-level">Rookie</div>
                     </div>
                     <div id="qrcode-container" class="w-16 h-16 cursor-pointer mt-4" title="Tap to enlarge QR code">
                         <!-- QR Code will be generated here -->
@@ -216,10 +233,11 @@
                     <div id="interest-chips" class="flex flex-wrap gap-2"></div>
                 </div>
 
-                <div>
+                <!-- Removed Service Medals section as per request -->
+                <!-- <div>
                     <h2 class="text-lg font-semibold mb-2">Service Medals</h2>
                     <div id="badge-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-4 text-center"></div>
-                </div>
+                </div> -->
 
                 <!-- Profile Tabs for My Tasks and Done History -->
                 <div class="mt-6 border-b" style="border-color: var(--tg-theme-secondary-bg-color);">
@@ -283,6 +301,7 @@
     const DEFAULT_DISTANCE_KM = 50; // Default max distance for filtering
 
     // --- TELEGRAM WEB APP INITIALIZATION ---
+    let telegramUser = null;
     try {
         const tg = window.Telegram.WebApp;
         tg.ready();
@@ -295,8 +314,13 @@
         document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#2481cc');
         document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color || '#ffffff');
         document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color || '#f4f4f5');
+
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            telegramUser = tg.initDataUnsafe.user;
+            console.log("Telegram User Data:", telegramUser);
+        }
     } catch (e) {
-        console.error("Telegram Web App script not found, running in browser mode.");
+        console.error("Telegram Web App script not found or error initializing, running in browser mode.", e);
     }
 
 
@@ -324,37 +348,42 @@
     }
 
     // --- MOCK DATA & INITIALIZATION ---
-    const ALL_BADGES = {
-        service_ribbon: { name: 'Service Ribbon', icon: `<svg viewBox="0 0 100 100"><rect x="15" y="35" width="70" height="30" fill="#4a90e2"/><rect x="15" y="35" width="23" height="30" fill="#f5a623"/></svg>`, description: 'Complete your first task.' },
-        commendation_medal: { name: 'Commendation Medal', icon: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="35" fill="#e84c3d"/><path d="M50 25 l10 20 l22 -8 l-8 22 l20 10 l-20 10 l8 22 l-22 -8 l-10 20 l-10 -20 l-22 8 l8 -22 l-20 -10 l20 -10 l-8 -22 l22 8z" fill="#f1c40f"/></svg>`, description: 'Complete 5 tasks.' },
-        distinguished_service: { name: 'Distinguished Service', icon: `<svg viewBox="0 0 100 100"><path d="M50 10 L60 40 L90 40 L65 60 L75 90 L50 70 L25 90 L35 60 L10 40 L40 40 Z" fill="#f1c40f" stroke="#c0392b" stroke-width="5"/></svg>`, description: 'Complete 15 tasks.' },
-        joint_ops_crest: { name: 'Joint Ops Crest', icon: `<svg viewBox="0 0 100 100"><path d="M20 80 L50 20 L80 80 Z" fill="#27ae60"/><path d="M20 80 h60 v-10 h-60 z" fill="#2c3e50"/></svg>`, description: 'Complete a task with a partner.' },
-        recon_specialist: { name: 'Recon Specialist', icon: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="30" fill="none" stroke="#bdc3c7" stroke-width="8"/><path d="M50 30 l20 40 h-40 z" fill="#3498db"/></svg>`, description: 'Complete a scavenger hunt task.'},
-        campaign_medal: { name: 'Campaign Medal', icon: `<svg viewBox="0 0 100 100"><rect x="20" y="20" width="60" height="60" fill="#8e44ad"/><path d="M50 30 L60 45 L50 60 L40 45 Z" fill="#ecf0f1"/></svg>`, description: 'Complete a mission task.'},
-    };
+    // Achievement levels based on score
+    const ACHIEVEMENT_LEVELS = [
+        { name: 'Rookie', minScore: 0 },
+        { name: 'Apprentice', minScore: 50 },
+        { name: 'Journeyman', minScore: 150 },
+        { name: 'Veteran', minScore: 300 },
+        { name: 'Master', minScore: 500 },
+        { name: 'Legend', minScore: 1000 }
+    ];
     
     const ALL_INTERESTS = ['Environment', 'Animals', 'Community', 'Seniors', 'Education', 'Arts'];
     const ALL_CATEGORIES = ['nearby', 'scavenger', 'mission']; // For task creation form
 
     async function populateInitialData() {
-        const user = await getObject('users', 'currentUser');
+        let user = await getObject('users', 'currentUser');
         if (!user) {
-            const tgUser = window.Telegram.WebApp.initDataUnsafe?.user;
-            const userName = tgUser ? `${tgUser.first_name || ''} ${tgUser.last_name || ''}`.trim() || 'Volunteer' : 'Volunteer';
-            const userUsername = tgUser?.username || '';
+            const userName = telegramUser ? `${telegramUser.first_name || ''} ${telegramUser.last_name || ''}`.trim() || 'Volunteer' : 'Volunteer';
+            const userUsername = telegramUser?.username || '';
+            const userId = telegramUser?.id ? `tg_${telegramUser.id}` : 'currentUser'; // Use Telegram ID if available
 
-            await addObject('users', { 
-                id: 'currentUser', 
+            user = { 
+                id: userId, 
                 name: userName, 
                 username: userUsername,
                 score: 0, 
-                badges: [], 
                 completedTasks: [], 
                 interests: ['Environment', 'Community'] 
-            });
-            await addObject('leaderboard', {id: 'user1', name: 'Alex', score: 150});
-            await addObject('leaderboard', {id: 'user2', name: 'Bravo', score: 120});
-            await addObject('leaderboard', {id: 'user3', name: 'Charlie', score: 95});
+            };
+            await addObject('users', user);
+            console.log("Initial user created:", user);
+
+            // Add mock leaderboard users if they don't exist
+            const existingLeaderboardUsers = await getAllObjects('leaderboard');
+            if (!existingLeaderboardUsers.some(u => u.id === 'user1')) await addObject('leaderboard', {id: 'user1', name: 'Alex', score: 150});
+            if (!existingLeaderboardUsers.some(u => u.id === 'user2')) await addObject('leaderboard', {id: 'user2', name: 'Bravo', score: 120});
+            if (!existingLeaderboardUsers.some(u => u.id === 'user3')) await addObject('leaderboard', {id: 'user3', name: 'Charlie', score: 95});
         }
         
         const tasks = await getAllObjects('tasks');
@@ -467,7 +496,7 @@
             case 'foryou': 
                 taskListHeader.textContent = 'Recommended Tasks'; 
                 filteredTasks = availableTasks.filter(t => user.interests.includes(t.interest_tag)); 
-                if (filteredTasks.length === 0) filteredTasks = availableTasks.slice(0, 5); 
+                if (filteredTasks.length === 0) filteredTasks = availableTasks.slice(0, 5); // Fallback if no interest-matched tasks
                 break;
             case 'missions': 
                 taskListHeader.textContent = 'Active Missions'; 
@@ -509,7 +538,7 @@
             }
 
             return `
-            <div class="task-card rounded-lg p-4 shadow-sm cursor-pointer" style="background-color: var(--tg-theme-secondary-bg-color);" data-task-id="${task.id}">
+            <div class="task-card rounded-lg p-4 shadow-sm cursor-pointer text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color);" data-task-id="${task.id}">
                 <div class="flex justify-between items-start">
                     <div>
                         <h3 class="font-bold text-md">${task.title}</h3>
@@ -530,16 +559,30 @@
         const list = document.getElementById('leaderboard-list');
         const currentUser = await getObject('users', 'currentUser');
         let otherUsers = await getAllObjects('leaderboard');
-        const allUsers = [...otherUsers, {id: currentUser.id, name: currentUser.name, score: currentUser.score}];
+        
+        // Ensure the current user is always in the leaderboard list
+        const allUsers = [...otherUsers.filter(u => u.id !== currentUser.id), {id: currentUser.id, name: currentUser.name, score: currentUser.score}];
         allUsers.sort((a, b) => b.score - a.score);
 
         list.innerHTML = allUsers.map((user, index) => `
-            <div class="flex items-center p-3 rounded-lg ${user.id === 'currentUser' ? 'font-bold' : ''}" style="background-color: ${user.id === 'currentUser' ? 'rgba(36, 129, 204, 0.1)' : 'var(--tg-theme-secondary-bg-color)'};">
+            <div class="flex items-center p-3 rounded-lg ${user.id === currentUser.id ? 'font-bold' : ''} text-on-secondary-bg" style="background-color: ${user.id === currentUser.id ? 'rgba(36, 129, 204, 0.1)' : 'var(--tg-theme-secondary-bg-color)'};">
                 <div class="w-8 text-lg font-bold" style="color: var(--tg-theme-hint-color);">${index + 1}</div>
                 <img src="https://placehold.co/40x40/EFEFEF/AAAAAA?text=${user.name.charAt(0)}" class="w-10 h-10 rounded-full mr-4">
                 <div class="flex-grow">${user.name}</div>
                 <div class="font-bold" style="color: var(--tg-theme-link-color);">${user.score} PTS</div>
             </div>`).join('');
+    }
+
+    function getAchievementLevel(score) {
+        let level = ACHIEVEMENT_LEVELS[0].name; // Default to Rookie
+        for (let i = 0; i < ACHIEVEMENT_LEVELS.length; i++) {
+            if (score >= ACHIEVEMENT_LEVELS[i].minScore) {
+                level = ACHIEVEMENT_LEVELS[i].name;
+            } else {
+                break; // Scores are sorted, so we can stop
+            }
+        }
+        return level;
     }
 
     async function renderProfile() {
@@ -551,19 +594,13 @@
         document.getElementById('profile-name').textContent = user.name;
         document.getElementById('profile-username').textContent = user.username ? `@${user.username}` : ''; // Display username if available
         document.getElementById('profile-score').textContent = `${user.score} PTS`;
+        document.getElementById('achievement-level').textContent = getAchievementLevel(user.score);
         // Update profile image if Telegram user photo is available (Telegram Web App doesn't directly provide user photo URL)
         // For now, keep placeholder or implement a way to upload/set user image.
 
         const interestChips = document.getElementById('interest-chips');
-        interestChips.innerHTML = ALL_INTERESTS.map(interest => `<button class="interest-chip text-sm py-1 px-3 rounded-full border ${user.interests.includes(interest) ? 'selected' : ''}" data-interest="${interest}">${interest}</button>`).join('');
+        interestChips.innerHTML = ALL_INTERESTS.map(interest => `<button class="interest-chip text-sm py-1 px-3 rounded-full border ${user.interests.includes(interest) ? 'selected' : ''} text-on-secondary-bg" style="border-color: var(--tg-theme-hint-color);" data-interest="${interest}">${interest}</button>`).join('');
         document.querySelectorAll('.interest-chip').forEach(chip => chip.addEventListener('click', toggleInterest));
-
-        const badgeGrid = document.getElementById('badge-grid');
-        badgeGrid.innerHTML = Object.entries(ALL_BADGES).map(([key, badge]) => `
-            <div class="flex flex-col items-center">
-                <div class="badge-icon w-12 h-12 ${user.badges.includes(key) ? 'unlocked' : ''}" title="${badge.name}: ${badge.description}">${badge.icon}</div>
-                <span class="text-xs mt-1 ${user.badges.includes(key) ? '' : 'text-gray-400'}">${badge.name}</span>
-            </div>`).join('');
         
         generateQRCode(`community-connect-user-${user.id}`);
 
@@ -625,7 +662,7 @@
         }
 
         myTaskList.innerHTML = myTasks.map(task => `
-            <div class="task-card rounded-lg p-4 shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color);">
+            <div class="task-card rounded-lg p-4 shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color);">
                 <div class="flex justify-between items-start mb-2">
                     <div>
                         <h3 class="font-bold text-md">${task.title}</h3>
@@ -670,7 +707,7 @@
         }
 
         doneTaskList.innerHTML = completedTasks.map(task => `
-            <div class="task-card rounded-lg p-4 shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color);">
+            <div class="task-card rounded-lg p-4 shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color);">
                 <div class="flex justify-between items-start">
                     <div>
                         <h3 class="font-bold text-md">${task.title}</h3>
@@ -720,7 +757,7 @@
              const baseShare = task.points / 2;
              const synergyBonus = Math.ceil(baseShare * 0.2);
              const totalPerPerson = Math.round(baseShare + synergyBonus);
-             partnerMessage = `<div class="mt-4 p-3 rounded-lg text-sm" style="background-color: var(--tg-theme-secondary-bg-color);">
+             partnerMessage = `<div class="mt-4 p-3 rounded-lg text-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color);">
                 <span class="font-bold">🤝 Joint Operation!</span> You've been matched with <span class="font-bold">Alex</span>.
                 <div class="mt-2 pt-2 border-t" style="border-color: var(--tg-theme-hint-color);">
                     <p class="font-semibold">Point Distribution:</p>
@@ -737,7 +774,7 @@
         const modalHTML = `
             <h2 class="text-xl font-bold mb-2">${task.title}</h2>
             <p class="mb-4" style="color: var(--tg-theme-hint-color);">${task.description}</p>
-            ${task.category === 'scavenger' ? `<div class="mb-4 p-3 bg-yellow-100 text-yellow-800 rounded-lg text-sm"><span class="font-bold">Intel:</span> ${task.hint}</div>` : ''}
+            ${task.category === 'scavenger' ? `<div class="mb-4 p-3 bg-yellow-100 text-yellow-800 rounded-lg text-sm text-on-secondary-bg"><span class="font-bold">Intel:</span> ${task.hint}</div>` : ''}
             <div class="flex justify-between items-center mb-4">
                 <span class="font-bold text-lg" style="color: var(--tg-theme-link-color);">${task.points} Points</span>
                 <span class="text-sm" style="color: var(--tg-theme-hint-color);"><a href="https://maps.google.com/?q=${task.latitude},${task.longitude}" target="_blank" style="color: var(--tg-theme-link-color);">View on Map</a></span>
@@ -780,14 +817,6 @@
         if (!user.completedTasks.includes(taskId)) {
             user.completedTasks.push(taskId);
         }
-
-        // Check for badges
-        if (!user.badges.includes('service_ribbon')) { user.badges.push('service_ribbon'); showNotification('Medal Awarded: Service Ribbon!'); }
-        if (user.completedTasks.length >= 5 && !user.badges.includes('commendation_medal')) { user.badges.push('commendation_medal'); showNotification('Medal Awarded: Commendation Medal!'); }
-        if (user.completedTasks.length >= 15 && !user.badges.includes('distinguished_service')) { user.badges.push('distinguished_service'); showNotification('Medal Awarded: Distinguished Service!'); }
-        if (isPartnerTask && !user.badges.includes('joint_ops_crest')) { user.badges.push('joint_ops_crest'); showNotification('Medal Awarded: Joint Ops Crest!'); }
-        if (taskCategory === 'scavenger' && !user.badges.includes('recon_specialist')) { user.badges.push('recon_specialist'); showNotification('Medal Awarded: Recon Specialist!'); }
-        if (taskCategory === 'mission' && !user.badges.includes('campaign_medal')) { user.badges.push('campaign_medal'); showNotification('Medal Awarded: Campaign Medal!'); }
 
         await updateObject('users', user);
 
@@ -920,19 +949,19 @@
             <form id="task-form" class="space-y-4">
                 <div>
                     <label for="task-title" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Title</label>
-                    <input type="text" id="task-title" value="${task.title}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);" required>
+                    <input type="text" id="task-title" value="${task.title}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);" required>
                 </div>
                 <div>
                     <label for="task-description" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Description</label>
-                    <textarea id="task-description" rows="3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);" required>${task.description}</textarea>
+                    <textarea id="task-description" rows="3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);" required>${task.description}</textarea>
                 </div>
                 <div>
                     <label for="task-points" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Points</label>
-                    <input type="number" id="task-points" value="${task.points}" min="1" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);" required>
+                    <input type="number" id="task-points" value="${task.points}" min="1" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);" required>
                 </div>
                 <div>
                     <label for="task-category" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Category</label>
-                    <select id="task-category" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);" required>
+                    <select id="task-category" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);" required>
                         ${categoryOptions}
                     </select>
                 </div>
@@ -940,30 +969,30 @@
                     ${task.category === 'nearby' || task.category === 'scavenger' ? `
                         <div>
                             <label for="task-latitude" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Latitude</label>
-                            <input type="number" step="0.000001" id="task-latitude" value="${task.latitude}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
+                            <input type="number" step="0.000001" id="task-latitude" value="${task.latitude}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
                         </div>
                         <div>
                             <label for="task-longitude" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Longitude</label>
-                            <input type="number" step="0.000001" id="task-longitude" value="${task.longitude}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
+                            <input type="number" step="0.000001" id="task-longitude" value="${task.longitude}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
                         </div>
                         <button type="button" id="get-current-location-btn" class="action-button text-sm mt-2 py-2 px-4 rounded-md w-full">Get Current Location</button>
                     ` : ''}
                     ${task.category === 'scavenger' ? `
                         <div>
                             <label for="task-hint" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Hint</label>
-                            <textarea id="task-hint" rows="2" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">${task.hint}</textarea>
+                            <textarea id="task-hint" rows="2" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">${task.hint}</textarea>
                         </div>
                     ` : ''}
                     ${task.category === 'mission' ? `
                         <div>
                             <label for="task-mission-name" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Mission Name</label>
-                            <input type="text" id="task-mission-name" value="${task.missionName}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
+                            <input type="text" id="task-mission-name" value="${task.missionName}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
                         </div>
                     ` : ''}
                 </div>
                 <div>
                     <label for="task-interest-tag" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Interest Tag</label>
-                    <select id="task-interest-tag" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
+                    <select id="task-interest-tag" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
                         ${interestOptions}
                     </select>
                 </div>
@@ -993,11 +1022,11 @@
                 newFieldsHtml += `
                     <div>
                         <label for="task-latitude" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Latitude</label>
-                        <input type="number" step="0.000001" id="task-latitude" value="${currentLatitude}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
+                        <input type="number" step="0.000001" id="task-latitude" value="${currentLatitude}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
                     </div>
                     <div>
                         <label for="task-longitude" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Longitude</label>
-                        <input type="number" step="0.000001" id="task-longitude" value="${currentLongitude}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
+                        <input type="number" step="0.000001" id="task-longitude" value="${currentLongitude}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
                     </div>
                     <button type="button" id="get-current-location-btn" class="action-button text-sm mt-2 py-2 px-4 rounded-md w-full">Get Current Location</button>
                 `;
@@ -1006,7 +1035,7 @@
                 newFieldsHtml += `
                     <div>
                         <label for="task-hint" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Hint</label>
-                        <textarea id="task-hint" rows="2" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">${currentHint}</textarea>
+                        <textarea id="task-hint" rows="2" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">${currentHint}</textarea>
                     </div>
                 `;
             }
@@ -1014,7 +1043,7 @@
                 newFieldsHtml += `
                     <div>
                         <label for="task-mission-name" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Mission Name</label>
-                        <input type="text" id="task-mission-name" value="${currentMissionName}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
+                        <input type="text" id="task-mission-name" value="${currentMissionName}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-on-secondary-bg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
                     </div>
                 `;
             }
@@ -1174,6 +1203,8 @@
         document.getElementById('random-service-btn').addEventListener('click', getRandomService);
         document.getElementById('find-partner-btn').addEventListener('click', findRandomPartner);
         // The add-task-btn is now inside the profile screen, its listener will be set up by renderMyTasks
+        // This listener needs to be set up once, not every time renderMyTasks is called.
+        // It's better to put it here in setupEventListeners.
         document.getElementById('add-task-btn').addEventListener('click', () => showTaskFormModal()); 
 
         // Distance filter event listener
