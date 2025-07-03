@@ -2,649 +2,997 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Local Experiences - Telegram Mini App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Community Connect</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'telegram-blue': '#0088cc',
-                        'telegram-light-blue': '#40a7e3',
-                        'telegram-bg': '#ffffff',
-                        'telegram-dark-bg': '#212121',
-                        'telegram-text': '#000000',
-                        'telegram-light-text': '#708499',
-                        'telegram-border': '#e1e5e9'
-                    }
-                }
-            }
-        }
-    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
     <style>
-        .telegram-shadow {
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        :root {
+            --tg-theme-bg-color: #ffffff;
+            --tg-theme-text-color: #000000;
+            --tg-theme-hint-color: #999999;
+            --tg-theme-link-color: #2481cc;
+            --tg-theme-button-color: #2481cc;
+            --tg-theme-button-text-color: #ffffff;
+            --tg-theme-secondary-bg-color: #f4f4f5;
         }
-        .category-scroll {
-            scrollbar-width: none;
-            -ms-overflow-style: none;
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            margin: 0;
+            padding: 0;
+            overscroll-behavior-y: none;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
-        .category-scroll::-webkit-scrollbar {
-            display: none;
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-height: -webkit-fill-available;
+        }
+        .main-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-bottom: 70px; /* Space for nav bar */
+        }
+        .nav-bar {
+            border-top: 1px solid var(--tg-theme-secondary-bg-color);
+            background-color: var(--tg-theme-bg-color);
+        }
+        .nav-button.active svg, .nav-button.active span {
+            color: var(--tg-theme-link-color);
+        }
+        .task-card {
+            border: 1px solid #e5e7eb;
+            transition: transform 0.2s ease-in-out;
+        }
+        .task-card:active {
+            transform: scale(0.98);
+        }
+        .badge-icon {
+            filter: grayscale(1);
+            opacity: 0.4;
+        }
+        .badge-icon.unlocked {
+            filter: none;
+            opacity: 1;
+        }
+        .filter-tab.active {
+            background-color: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+        }
+        .interest-chip.selected {
+            background-color: var(--tg-theme-link-color);
+            color: var(--tg-theme-button-text-color);
+            border-color: var(--tg-theme-link-color);
+        }
+        .action-button {
+            background-color: var(--tg-theme-secondary-bg-color);
+            transition: background-color 0.2s;
+        }
+        .action-button:active {
+             background-color: #e5e7eb;
+        }
+        /* Styles for CRUD buttons */
+        .crud-button {
+            background-color: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .crud-button:hover {
+            filter: brightness(1.1);
+        }
+        .crud-button.delete {
+            background-color: #ef4444; /* Red for delete */
+        }
+        .crud-button.delete:hover {
+            background-color: #dc2626;
+        }
+        .crud-button.edit {
+            background-color: #f59e0b; /* Amber for edit */
+        }
+        .crud-button.edit:hover {
+            background-color: #d97706;
+        }
+        .crud-button.add {
+            background-color: #22c55e; /* Green for add */
+        }
+        .crud-button.add:hover {
+            background-color: #16a34a;
+        }
+        /* Profile Tabs */
+        .profile-tab-button {
+            flex: 1;
+            padding: 10px 0;
+            text-align: center;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            color: var(--tg-theme-hint-color);
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .profile-tab-button.active {
+            border-color: var(--tg-theme-link-color);
+            color: var(--tg-theme-link-color);
+        }
+        .profile-tab-content {
+            padding-top: 16px;
         }
     </style>
 </head>
-<body class="bg-gray-50 dark:bg-telegram-dark-bg min-h-screen">
-    <!-- Header -->
-    <header class="bg-telegram-bg dark:bg-telegram-dark-bg border-b border-telegram-border dark:border-gray-700 sticky top-0 z-10">
-        <div class="px-4 py-3">
-            <div class="flex items-center justify-between">
-                <h1 class="text-lg font-semibold text-telegram-text dark:text-white">Local Experiences</h1>
-                <div class="flex items-center space-x-2">
-                    <span class="text-sm text-telegram-light-text dark:text-gray-400">📍 New York, NY</span>
-                </div>
-            </div>
-        </div>
-    </header>
+<body class="antialiased">
 
-    <!-- Main Content -->
-    <main class="pb-20">
-        <!-- For You Tab -->
-        <div id="for-you-tab" class="tab-content">
-            <!-- Categories Scroll -->
-            <div class="bg-telegram-bg dark:bg-telegram-dark-bg border-b border-telegram-border dark:border-gray-700 py-3">
-                <div class="flex overflow-x-auto category-scroll px-4 space-x-3">
-                    <button class="category-btn active flex-shrink-0 px-4 py-2 bg-telegram-blue text-white rounded-full text-sm font-medium" data-category="all">
-                        All
+    <div id="app" class="app-container">
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Home Screen -->
+            <div id="home-screen" class="p-4">
+                <header class="flex justify-between items-center mb-4">
+                    <div>
+                        <h1 class="text-2xl font-bold">Volunteer HQ</h1>
+                        <p class="text-sm" style="color: var(--tg-theme-hint-color);">Ready for deployment?</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-lg font-bold" id="user-score">0 PTS</div>
+                        <div class="text-xs" style="color: var(--tg-theme-hint-color);">Service Score</div>
+                    </div>
+                </header>
+
+                <!-- Action Buttons -->
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <button id="random-service-btn" class="action-button p-3 rounded-lg flex items-center justify-center text-sm font-semibold">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M3 7.9l4.1 4.1-4.1 4.1M21 7.9l-4.1 4.1 4.1 4.1M12 4v16"/></svg>
+                        Random Service
                     </button>
-                    <button class="category-btn flex-shrink-0 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium" data-category="tourism">
-                        🏛️ Tourism
-                    </button>
-                    <button class="category-btn flex-shrink-0 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium" data-category="food">
-                        🍽️ Food & Drink
-                    </button>
-                    <button class="category-btn flex-shrink-0 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium" data-category="nightlife">
-                        🌃 Nightlife
-                    </button>
-                    <button class="category-btn flex-shrink-0 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium" data-category="activities">
-                        🎯 Activities
-                    </button>
-                    <button class="category-btn flex-shrink-0 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium" data-category="culture">
-                        🎨 Culture
-                    </button>
-                    <button class="category-btn flex-shrink-0 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium" data-category="shows">
-                        🎭 Live Shows
-                    </button>
-                    <button class="category-btn flex-shrink-0 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium" data-category="entertainment">
-                        🎪 Entertainment
-                    </button>
-                    <button class="category-btn flex-shrink-0 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium" data-category="couple">
-                        💕 Plans for Two
-                    </button>
-                    <button class="category-btn flex-shrink-0 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium" data-category="family">
-                        👨‍👩‍👧‍👦 Family
-                    </button>
-                    <button class="category-btn flex-shrink-0 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium" data-category="courses">
-                        📚 Courses
-                    </button>
-                    <button class="category-btn flex-shrink-0 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium" data-category="conventions">
-                        🗣️ Talks & Conventions
-                    </button>
-                    <button class="category-btn flex-shrink-0 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium" data-category="gifts">
-                        🎁 Gifts
-                    </button>
-                    <button class="category-btn flex-shrink-0 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium" data-category="broadway">
-                        🎵 Broadway Shows
-                    </button>
-                    <button class="category-btn flex-shrink-0 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium" data-category="wellness">
-                        💆‍♀️ Beauty & Wellness
-                    </button>
-                    <button class="category-btn flex-shrink-0 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium" data-category="sports">
-                        ⚽ Sports & Events
-                    </button>
-                    <button class="category-btn flex-shrink-0 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium" data-category="meetups">
-                        🤝 Meetups
+                    <button id="find-partner-btn" class="action-button p-3 rounded-lg flex items-center justify-center text-sm font-semibold">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        Find Partner
                     </button>
                 </div>
-            </div>
-
-            <!-- Nearby Section -->
-            <div class="p-4">
-                <h2 class="text-lg font-semibold text-telegram-text dark:text-white mb-3">🌟 Recommended Near You</h2>
-                <div id="experiences-grid" class="space-y-4">
-                    <!-- Experience cards will be populated by JavaScript -->
+                
+                <!-- Task Filters -->
+                <div class="flex space-x-2 mb-4 overflow-x-auto pb-2">
+                    <button class="filter-tab active whitespace-nowrap text-sm font-medium py-2 px-4 rounded-full" data-filter="foryou">For You</button>
+                    <button class="filter-tab whitespace-nowrap text-sm font-medium py-2 px-4 rounded-full" data-filter="missions">Missions</button>
+                    <button class="filter-tab whitespace-nowrap text-sm font-medium py-2 px-4 rounded-full" data-filter="nearby">Local Ops</button>
                 </div>
-            </div>
-        </div>
 
-        <!-- Search Tab -->
-        <div id="search-tab" class="tab-content hidden">
-            <div class="p-4">
                 <div class="mb-4">
-                    <input type="text" id="search-input" placeholder="Search experiences..." 
-                           class="w-full px-4 py-3 text-base border border-telegram-border dark:border-gray-600 rounded-lg bg-telegram-bg dark:bg-gray-700 text-telegram-text dark:text-white focus:outline-none focus:border-telegram-blue">
-                </div>
-                <div id="search-results" class="space-y-4">
-                    <div class="text-center text-telegram-light-text dark:text-gray-400 py-8">
-                        🔍 Start typing to search for experiences
+                    <h2 id="task-list-header" class="text-lg font-semibold mb-2">Recommended Tasks</h2>
+                    <div id="task-list" class="space-y-3">
+                        <!-- Tasks will be dynamically inserted here -->
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Tickets Tab -->
-        <div id="tickets-tab" class="tab-content hidden">
-            <div class="p-4">
-                <h2 class="text-lg font-semibold text-telegram-text dark:text-white mb-4">🎫 My Tickets</h2>
-                <div id="tickets-list" class="space-y-4">
-                    <div class="text-center text-telegram-light-text dark:text-gray-400 py-8">
-                        🎟️ No tickets yet<br>
-                        <span class="text-sm">Book an experience to see your tickets here</span>
-                    </div>
-                </div>
+            <!-- Leaderboard Screen -->
+            <div id="leaderboard-screen" class="hidden p-4">
+                <h1 class="text-2xl font-bold mb-4">Service Leaderboard</h1>
+                <div id="leaderboard-list" class="space-y-2"></div>
             </div>
-        </div>
 
-        <!-- Profile Tab -->
-        <div id="profile-tab" class="tab-content hidden">
-            <div class="p-4">
-                <div class="bg-telegram-bg dark:bg-gray-800 rounded-lg p-6 telegram-shadow mb-4">
-                    <div class="text-center">
-                        <div class="w-16 h-16 bg-telegram-blue rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-3">
-                            U
-                        </div>
-                        <h3 class="text-lg font-semibold text-telegram-text dark:text-white">User</h3>
-                        <p class="text-telegram-light-text dark:text-gray-400">@username</p>
+            <!-- Profile Screen -->
+            <div id="profile-screen" class="hidden p-4">
+                <div class="flex items-center mb-6">
+                    <img src="https://placehold.co/80x80/EFEFEF/AAAAAA?text=V" class="w-20 h-20 rounded-full mr-4 border-2" style="border-color: var(--tg-theme-secondary-bg-color);">
+                    <div>
+                        <h1 id="profile-name" class="text-2xl font-bold">Volunteer</h1>
+                        <p id="profile-score" class="text-lg" style="color: var(--tg-theme-hint-color);">0 PTS</p>
+                    </div>
+                    <div id="qrcode-container" class="ml-auto w-16 h-16 cursor-pointer" title="Tap to enlarge QR code">
+                        <!-- QR Code will be generated here -->
                     </div>
                 </div>
 
-                <div class="space-y-2">
-                    <button class="w-full bg-telegram-bg dark:bg-gray-800 p-4 rounded-lg telegram-shadow flex items-center justify-between text-telegram-text dark:text-white">
-                        <div class="flex items-center">
-                            <span class="mr-3">❤️</span>
-                            <span>Favorites</span>
-                        </div>
-                        <span class="text-telegram-light-text dark:text-gray-400">→</span>
-                    </button>
-                    
-                    <button class="w-full bg-telegram-bg dark:bg-gray-800 p-4 rounded-lg telegram-shadow flex items-center justify-between text-telegram-text dark:text-white">
-                        <div class="flex items-center">
-                            <span class="mr-3">🕐</span>
-                            <span>History</span>
-                        </div>
-                        <span class="text-telegram-light-text dark:text-gray-400">→</span>
-                    </button>
+                <div class="mb-6">
+                    <h2 class="text-lg font-semibold mb-2">My Interests</h2>
+                    <div id="interest-chips" class="flex flex-wrap gap-2"></div>
+                </div>
 
-                    <button class="w-full bg-telegram-bg dark:bg-gray-800 p-4 rounded-lg telegram-shadow flex items-center justify-between text-telegram-text dark:text-white">
-                        <div class="flex items-center">
-                            <span class="mr-3">⚙️</span>
-                            <span>Settings</span>
-                        </div>
-                        <span class="text-telegram-light-text dark:text-gray-400">→</span>
-                    </button>
+                <div>
+                    <h2 class="text-lg font-semibold mb-2">Service Medals</h2>
+                    <div id="badge-grid" class="grid grid-cols-4 gap-4 text-center"></div>
+                </div>
 
-                    <button class="w-full bg-telegram-bg dark:bg-gray-800 p-4 rounded-lg telegram-shadow flex items-center justify-between text-telegram-text dark:text-white">
-                        <div class="flex items-center">
-                            <span class="mr-3">❓</span>
-                            <span>Help & Support</span>
+                <!-- Profile Tabs for My Tasks and Done History -->
+                <div class="mt-6 border-b" style="border-color: var(--tg-theme-secondary-bg-color);">
+                    <div class="flex">
+                        <button class="profile-tab-button active" data-tab="my-tasks">My Tasks</button>
+                        <button class="profile-tab-button" data-tab="done-history">Done History</button>
+                    </div>
+                </div>
+
+                <div id="profile-tab-contents" class="profile-tab-contents">
+                    <div id="my-tasks-tab-content" class="profile-tab-content">
+                        <button id="add-task-btn" class="crud-button add mb-4 mt-4 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 mr-1">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
+                            Add New Task
+                        </button>
+                        <div id="my-task-list" class="space-y-3">
+                            <!-- User's created tasks will be dynamically inserted here -->
                         </div>
-                        <span class="text-telegram-light-text dark:text-gray-400">→</span>
-                    </button>
+                    </div>
+
+                    <div id="done-history-tab-content" class="profile-tab-content hidden">
+                        <div id="done-task-list" class="space-y-3">
+                            <!-- User's completed tasks will be dynamically inserted here -->
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </main>
+        </main>
 
-    <!-- Bottom Navigation -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-telegram-bg dark:bg-telegram-dark-bg border-t border-telegram-border dark:border-gray-700">
-        <div class="flex">
-            <button class="nav-btn active flex-1 py-3 px-2 text-center" data-tab="for-you">
-                <div class="text-lg mb-1">🌟</div>
-                <div class="text-xs font-medium">For You</div>
+        <!-- Bottom Navigation Bar -->
+        <nav class="nav-bar fixed bottom-0 left-0 right-0 h-[65px] flex justify-around items-center" style="background-color: var(--tg-theme-bg-color);">
+            <button data-screen="home-screen" class="nav-button active flex flex-col items-center justify-center text-gray-500 w-full h-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                <span class="text-xs">Home</span>
             </button>
-            <button class="nav-btn flex-1 py-3 px-2 text-center" data-tab="search">
-                <div class="text-lg mb-1">🔍</div>
-                <div class="text-xs font-medium">Search</div>
+            <button data-screen="leaderboard-screen" class="nav-button flex flex-col items-center justify-center text-gray-500 w-full h-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 012-2h2a2 2 0 012 2v6m-6 0h6m-6 0H6a2 2 0 01-2-2v-6a2 2 0 012-2h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span class="text-xs">Leaders</span>
             </button>
-            <button class="nav-btn flex-1 py-3 px-2 text-center" data-tab="tickets">
-                <div class="text-lg mb-1">🎫</div>
-                <div class="text-xs font-medium">Tickets</div>
+            <!-- My Tasks button removed from main nav as it's now in Profile -->
+            <button data-screen="profile-screen" class="nav-button flex flex-col items-center justify-center text-gray-500 w-full h-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                <span class="text-xs">Profile</span>
             </button>
-            <button class="nav-btn flex-1 py-3 px-2 text-center" data-tab="profile">
-                <div class="text-lg mb-1">👤</div>
-                <div class="text-xs font-medium">Profile</div>
-            </button>
-        </div>
-    </nav>
+        </nav>
+    </div>
 
-    <!-- Experience Detail Modal -->
-    <div id="experience-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
-        <div class="absolute bottom-0 left-0 right-0 bg-telegram-bg dark:bg-telegram-dark-bg rounded-t-lg max-h-[90vh] overflow-y-auto">
-            <div class="p-4">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 id="modal-title" class="text-lg font-semibold text-telegram-text dark:text-white"></h3>
-                    <button id="close-modal" class="text-telegram-light-text dark:text-gray-400 text-xl">✕</button>
-                </div>
-                <div id="modal-content" class="space-y-4">
-                    <!-- Modal content will be populated by JavaScript -->
-                </div>
-            </div>
+    <!-- Generic Modal -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center p-4 z-50">
+        <div id="modal-content" class="bg-white rounded-lg shadow-xl w-full max-w-md p-6" style="background-color: var(--tg-theme-bg-color);">
+            <!-- Modal content will be injected here -->
         </div>
     </div>
 
+
     <script>
-        // Dark mode detection
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            document.documentElement.classList.add('dark');
-        }
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
-            if (event.matches) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-        });
+    // --- TELEGRAM WEB APP INITIALIZATION ---
+    try {
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+        document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#ffffff');
+        document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#000000');
+        document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color || '#999999');
+        document.documentElement.style.setProperty('--tg-theme-link-color', tg.themeParams.link_color || '#2481cc');
+        document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#2481cc');
+        document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color || '#ffffff');
+        document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.themeParams.secondary_bg_color || '#f4f4f5');
+    } catch (e) {
+        console.error("Telegram Web App script not found, running in browser mode.");
+    }
 
-        // Mock data for experiences
-        const experiences = [
-            {
-                id: 1,
-                title: "Statue of Liberty Tour",
-                category: "tourism",
-                price: "$35",
-                rating: 4.8,
-                reviews: 1245,
-                distance: "2.1 mi",
-                image: "🗽",
-                description: "Experience the iconic Statue of Liberty with ferry rides and guided tours.",
-                duration: "3 hours",
-                availability: "Daily 9:00 AM - 5:00 PM"
-            },
-            {
-                id: 2,
-                title: "Broadway Show: The Lion King",
-                category: "broadway",
-                price: "$85",
-                rating: 4.9,
-                reviews: 3254,
-                distance: "1.8 mi",
-                image: "🦁",
-                description: "The award-winning musical brings the African savanna to life on stage.",
-                duration: "2.5 hours",
-                availability: "Wed-Sun 8:00 PM"
-            },
-            {
-                id: 3,
-                title: "Central Park Food Tour",
-                category: "food",
-                price: "$45",
-                rating: 4.6,
-                reviews: 892,
-                distance: "0.8 mi",
-                image: "🍕",
-                description: "Taste the best street food while exploring Central Park.",
-                duration: "2 hours",
-                availability: "Daily 11:00 AM - 6:00 PM"
-            },
-            {
-                id: 4,
-                title: "Rooftop Bar Experience",
-                category: "nightlife",
-                price: "$25",
-                rating: 4.7,
-                reviews: 567,
-                distance: "1.2 mi",
-                image: "🍸",
-                description: "Enjoy panoramic city views with craft cocktails.",
-                duration: "Open evening",
-                availability: "Daily 5:00 PM - 2:00 AM"
-            },
-            {
-                id: 5,
-                title: "Art Gallery Walking Tour",
-                category: "culture",
-                price: "$30",
-                rating: 4.5,
-                reviews: 456,
-                distance: "1.5 mi",
-                image: "🎨",
-                description: "Discover contemporary art in Chelsea's finest galleries.",
-                duration: "2.5 hours",
-                availability: "Tue-Sun 10:00 AM - 4:00 PM"
-            },
-            {
-                id: 6,
-                title: "Escape Room Challenge",
-                category: "activities",
-                price: "$40",
-                rating: 4.8,
-                reviews: 1123,
-                distance: "0.9 mi",
-                image: "🔐",
-                description: "Test your puzzle-solving skills in themed escape rooms.",
-                duration: "1 hour",
-                availability: "Daily 10:00 AM - 10:00 PM"
-            },
-            {
-                id: 7,
-                title: "Couples Spa Package",
-                category: "couple",
-                price: "$180",
-                rating: 4.9,
-                reviews: 234,
-                distance: "2.3 mi",
-                image: "💆‍♀️",
-                description: "Relaxing spa treatments designed for couples.",
-                duration: "3 hours",
-                availability: "Daily 9:00 AM - 8:00 PM"
-            },
-            {
-                id: 8,
-                title: "Family Zoo Experience",
-                category: "family",
-                price: "$25",
-                rating: 4.7,
-                reviews: 789,
-                distance: "3.1 mi",
-                image: "🦒",
-                description: "Interactive zoo experience perfect for families with children.",
-                duration: "4 hours",
-                availability: "Daily 9:00 AM - 5:00 PM"
-            }
-        ];
 
-        let bookedExperiences = [];
-        let currentCategory = 'all';
+    // --- DATABASE SETUP (IndexedDB) ---
+    const DB_NAME = 'CommunityConnectDB_V3';
+    const DB_VERSION = 1;
+    let db;
 
-        // Navigation functionality
-        function showTab(tabName) {
-            // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.add('hidden');
-            });
-            
-            // Show selected tab
-            document.getElementById(`${tabName}-tab`).classList.remove('hidden');
-            
-            // Update navigation buttons
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('active');
-                btn.classList.add('text-telegram-light-text', 'dark:text-gray-400');
-                btn.classList.remove('text-telegram-blue');
-            });
-            
-            const activeBtn = document.querySelector(`[data-tab="${tabName}"]`);
-            activeBtn.classList.add('active');
-            activeBtn.classList.remove('text-telegram-light-text', 'dark:text-gray-400');
-            activeBtn.classList.add('text-telegram-blue');
-        }
-
-        // Category filtering
-        function filterByCategory(category) {
-            currentCategory = category;
-            
-            // Update category buttons
-            document.querySelectorAll('.category-btn').forEach(btn => {
-                btn.classList.remove('active');
-                btn.classList.remove('bg-telegram-blue', 'text-white');
-                btn.classList.add('bg-gray-100', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
-            });
-            
-            const activeBtn = document.querySelector(`[data-category="${category}"]`);
-            activeBtn.classList.add('active');
-            activeBtn.classList.add('bg-telegram-blue', 'text-white');
-            activeBtn.classList.remove('bg-gray-100', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
-            
-            renderExperiences();
-        }
-
-        // Render experiences
-        function renderExperiences() {
-            const grid = document.getElementById('experiences-grid');
-            const filteredExperiences = currentCategory === 'all' 
-                ? experiences 
-                : experiences.filter(exp => exp.category === currentCategory);
-            
-            grid.innerHTML = filteredExperiences.map(exp => `
-                <div class="bg-telegram-bg dark:bg-gray-800 rounded-lg telegram-shadow overflow-hidden cursor-pointer experience-card" data-id="${exp.id}">
-                    <div class="p-4">
-                        <div class="flex items-start space-x-3">
-                            <div class="text-4xl">${exp.image}</div>
-                            <div class="flex-1">
-                                <h3 class="font-semibold text-telegram-text dark:text-white mb-1">${exp.title}</h3>
-                                <div class="flex items-center space-x-2 text-sm text-telegram-light-text dark:text-gray-400 mb-2">
-                                    <span>⭐ ${exp.rating}</span>
-                                    <span>(${exp.reviews})</span>
-                                    <span>•</span>
-                                    <span>📍 ${exp.distance}</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-lg font-bold text-telegram-blue">${exp.price}</span>
-                                    <button class="bg-telegram-blue text-white px-4 py-2 rounded-lg text-sm font-medium book-btn" data-id="${exp.id}">
-                                        Book Now
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // Search functionality
-        function handleSearch(query) {
-            const searchResults = document.getElementById('search-results');
-            
-            if (!query.trim()) {
-                searchResults.innerHTML = `
-                    <div class="text-center text-telegram-light-text dark:text-gray-400 py-8">
-                        🔍 Start typing to search for experiences
-                    </div>
-                `;
-                return;
-            }
-            
-            const filteredExperiences = experiences.filter(exp => 
-                exp.title.toLowerCase().includes(query.toLowerCase()) ||
-                exp.description.toLowerCase().includes(query.toLowerCase())
-            );
-            
-            if (filteredExperiences.length === 0) {
-                searchResults.innerHTML = `
-                    <div class="text-center text-telegram-light-text dark:text-gray-400 py-8">
-                        😔 No experiences found for "${query}"
-                    </div>
-                `;
-                return;
-            }
-            
-            searchResults.innerHTML = filteredExperiences.map(exp => `
-                <div class="bg-telegram-bg dark:bg-gray-800 rounded-lg telegram-shadow overflow-hidden cursor-pointer experience-card" data-id="${exp.id}">
-                    <div class="p-4">
-                        <div class="flex items-start space-x-3">
-                            <div class="text-4xl">${exp.image}</div>
-                            <div class="flex-1">
-                                <h3 class="font-semibold text-telegram-text dark:text-white mb-1">${exp.title}</h3>
-                                <div class="flex items-center space-x-2 text-sm text-telegram-light-text dark:text-gray-400 mb-2">
-                                    <span>⭐ ${exp.rating}</span>
-                                    <span>(${exp.reviews})</span>
-                                    <span>•</span>
-                                    <span>📍 ${exp.distance}</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-lg font-bold text-telegram-blue">${exp.price}</span>
-                                    <button class="bg-telegram-blue text-white px-4 py-2 rounded-lg text-sm font-medium book-btn" data-id="${exp.id}">
-                                        Book Now
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // Show experience details
-        function showExperienceDetails(id) {
-            const experience = experiences.find(exp => exp.id === parseInt(id));
-            if (!experience) return;
-            
-            const modal = document.getElementById('experience-modal');
-            const title = document.getElementById('modal-title');
-            const content = document.getElementById('modal-content');
-            
-            title.textContent = experience.title;
-            content.innerHTML = `
-                <div class="text-center mb-4">
-                    <div class="text-6xl mb-2">${experience.image}</div>
-                    <div class="flex items-center justify-center space-x-2 text-sm text-telegram-light-text dark:text-gray-400">
-                        <span>⭐ ${experience.rating}</span>
-                        <span>(${experience.reviews} reviews)</span>
-                        <span>•</span>
-                        <span>📍 ${experience.distance}</span>
-                    </div>
-                </div>
-                
-                <div class="space-y-4">
-                    <div>
-                        <h4 class="font-semibold text-telegram-text dark:text-white mb-2">Description</h4>
-                        <p class="text-telegram-light-text dark:text-gray-400">${experience.description}</p>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <h4 class="font-semibold text-telegram-text dark:text-white mb-1">Duration</h4>
-                            <p class="text-telegram-light-text dark:text-gray-400">${experience.duration}</p>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold text-telegram-text dark:text-white mb-1">Price</h4>
-                            <p class="text-telegram-blue font-bold text-lg">${experience.price}</p>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <h4 class="font-semibold text-telegram-text dark:text-white mb-2">Availability</h4>
-                        <p class="text-telegram-light-text dark:text-gray-400">${experience.availability}</p>
-                    </div>
-                    
-                    <button class="w-full bg-telegram-blue text-white py-3 rounded-lg font-semibold book-btn" data-id="${experience.id}">
-                        Book for ${experience.price}
-                    </button>
-                </div>
-            `;
-            
-            modal.classList.remove('hidden');
-        }
-
-        // Book experience
-        function bookExperience(id) {
-            const experience = experiences.find(exp => exp.id === parseInt(id));
-            if (!experience) return;
-            
-            // Add to booked experiences
-            const ticket = {
-                ...experience,
-                bookingId: Date.now(),
-                bookingDate: new Date().toLocaleDateString(),
-                status: 'confirmed'
+    function initDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains('tasks')) {
+                    const taskStore = db.createObjectStore('tasks', { keyPath: 'id', autoIncrement: true });
+                    taskStore.createIndex('category', 'category', { unique: false });
+                    taskStore.createIndex('createdBy', 'createdBy', { unique: false }); // New index for tasks created by user
+                }
+                if (!db.objectStoreNames.contains('users')) db.createObjectStore('users', { keyPath: 'id' });
+                if (!db.objectStoreNames.contains('leaderboard')) db.createObjectStore('leaderboard', { keyPath: 'id' });
             };
-            
-            bookedExperiences.push(ticket);
-            renderTickets();
-            
-            // Close modal if open
-            document.getElementById('experience-modal').classList.add('hidden');
-            
-            // Show success message
-            alert('🎉 Booking confirmed! Check your tickets tab.');
+            request.onsuccess = (event) => { db = event.target.result; console.log('Database initialized'); resolve(db); };
+            request.onerror = (event) => { console.error('Database error:', event.target.errorCode); reject(event.target.errorCode); };
+        });
+    }
+
+    // --- MOCK DATA & INITIALIZATION ---
+    const ALL_BADGES = {
+        service_ribbon: { name: 'Service Ribbon', icon: `<svg viewBox="0 0 100 100"><rect x="15" y="35" width="70" height="30" fill="#4a90e2"/><rect x="15" y="35" width="23" height="30" fill="#f5a623"/></svg>`, description: 'Complete your first task.' },
+        commendation_medal: { name: 'Commendation Medal', icon: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="35" fill="#e84c3d"/><path d="M50 25 l10 20 l22 -8 l-8 22 l20 10 l-20 10 l8 22 l-22 -8 l-10 20 l-10 -20 l-22 8 l8 -22 l-20 -10 l20 -10 l-8 -22 l22 8z" fill="#f1c40f"/></svg>`, description: 'Complete 5 tasks.' },
+        distinguished_service: { name: 'Distinguished Service', icon: `<svg viewBox="0 0 100 100"><path d="M50 10 L60 40 L90 40 L65 60 L75 90 L50 70 L25 90 L35 60 L10 40 L40 40 Z" fill="#f1c40f" stroke="#c0392b" stroke-width="5"/></svg>`, description: 'Complete 15 tasks.' },
+        joint_ops_crest: { name: 'Joint Ops Crest', icon: `<svg viewBox="0 0 100 100"><path d="M20 80 L50 20 L80 80 Z" fill="#27ae60"/><path d="M20 80 h60 v-10 h-60 z" fill="#2c3e50"/></svg>`, description: 'Complete a task with a partner.' },
+        recon_specialist: { name: 'Recon Specialist', icon: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="30" fill="none" stroke="#bdc3c7" stroke-width="8"/><path d="M50 30 l20 40 h-40 z" fill="#3498db"/></svg>`, description: 'Complete a scavenger hunt task.'},
+        campaign_medal: { name: 'Campaign Medal', icon: `<svg viewBox="0 0 100 100"><rect x="20" y="20" width="60" height="60" fill="#8e44ad"/><path d="M50 30 L60 45 L50 60 L40 45 Z" fill="#ecf0f1"/></svg>`, description: 'Complete a mission task.'},
+    };
+    
+    const ALL_INTERESTS = ['Environment', 'Animals', 'Community', 'Seniors', 'Education', 'Arts'];
+    const ALL_CATEGORIES = ['nearby', 'scavenger', 'mission']; // For task creation form
+
+    async function populateInitialData() {
+        const user = await getObject('users', 'currentUser');
+        if (!user) {
+            await addObject('users', { id: 'currentUser', name: window.Telegram.WebApp.initDataUnsafe?.user?.first_name || 'Volunteer', score: 0, badges: [], completedTasks: [], interests: ['Environment', 'Community'] });
+            await addObject('leaderboard', {id: 'user1', name: 'Alex', score: 150});
+            await addObject('leaderboard', {id: 'user2', name: 'Bravo', score: 120});
+            await addObject('leaderboard', {id: 'user3', name: 'Charlie', score: 95});
+        }
+        
+        const tasks = await getAllObjects('tasks');
+        if (tasks.length === 0) {
+            const initialTasks = [
+                { title: 'Community Garden Cleanup', description: 'Help clear out weeds from the local community garden.', latitude: 9.02, longitude: 38.77, points: 20, status: 'available', category: 'nearby', interest_tag: 'Environment', createdBy: 'system' },
+                { title: 'Park Patrol', description: 'Join a group to pick up litter at Meskel Square Park.', latitude: 9.01, longitude: 38.76, points: 15, status: 'available', category: 'nearby', interest_tag: 'Environment', createdBy: 'system' },
+                { title: 'Senior Support Run', description: 'Help an elderly resident with their weekly grocery shopping.', latitude: 9.03, longitude: 38.75, points: 25, status: 'available', category: 'nearby', interest_tag: 'Seniors', createdBy: 'system' },
+                { title: 'Intel Drop: Book Donation', description: 'Find the hidden drop-off point for book donations.', latitude: 9.00, longitude: 38.78, points: 30, status: 'available', category: 'scavenger', interest_tag: 'Education', hint: 'Intel suggests a location near the large statue at the national museum. Box is concealed.', createdBy: 'system' },
+                { title: 'Animal Shelter Support', description: 'Assist at the city animal shelter.', latitude: 9.04, longitude: 38.79, points: 20, status: 'available', category: 'nearby', interest_tag: 'Animals', createdBy: 'system' },
+                { title: 'Operation Green City', description: 'Part of a major initiative to plant 100 trees this month.', latitude: 9.05, longitude: 38.74, points: 35, status: 'available', category: 'mission', interest_tag: 'Environment', missionName: 'Operation Green City', createdBy: 'system' },
+            ];
+            for (const task of initialTasks) await addObject('tasks', task);
+        }
+    }
+
+
+    // --- DB HELPER FUNCTIONS ---
+    function getObject(storeName, key) { return new Promise((resolve, reject) => { const req = db.transaction(storeName, 'readonly').objectStore(storeName).get(key); req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); }); }
+    function getAllObjects(storeName) { return new Promise((resolve, reject) => { const req = db.transaction(storeName, 'readonly').objectStore(storeName).getAll(); req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); }); }
+    function addObject(storeName, object) { return new Promise((resolve, reject) => { const req = db.transaction(storeName, 'readwrite').objectStore(storeName).add(object); req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); }); }
+    function updateObject(storeName, object) { return new Promise((resolve, reject) => { const req = db.transaction(storeName, 'readwrite').objectStore(storeName).put(object); req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); }); }
+    function deleteObject(storeName, key) { return new Promise((resolve, reject) => { const req = db.transaction(storeName, 'readwrite').objectStore(storeName).delete(key); req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); }); }
+    
+    // Function to get objects by index
+    function getObjectsByIndex(storeName, indexName, key) {
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(storeName, 'readonly');
+            const store = transaction.objectStore(storeName);
+            const index = store.index(indexName);
+            const request = index.getAll(key);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    // --- UI RENDERING ---
+    async function renderAll(activeFilter = 'foryou') {
+        await renderTasks(activeFilter);
+        await renderLeaderboard();
+        await renderProfile();
+        // My Tasks and Done History will be rendered by renderProfile's tab logic
+    }
+
+    async function renderTasks(filter = 'foryou') {
+        const taskList = document.getElementById('task-list');
+        const taskListHeader = document.getElementById('task-list-header');
+        const allTasks = await getAllObjects('tasks');
+        const user = await getObject('users', 'currentUser');
+        // Filter out tasks created by the current user from the main task list
+        const availableTasks = allTasks.filter(t => t.status === 'available' && t.createdBy !== user.id);
+
+        let filteredTasks = [];
+        switch(filter) {
+            case 'foryou': taskListHeader.textContent = 'Recommended Tasks'; filteredTasks = availableTasks.filter(t => user.interests.includes(t.interest_tag)); if (filteredTasks.length === 0) filteredTasks = availableTasks.slice(0, 5); break;
+            case 'missions': taskListHeader.textContent = 'Active Missions'; filteredTasks = availableTasks.filter(t => t.category === 'mission'); break;
+            case 'nearby': default: taskListHeader.textContent = 'Local Operations'; filteredTasks = availableTasks.filter(t => t.category === 'nearby' || t.category === 'scavenger'); break;
         }
 
-        // Render tickets
-        function renderTickets() {
-            const ticketsList = document.getElementById('tickets-list');
-            
-            if (bookedExperiences.length === 0) {
-                ticketsList.innerHTML = `
-                    <div class="text-center text-telegram-light-text dark:text-gray-400 py-8">
-                        🎟️ No tickets yet<br>
-                        <span class="text-sm">Book an experience to see your tickets here</span>
+        if (filteredTasks.length === 0) {
+            taskList.innerHTML = `<div class="text-center p-8 border-2 border-dashed rounded-lg" style="border-color: var(--tg-theme-hint-color);"><p style="color: var(--tg-theme-hint-color);">No tasks available in this category.</p></div>`;
+            return;
+        }
+
+        taskList.innerHTML = filteredTasks.map(task => {
+            let tag = '';
+            if (task.category === 'mission') tag = `<div class="mt-2 text-xs font-semibold" style="color: var(--tg-theme-link-color);">${task.missionName}</div>`;
+            else if (task.category === 'scavenger') tag = `<div class="mt-2 text-xs font-semibold text-yellow-600">Recon Op</div>`;
+            return `
+            <div class="task-card rounded-lg p-4 shadow-sm cursor-pointer" style="background-color: var(--tg-theme-secondary-bg-color);" data-task-id="${task.id}">
+                <div class="flex justify-between items-start">
+                    <div><h3 class="font-bold text-md">${task.title}</h3><p class="text-sm mt-1" style="color: var(--tg-theme-hint-color);">${task.description.substring(0, 50)}...</p></div>
+                    <div class="text-right ml-2 flex-shrink-0"><div class="font-bold text-lg" style="color: var(--tg-theme-link-color);">${task.points}</div><div class="text-xs" style="color: var(--tg-theme-hint-color);">PTS</div></div>
+                </div>
+                ${tag}
+            </div>`}).join('');
+
+        document.querySelectorAll('.task-card').forEach(card => card.addEventListener('click', () => showTaskModal(card.dataset.taskId)));
+    }
+
+    async function renderLeaderboard() {
+        const list = document.getElementById('leaderboard-list');
+        const currentUser = await getObject('users', 'currentUser');
+        let otherUsers = await getAllObjects('leaderboard');
+        const allUsers = [...otherUsers, {id: currentUser.id, name: currentUser.name, score: currentUser.score}];
+        allUsers.sort((a, b) => b.score - a.score);
+
+        list.innerHTML = allUsers.map((user, index) => `
+            <div class="flex items-center p-3 rounded-lg ${user.id === 'currentUser' ? 'font-bold' : ''}" style="background-color: ${user.id === 'currentUser' ? 'rgba(36, 129, 204, 0.1)' : 'var(--tg-theme-secondary-bg-color)'};">
+                <div class="w-8 text-lg font-bold" style="color: var(--tg-theme-hint-color);">${index + 1}</div>
+                <img src="https://placehold.co/40x40/EFEFEF/AAAAAA?text=${user.name.charAt(0)}" class="w-10 h-10 rounded-full mr-4">
+                <div class="flex-grow">${user.name}</div>
+                <div class="font-bold" style="color: var(--tg-theme-link-color);">${user.score} PTS</div>
+            </div>`).join('');
+    }
+
+    async function renderProfile() {
+        const user = await getObject('users', 'currentUser');
+        if (!user) return;
+
+        document.getElementById('user-score').textContent = `${user.score} PTS`;
+        document.getElementById('profile-name').textContent = user.name;
+        document.getElementById('profile-score').textContent = `${user.score} PTS`;
+
+        const interestChips = document.getElementById('interest-chips');
+        interestChips.innerHTML = ALL_INTERESTS.map(interest => `<button class="interest-chip text-sm py-1 px-3 rounded-full border ${user.interests.includes(interest) ? 'selected' : ''}" data-interest="${interest}">${interest}</button>`).join('');
+        document.querySelectorAll('.interest-chip').forEach(chip => chip.addEventListener('click', toggleInterest));
+
+        const badgeGrid = document.getElementById('badge-grid');
+        badgeGrid.innerHTML = Object.entries(ALL_BADGES).map(([key, badge]) => `
+            <div class="flex flex-col items-center">
+                <div class="badge-icon w-12 h-12 ${user.badges.includes(key) ? 'unlocked' : ''}" title="${badge.name}: ${badge.description}">${badge.icon}</div>
+                <span class="text-xs mt-1 ${user.badges.includes(key) ? '' : 'text-gray-400'}">${badge.name}</span>
+            </div>`).join('');
+        
+        generateQRCode(`community-connect-user-${user.id}`);
+
+        // Initialize profile tabs
+        const profileTabButtons = document.querySelectorAll('.profile-tab-button');
+        const profileTabContents = document.querySelectorAll('.profile-tab-content');
+
+        profileTabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetTab = button.dataset.tab;
+
+                profileTabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+
+                profileTabContents.forEach(content => content.classList.add('hidden'));
+                document.getElementById(`${targetTab}-tab-content`).classList.remove('hidden');
+
+                // Render content specific to the active tab
+                if (targetTab === 'my-tasks') {
+                    renderMyTasks();
+                } else if (targetTab === 'done-history') {
+                    renderDoneHistory();
+                }
+            });
+        });
+
+        // Initially render the default active tab (My Tasks)
+        renderMyTasks();
+        // Ensure done history is also rendered so data is available if user switches
+        renderDoneHistory();
+    }
+
+    async function renderMyTasks() {
+        const myTaskList = document.getElementById('my-task-list');
+        const user = await getObject('users', 'currentUser');
+        const myTasks = await getObjectsByIndex('tasks', 'createdBy', user.id);
+
+        if (myTasks.length === 0) {
+            myTaskList.innerHTML = `<div class="text-center p-8 border-2 border-dashed rounded-lg" style="border-color: var(--tg-theme-hint-color);"><p style="color: var(--tg-theme-hint-color);">You haven't created any tasks yet.</p></div>`;
+            return;
+        }
+
+        myTaskList.innerHTML = myTasks.map(task => `
+            <div class="task-card rounded-lg p-4 shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color);">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <h3 class="font-bold text-md">${task.title}</h3>
+                        <p class="text-sm mt-1" style="color: var(--tg-theme-hint-color);">${task.description.substring(0, 50)}...</p>
+                        <p class="text-xs mt-1" style="color: var(--tg-theme-hint-color);">Category: ${task.category}</p>
+                        <p class="text-xs mt-1" style="color: var(--tg-theme-hint-color);">Points: ${task.points}</p>
                     </div>
-                `;
-                return;
-            }
-            
-            ticketsList.innerHTML = bookedExperiences.map(ticket => `
-                <div class="bg-telegram-bg dark:bg-gray-800 rounded-lg telegram-shadow p-4">
-                    <div class="flex items-start space-x-3">
-                        <div class="text-3xl">${ticket.image}</div>
-                        <div class="flex-1">
-                            <h3 class="font-semibold text-telegram-text dark:text-white mb-1">${ticket.title}</h3>
-                            <div class="text-sm text-telegram-light-text dark:text-gray-400 mb-2">
-                                <div>Booking ID: #${ticket.bookingId}</div>
-                                <div>Booked: ${ticket.bookingDate}</div>
-                                <div class="text-green-500 font-medium">✓ ${ticket.status.toUpperCase()}</div>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-telegram-blue font-bold">${ticket.price}</span>
-                                <button class="text-telegram-blue text-sm font-medium">View Details</button>
-                            </div>
-                        </div>
+                    <div class="text-right ml-2 flex-shrink-0">
+                        <div class="font-bold text-lg" style="color: var(--tg-theme-link-color);">${task.points}</div>
+                        <div class="text-xs" style="color: var(--tg-theme-hint-color);">PTS</div>
                     </div>
                 </div>
-            `).join('');
+                <div class="flex justify-end space-x-2 mt-4">
+                    <button class="crud-button edit" data-task-id="${task.id}" data-action="edit">Edit</button>
+                    <button class="crud-button delete" data-task-id="${task.id}" data-action="delete">Delete</button>
+                </div>
+            </div>`).join('');
+
+        document.querySelectorAll('#my-task-list .crud-button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const taskId = parseInt(e.currentTarget.dataset.taskId);
+                const action = e.currentTarget.dataset.action;
+                if (action === 'edit') showTaskFormModal(taskId);
+                else if (action === 'delete') confirmDeleteTask(taskId);
+            });
+        });
+    }
+
+    async function renderDoneHistory() {
+        const doneTaskList = document.getElementById('done-task-list');
+        const user = await getObject('users', 'currentUser');
+        const allTasks = await getAllObjects('tasks');
+        
+        // Filter tasks that are completed AND are in the user's completedTasks array
+        const completedTasks = allTasks.filter(task => 
+            task.status === 'completed' && user.completedTasks.includes(task.id)
+        );
+
+        if (completedTasks.length === 0) {
+            doneTaskList.innerHTML = `<div class="text-center p-8 border-2 border-dashed rounded-lg" style="border-color: var(--tg-theme-hint-color);"><p style="color: var(--tg-theme-hint-color);">You haven't completed any tasks yet.</p></div>`;
+            return;
         }
 
-        // Event listeners
-        document.addEventListener('DOMContentLoaded', function() {
-            // Navigation
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    showTab(this.dataset.tab);
-                });
-            });
-            
-            // Categories
-            document.querySelectorAll('.category-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    filterByCategory(this.dataset.category);
-                });
-            });
-            
-            // Search
-            document.getElementById('search-input').addEventListener('input', function() {
-                handleSearch(this.value);
-            });
-            
-            // Experience cards (event delegation)
-            document.addEventListener('click', function(e) {
-                if (e.target.closest('.experience-card') && !e.target.closest('.book-btn')) {
-                    const card = e.target.closest('.experience-card');
-                    showExperienceDetails(card.dataset.id);
-                }
-                
-                if (e.target.closest('.book-btn')) {
-                    e.stopPropagation();
-                    const id = e.target.closest('.book-btn').dataset.id;
-                    bookExperience(id);
-                }
-            });
-            
-            // Modal close
-            document.getElementById('close-modal').addEventListener('click', function() {
-                document.getElementById('experience-modal').classList.add('hidden');
-            });
-            
-            // Close modal on backdrop click
-            document.getElementById('experience-modal').addEventListener('click', function(e) {
-                if (e.target === this) {
-                    this.classList.add('hidden');
-                }
-            });
-            
-            // Initial render
-            renderExperiences();
+        doneTaskList.innerHTML = completedTasks.map(task => `
+            <div class="task-card rounded-lg p-4 shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color);">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="font-bold text-md">${task.title}</h3>
+                        <p class="text-sm mt-1" style="color: var(--tg-theme-hint-color);">${task.description.substring(0, 50)}...</p>
+                        <p class="text-xs mt-1" style="color: var(--tg-theme-hint-color);">Completed: ${new Date().toLocaleDateString()}</p> <!-- Placeholder for actual completion date -->
+                    </div>
+                    <div class="text-right ml-2 flex-shrink-0">
+                        <div class="font-bold text-lg" style="color: var(--tg-theme-link-color);">${task.points}</div>
+                        <div class="text-xs" style="color: var(--tg-theme-hint-color);">PTS</div>
+                    </div>
+                </div>
+            </div>`).join('');
+    }
+    
+    // --- TASK & MODAL LOGIC ---
+    function showModal(innerHTML) {
+        const modal = document.getElementById('modal');
+        const modalContent = document.getElementById('modal-content');
+        modalContent.innerHTML = innerHTML;
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        modal.addEventListener('click', (e) => {
+            if (e.target.id === 'modal' || e.target.classList.contains('close-modal-btn')) {
+                hideModal();
+            }
         });
+    }
+
+    function hideModal() {
+        const modal = document.getElementById('modal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    async function showTaskModal(taskId) {
+        const task = await getObject('tasks', parseInt(taskId));
+        if (!task) return;
+
+        // Prevent completing tasks created by the current user from the main list
+        const user = await getObject('users', 'currentUser');
+        const isUserCreatedTask = task.createdBy === user.id;
+
+        const isPartnerTask = Math.random() > 0.5; // This logic for partner task seems generic, keep as is.
+        let partnerMessage = '';
+        if (isPartnerTask) {
+             const baseShare = task.points / 2;
+             const synergyBonus = Math.ceil(baseShare * 0.2);
+             const totalPerPerson = Math.round(baseShare + synergyBonus);
+             partnerMessage = `<div class="mt-4 p-3 rounded-lg text-sm" style="background-color: var(--tg-theme-secondary-bg-color);">
+                <span class="font-bold">🤝 Joint Operation!</span> You've been matched with <span class="font-bold">Alex</span>.
+                <div class="mt-2 pt-2 border-t" style="border-color: var(--tg-theme-hint-color);">
+                    <p class="font-semibold">Point Distribution:</p>
+                    <p>Each operative earns ${totalPerPerson} points (${Math.round(baseShare)} base + ${synergyBonus} synergy bonus).</p>
+                </div>
+             </div>`;
+        }
+        
+        const completeButton = isUserCreatedTask 
+            ? `<button class="w-2/3 py-2 px-4 rounded-lg font-bold opacity-50 cursor-not-allowed" style="background-color: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color);" disabled>Cannot Complete Your Own Task</button>`
+            : `<button id="complete-task-btn" data-task-id="${task.id}" data-task-points="${task.points}" data-is-partner="${isPartnerTask}" data-task-category="${task.category}" class="w-2/3 py-2 px-4 rounded-lg font-bold" style="background-color: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color);">Mark as Complete</button>`;
+
+
+        const modalHTML = `
+            <h2 class="text-xl font-bold mb-2">${task.title}</h2>
+            <p class="mb-4" style="color: var(--tg-theme-hint-color);">${task.description}</p>
+            ${task.category === 'scavenger' ? `<div class="mb-4 p-3 bg-yellow-100 text-yellow-800 rounded-lg text-sm"><span class="font-bold">Intel:</span> ${task.hint}</div>` : ''}
+            <div class="flex justify-between items-center mb-4">
+                <span class="font-bold text-lg" style="color: var(--tg-theme-link-color);">${task.points} Points</span>
+                <span class="text-sm" style="color: var(--tg-theme-hint-color);"><a href="https://maps.google.com/?q=${task.latitude},${task.longitude}" target="_blank" style="color: var(--tg-theme-link-color);">View on Map</a></span>
+            </div>
+            ${partnerMessage}
+            <div class="mt-6 flex space-x-2">
+                <button class="close-modal-btn w-1/3 py-2 px-4 rounded-lg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">Abort</button>
+                ${completeButton}
+            </div>`;
+        showModal(modalHTML);
+        if (!isUserCreatedTask) {
+            document.getElementById('complete-task-btn').addEventListener('click', completeTask);
+        }
+    }
+
+    async function completeTask(event) {
+        const button = event.currentTarget;
+        const taskId = parseInt(button.dataset.taskId);
+        const basePoints = parseInt(button.dataset.taskPoints);
+        const isPartnerTask = button.dataset.isPartner === 'true';
+        const taskCategory = button.dataset.taskCategory;
+
+        let pointsEarned = basePoints;
+        let notificationMessage = `Task completed! +${basePoints} points!`;
+
+        if (isPartnerTask) {
+            const baseShare = basePoints / 2;
+            const synergyBonus = Math.ceil(baseShare * 0.2);
+            pointsEarned = Math.round(baseShare + synergyBonus);
+            notificationMessage = `Joint Op success! You earned ${pointsEarned} points!`;
+        }
+
+        const task = await getObject('tasks', taskId);
+        task.status = 'completed';
+        await updateObject('tasks', task);
+
+        const user = await getObject('users', 'currentUser');
+        user.score += pointsEarned;
+        // Only add to completedTasks if not already present (to prevent duplicates if user somehow completes same task multiple times)
+        if (!user.completedTasks.includes(taskId)) {
+            user.completedTasks.push(taskId);
+        }
+
+        // Check for badges
+        if (!user.badges.includes('service_ribbon')) { user.badges.push('service_ribbon'); showNotification('Medal Awarded: Service Ribbon!'); }
+        if (user.completedTasks.length >= 5 && !user.badges.includes('commendation_medal')) { user.badges.push('commendation_medal'); showNotification('Medal Awarded: Commendation Medal!'); }
+        if (user.completedTasks.length >= 15 && !user.badges.includes('distinguished_service')) { user.badges.push('distinguished_service'); showNotification('Medal Awarded: Distinguished Service!'); }
+        if (isPartnerTask && !user.badges.includes('joint_ops_crest')) { user.badges.push('joint_ops_crest'); showNotification('Medal Awarded: Joint Ops Crest!'); }
+        if (taskCategory === 'scavenger' && !user.badges.includes('recon_specialist')) { user.badges.push('recon_specialist'); showNotification('Medal Awarded: Recon Specialist!'); }
+        if (taskCategory === 'mission' && !user.badges.includes('campaign_medal')) { user.badges.push('campaign_medal'); showNotification('Medal Awarded: Campaign Medal!'); }
+
+        await updateObject('users', user);
+
+        hideModal();
+        showNotification(notificationMessage);
+        const activeFilter = document.querySelector('.filter-tab.active').dataset.filter;
+        await renderAll(activeFilter); // Re-render all sections including profile tabs
+    }
+    
+    function showNotification(message) {
+        try {
+            window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+            window.Telegram.WebApp.showPopup({ title: 'Success', message: message, buttons: [{type: 'ok'}] });
+        } catch (e) {
+            const notif = document.createElement('div');
+            notif.className = 'fixed top-5 left-1/2 -translate-x-1/2 bg-green-500 text-white py-2 px-4 rounded-full shadow-lg text-sm z-50';
+            notif.textContent = message;
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 3000);
+        }
+    }
+
+    async function toggleInterest(event) {
+        const chip = event.currentTarget;
+        const interest = chip.dataset.interest;
+        const user = await getObject('users', 'currentUser');
+        const index = user.interests.indexOf(interest);
+        if (index > -1) user.interests.splice(index, 1);
+        else user.interests.push(interest);
+        await updateObject('users', user);
+        chip.classList.toggle('selected');
+        if(document.getElementById('home-screen').offsetParent !== null && document.querySelector('.filter-tab.active').dataset.filter === 'foryou') {
+            await renderTasks('foryou');
+        }
+    }
+    
+    // --- NEW FEATURE LOGIC ---
+    async function getRandomService() {
+        const availableTasks = (await getAllObjects('tasks')).filter(t => t.status === 'available');
+        if (availableTasks.length === 0) {
+            showNotification("No available services to assign.");
+            return;
+        }
+        const randomTask = availableTasks[Math.floor(Math.random() * availableTasks.length)];
+        showTaskModal(randomTask.id);
+    }
+
+    async function findRandomPartner() {
+        const partners = (await getAllObjects('leaderboard')).filter(p => p.id !== 'currentUser');
+        if (partners.length === 0) {
+            showNotification("No other volunteers available right now.");
+            return;
+        }
+        const partner = partners[Math.floor(Math.random() * partners.length)];
+        const modalHTML = `
+            <div class="text-center">
+                <h2 class="text-xl font-bold mb-4">Partner Recommendation</h2>
+                <img src="https://placehold.co/80x80/EFEFEF/AAAAAA?text=${partner.name.charAt(0)}" class="w-20 h-20 rounded-full mx-auto mb-4 border-2" style="border-color: var(--tg-theme-secondary-bg-color);">
+                <p>Consider teaming up with</p>
+                <p class="text-lg font-bold">${partner.name}</p>
+                <p class="text-sm" style="color: var(--tg-theme-hint-color);">${partner.score} Service Points</p>
+                <button class="close-modal-btn mt-6 w-full py-2 px-4 rounded-lg font-bold" style="background-color: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color);">Awesome!</button>
+            </div>`;
+        showModal(modalHTML);
+    }
+
+    function generateQRCode(text) {
+        const container = document.getElementById('qrcode-container');
+        container.innerHTML = ''; // Clear previous QR code
+
+        try {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128; // Adjust size as needed
+            canvas.height = 128; // Adjust size as needed
+            container.appendChild(canvas);
+
+            new QRious({
+                element: canvas,
+                value: text,
+                size: 128,
+                background: 'white',
+                backgroundAlpha: 1,
+                foreground: 'black',
+                foregroundAlpha: 1,
+                level: 'L'
+            });
+
+            // Make the QR code clickable to show in a larger modal
+            container.onclick = () => {
+                showModal(`<div class="p-4"><img src="${canvas.toDataURL()}" class="w-full max-w-xs mx-auto" alt="Profile QR Code"></div>`);
+            };
+
+        } catch (e) {
+            console.error("Error generating QR code:", e);
+            container.innerHTML = '<p class="text-red-500 text-xs">QR Code Error</p>';
+        }
+    }
+
+    // --- TASK CRUD OPERATIONS ---
+
+    // Show form to add/edit a task
+    async function showTaskFormModal(taskId = null) {
+        let task = {
+            title: '', description: '', points: 10, category: 'nearby', interest_tag: ALL_INTERESTS[0],
+            latitude: '', longitude: '', hint: '', missionName: ''
+        };
+        let modalTitle = 'Create New Task';
+        if (taskId !== null) {
+            task = await getObject('tasks', taskId);
+            modalTitle = 'Edit Task';
+        }
+
+        const categoryOptions = ALL_CATEGORIES.map(cat => 
+            `<option value="${cat}" ${task.category === cat ? 'selected' : ''}>${cat.charAt(0).toUpperCase() + cat.slice(1)}</option>`
+        ).join('');
+
+        const interestOptions = ALL_INTERESTS.map(interest => 
+            `<option value="${interest}" ${task.interest_tag === interest ? 'selected' : ''}>${interest}</option>`
+        ).join('');
+
+        const formHtml = `
+            <h2 class="text-xl font-bold mb-4">${modalTitle}</h2>
+            <form id="task-form" class="space-y-4">
+                <div>
+                    <label for="task-title" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Title</label>
+                    <input type="text" id="task-title" value="${task.title}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);" required>
+                </div>
+                <div>
+                    <label for="task-description" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Description</label>
+                    <textarea id="task-description" rows="3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);" required>${task.description}</textarea>
+                </div>
+                <div>
+                    <label for="task-points" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Points</label>
+                    <input type="number" id="task-points" value="${task.points}" min="1" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);" required>
+                </div>
+                <div>
+                    <label for="task-category" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Category</label>
+                    <select id="task-category" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);" required>
+                        ${categoryOptions}
+                    </select>
+                </div>
+                <div id="additional-fields">
+                    ${task.category === 'nearby' || task.category === 'scavenger' ? `
+                        <div>
+                            <label for="task-latitude" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Latitude</label>
+                            <input type="number" step="0.000001" id="task-latitude" value="${task.latitude}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
+                        </div>
+                        <div>
+                            <label for="task-longitude" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Longitude</label>
+                            <input type="number" step="0.000001" id="task-longitude" value="${task.longitude}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
+                        </div>
+                    ` : ''}
+                    ${task.category === 'scavenger' ? `
+                        <div>
+                            <label for="task-hint" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Hint</label>
+                            <textarea id="task-hint" rows="2" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">${task.hint}</textarea>
+                        </div>
+                    ` : ''}
+                    ${task.category === 'mission' ? `
+                        <div>
+                            <label for="task-mission-name" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Mission Name</label>
+                            <input type="text" id="task-mission-name" value="${task.missionName}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
+                        </div>
+                    ` : ''}
+                </div>
+                <div>
+                    <label for="task-interest-tag" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Interest Tag</label>
+                    <select id="task-interest-tag" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
+                        ${interestOptions}
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-2 mt-6">
+                    <button type="button" class="close-modal-btn py-2 px-4 rounded-lg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">Cancel</button>
+                    <button type="submit" id="save-task-btn" data-task-id="${taskId || ''}" class="crud-button py-2 px-4 rounded-lg">${taskId !== null ? 'Save Changes' : 'Create Task'}</button>
+                </div>
+            </form>
+        `;
+        showModal(formHtml);
+
+        const taskCategorySelect = document.getElementById('task-category');
+        taskCategorySelect.addEventListener('change', () => {
+            const selectedCategory = taskCategorySelect.value;
+            const additionalFieldsDiv = document.getElementById('additional-fields');
+            let newFieldsHtml = '';
+
+            // Retain current values if available, for a smoother UX when switching categories
+            const currentLatitude = document.getElementById('task-latitude')?.value || task.latitude;
+            const currentLongitude = document.getElementById('task-longitude')?.value || task.longitude;
+            const currentHint = document.getElementById('task-hint')?.value || task.hint;
+            const currentMissionName = document.getElementById('task-mission-name')?.value || task.missionName;
+
+
+            if (selectedCategory === 'nearby' || selectedCategory === 'scavenger') {
+                newFieldsHtml += `
+                    <div>
+                        <label for="task-latitude" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Latitude</label>
+                        <input type="number" step="0.000001" id="task-latitude" value="${currentLatitude}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
+                    </div>
+                    <div>
+                        <label for="task-longitude" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Longitude</label>
+                        <input type="number" step="0.000001" id="task-longitude" value="${currentLongitude}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
+                    </div>
+                `;
+            }
+            if (selectedCategory === 'scavenger') {
+                newFieldsHtml += `
+                    <div>
+                        <label for="task-hint" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Hint</label>
+                        <textarea id="task-hint" rows="2" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">${currentHint}</textarea>
+                    </div>
+                `;
+            }
+            if (selectedCategory === 'mission') {
+                newFieldsHtml += `
+                    <div>
+                        <label for="task-mission-name" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Mission Name</label>
+                        <input type="text" id="task-mission-name" value="${currentMissionName}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
+                    </div>
+                `;
+            }
+            additionalFieldsDiv.innerHTML = newFieldsHtml;
+        });
+
+
+        document.getElementById('task-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            saveTask(taskId);
+        });
+    }
+
+    // Save (Create/Update) Task
+    async function saveTask(taskId = null) {
+        const user = await getObject('users', 'currentUser');
+        const title = document.getElementById('task-title').value;
+        const description = document.getElementById('task-description').value;
+        const points = parseInt(document.getElementById('task-points').value);
+        const category = document.getElementById('task-category').value;
+        const interest_tag = document.getElementById('task-interest-tag').value;
+
+        let newTaskData = {
+            title,
+            description,
+            points,
+            category,
+            interest_tag,
+            status: 'available',
+            createdBy: user.id // Mark task as created by the current user
+        };
+
+        // Add category-specific fields
+        if (category === 'nearby' || category === 'scavenger') {
+            newTaskData.latitude = parseFloat(document.getElementById('task-latitude')?.value) || 0;
+            newTaskData.longitude = parseFloat(document.getElementById('task-longitude')?.value) || 0;
+        }
+        if (category === 'scavenger') {
+            newTaskData.hint = document.getElementById('task-hint')?.value || '';
+        }
+        if (category === 'mission') {
+            newTaskData.missionName = document.getElementById('task-mission-name')?.value || '';
+        }
+
+        if (taskId) {
+            // Update existing task
+            const existingTask = await getObject('tasks', taskId);
+            Object.assign(existingTask, newTaskData);
+            await updateObject('tasks', existingTask);
+            showNotification('Task updated successfully!');
+        } else {
+            // Add new task
+            await addObject('tasks', newTaskData);
+            showNotification('Task created successfully!');
+        }
+        hideModal();
+        // Re-render the active profile tab
+        const activeProfileTab = document.querySelector('.profile-tab-button.active')?.dataset.tab;
+        if (activeProfileTab === 'my-tasks') {
+            await renderMyTasks();
+        } else if (activeProfileTab === 'done-history') {
+            await renderDoneHistory();
+        }
+        await renderTasks(document.querySelector('.filter-tab.active').dataset.filter); // Re-render main task list
+    }
+
+    // Confirm Delete Task
+    function confirmDeleteTask(taskId) {
+        const modalHtml = `
+            <h2 class="text-xl font-bold mb-4">Confirm Deletion</h2>
+            <p class="mb-6">Are you sure you want to delete this task? This action cannot be undone.</p>
+            <div class="flex justify-end space-x-2">
+                <button type="button" class="close-modal-btn py-2 px-4 rounded-lg" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">Cancel</button>
+                <button type="button" id="delete-task-confirm-btn" data-task-id="${taskId}" class="crud-button delete py-2 px-4 rounded-lg">Delete</button>
+            </div>
+        `;
+        showModal(modalHtml);
+        document.getElementById('delete-task-confirm-btn').addEventListener('click', deleteTask);
+    }
+
+    // Delete Task
+    async function deleteTask(event) {
+        const taskId = parseInt(event.currentTarget.dataset.taskId);
+        await deleteObject('tasks', taskId);
+        showNotification('Task deleted successfully!');
+        hideModal();
+        // Re-render the active profile tab
+        const activeProfileTab = document.querySelector('.profile-tab-button.active')?.dataset.tab;
+        if (activeProfileTab === 'my-tasks') {
+            await renderMyTasks();
+        } else if (activeProfileTab === 'done-history') {
+            await renderDoneHistory();
+        }
+        await renderTasks(document.querySelector('.filter-tab.active').dataset.filter); // Re-render main task list
+    }
+
+
+    // --- NAVIGATION & EVENT LISTENERS ---
+    function setupEventListeners() {
+        document.querySelectorAll('.nav-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const targetScreenId = button.dataset.screen;
+                document.querySelectorAll('.main-content > div').forEach(screen => screen.classList.toggle('hidden', screen.id !== targetScreenId));
+                document.querySelectorAll('.nav-button').forEach(btn => btn.classList.toggle('active', btn.dataset.screen === targetScreenId));
+                document.querySelector('.main-content').scrollTop = 0;
+                // If navigating to Profile, ensure profile tabs are rendered
+                if (targetScreenId === 'profile-screen') {
+                    renderProfile(); // This will handle rendering the default tab (My Tasks)
+                }
+            });
+        });
+        
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                renderTasks(tab.dataset.filter);
+            });
+        });
+
+        document.getElementById('random-service-btn').addEventListener('click', getRandomService);
+        document.getElementById('find-partner-btn').addEventListener('click', findRandomPartner);
+        // The add-task-btn is now inside the profile screen, its listener will be set up by renderMyTasks
+        document.getElementById('add-task-btn').addEventListener('click', () => showTaskFormModal()); 
+    }
+
+    // --- APP START ---
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            await initDB();
+            await populateInitialData();
+            await renderAll();
+            setupEventListeners();
+        } catch (error) {
+            console.error("Failed to initialize the app:", error);
+            document.getElementById('task-list').innerHTML = `<div class="text-center p-8 border-2 border-dashed rounded-lg text-red-500"><p>Could not load app data. Please try again.</p></div>`;
+        }
+    });
+
     </script>
 </body>
 </html>
