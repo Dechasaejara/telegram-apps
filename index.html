@@ -125,6 +125,17 @@
         .profile-tab-content {
             padding-top: 16px;
         }
+
+        /* Responsive adjustments for profile page */
+        @media (min-width: 640px) {
+            .profile-header {
+                flex-direction: row;
+                align-items: center;
+            }
+            .profile-info {
+                text-align: left;
+            }
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -164,6 +175,13 @@
                     <button class="filter-tab whitespace-nowrap text-sm font-medium py-2 px-4 rounded-full" data-filter="nearby">Local Ops</button>
                 </div>
 
+                <!-- Distance Filter (New) -->
+                <div id="distance-filter-section" class="mb-4 p-3 rounded-lg" style="background-color: var(--tg-theme-secondary-bg-color);">
+                    <label for="distance-range" class="block text-sm font-medium mb-2" style="color: var(--tg-theme-text-color);">Max Distance: <span id="distance-value">50</span> km</label>
+                    <input type="range" id="distance-range" min="1" max="500" value="50" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    <p id="location-status" class="text-xs mt-2" style="color: var(--tg-theme-hint-color);">Getting your location...</p>
+                </div>
+
                 <div class="mb-4">
                     <h2 id="task-list-header" class="text-lg font-semibold mb-2">Recommended Tasks</h2>
                     <div id="task-list" class="space-y-3">
@@ -179,26 +197,28 @@
             </div>
 
             <!-- Profile Screen -->
-            <div id="profile-screen" class="hidden p-4">
-                <div class="flex items-center mb-6">
-                    <img src="https://placehold.co/80x80/EFEFEF/AAAAAA?text=V" class="w-20 h-20 rounded-full mr-4 border-2" style="border-color: var(--tg-theme-secondary-bg-color);">
-                    <div>
+            <div id="profile-screen" class="hidden p-4 flex flex-col gap-6" style="color: var(--tg-theme-text-color);">
+                <!-- Profile Header -->
+                <div class="profile-header flex flex-col sm:flex-row items-center sm:items-start mb-6 text-center sm:text-left ">
+                    <img id="profile-image" src="https://placehold.co/80x80/EFEFEF/AAAAAA?text=V" class="w-20 h-20 rounded-full mb-4 sm:mb-0 sm:mr-4 border-2" style="border-color: var(--tg-theme-secondary-bg-color);">
+                    <div class="profile-info flex-grow">
                         <h1 id="profile-name" class="text-2xl font-bold">Volunteer</h1>
-                        <p id="profile-score" class="text-lg" style="color: var(--tg-theme-hint-color);">0 PTS</p>
+                        <p id="profile-username" class="text-sm" style="color: var(--tg-theme-hint-color);"></p>
+                        <p id="profile-score" class="text-lg" style="color: var(--tg-theme-link-color);">0 PTS</p>
                     </div>
-                    <div id="qrcode-container" class="ml-auto w-16 h-16 cursor-pointer" title="Tap to enlarge QR code">
+                    <div id="qrcode-container" class="w-16 h-16 cursor-pointer mt-4" title="Tap to enlarge QR code">
                         <!-- QR Code will be generated here -->
                     </div>
                 </div>
 
-                <div class="mb-6">
+                <div class="mb-6 mt-3 ">
                     <h2 class="text-lg font-semibold mb-2">My Interests</h2>
                     <div id="interest-chips" class="flex flex-wrap gap-2"></div>
                 </div>
 
                 <div>
                     <h2 class="text-lg font-semibold mb-2">Service Medals</h2>
-                    <div id="badge-grid" class="grid grid-cols-4 gap-4 text-center"></div>
+                    <div id="badge-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-4 text-center"></div>
                 </div>
 
                 <!-- Profile Tabs for My Tasks and Done History -->
@@ -241,9 +261,8 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 012-2h2a2 2 0 012 2v6m-6 0h6m-6 0H6a2 2 0 01-2-2v-6a2 2 0 012-2h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                 <span class="text-xs">Leaders</span>
             </button>
-            <!-- My Tasks button removed from main nav as it's now in Profile -->
             <button data-screen="profile-screen" class="nav-button flex flex-col items-center justify-center text-gray-500 w-full h-full">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 4 0 00-7-7z"/></svg>
                 <span class="text-xs">Profile</span>
             </button>
         </nav>
@@ -258,11 +277,17 @@
 
 
     <script>
+    // --- GLOBAL VARIABLES ---
+    let db;
+    let userLocation = { lat: null, lon: null }; // Stores user's current location
+    const DEFAULT_DISTANCE_KM = 50; // Default max distance for filtering
+
     // --- TELEGRAM WEB APP INITIALIZATION ---
     try {
         const tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
+        // Apply Telegram theme parameters
         document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#ffffff');
         document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#000000');
         document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color || '#999999');
@@ -277,8 +302,7 @@
 
     // --- DATABASE SETUP (IndexedDB) ---
     const DB_NAME = 'CommunityConnectDB_V3';
-    const DB_VERSION = 1;
-    let db;
+    const DB_VERSION = 1; // Increment version if schema changes
 
     function initDB() {
         return new Promise((resolve, reject) => {
@@ -288,7 +312,8 @@
                 if (!db.objectStoreNames.contains('tasks')) {
                     const taskStore = db.createObjectStore('tasks', { keyPath: 'id', autoIncrement: true });
                     taskStore.createIndex('category', 'category', { unique: false });
-                    taskStore.createIndex('createdBy', 'createdBy', { unique: false }); // New index for tasks created by user
+                    taskStore.createIndex('createdBy', 'createdBy', { unique: false }); // Index for tasks created by user
+                    taskStore.createIndex('status', 'status', { unique: false }); // Index for task status
                 }
                 if (!db.objectStoreNames.contains('users')) db.createObjectStore('users', { keyPath: 'id' });
                 if (!db.objectStoreNames.contains('leaderboard')) db.createObjectStore('leaderboard', { keyPath: 'id' });
@@ -314,7 +339,19 @@
     async function populateInitialData() {
         const user = await getObject('users', 'currentUser');
         if (!user) {
-            await addObject('users', { id: 'currentUser', name: window.Telegram.WebApp.initDataUnsafe?.user?.first_name || 'Volunteer', score: 0, badges: [], completedTasks: [], interests: ['Environment', 'Community'] });
+            const tgUser = window.Telegram.WebApp.initDataUnsafe?.user;
+            const userName = tgUser ? `${tgUser.first_name || ''} ${tgUser.last_name || ''}`.trim() || 'Volunteer' : 'Volunteer';
+            const userUsername = tgUser?.username || '';
+
+            await addObject('users', { 
+                id: 'currentUser', 
+                name: userName, 
+                username: userUsername,
+                score: 0, 
+                badges: [], 
+                completedTasks: [], 
+                interests: ['Environment', 'Community'] 
+            });
             await addObject('leaderboard', {id: 'user1', name: 'Alex', score: 150});
             await addObject('leaderboard', {id: 'user2', name: 'Bravo', score: 120});
             await addObject('leaderboard', {id: 'user3', name: 'Charlie', score: 95});
@@ -354,31 +391,109 @@
         });
     }
 
+    // --- GEOLOCATION HELPER ---
+    function getUserLocation() {
+        const locationStatusEl = document.getElementById('location-status');
+        if (!navigator.geolocation) {
+            locationStatusEl.textContent = 'Geolocation is not supported by your browser.';
+            return;
+        }
+
+        locationStatusEl.textContent = 'Getting your location...';
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                userLocation.lat = position.coords.latitude;
+                userLocation.lon = position.coords.longitude;
+                locationStatusEl.textContent = `Location: ${userLocation.lat.toFixed(3)}, ${userLocation.lon.toFixed(3)}`;
+                // Re-render tasks with updated location if on home screen
+                if (document.getElementById('home-screen').classList.contains('hidden') === false) {
+                    renderTasks(document.querySelector('.filter-tab.active').dataset.filter, parseInt(document.getElementById('distance-range').value));
+                }
+            },
+            (error) => {
+                console.error('Geolocation error:', error);
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        locationStatusEl.textContent = 'Location access denied. Please enable in browser settings for distance filtering.';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        locationStatusEl.textContent = 'Location information is unavailable.';
+                        break;
+                    case error.TIMEOUT:
+                        locationStatusEl.textContent = 'The request to get user location timed out.';
+                        break;
+                    default:
+                        locationStatusEl.textContent = 'An unknown error occurred while getting location.';
+                        break;
+                }
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+        );
+    }
+
+    // Haversine formula to calculate distance between two lat/lon points in km
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371; // Radius of Earth in kilometers
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = 
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distance = R * c; // Distance in km
+        return distance;
+    }
+
+
     // --- UI RENDERING ---
     async function renderAll(activeFilter = 'foryou') {
-        await renderTasks(activeFilter);
+        await renderTasks(activeFilter, parseInt(document.getElementById('distance-range').value));
         await renderLeaderboard();
         await renderProfile();
         // My Tasks and Done History will be rendered by renderProfile's tab logic
     }
 
-    async function renderTasks(filter = 'foryou') {
+    async function renderTasks(filter = 'foryou', maxDistance = DEFAULT_DISTANCE_KM) {
         const taskList = document.getElementById('task-list');
         const taskListHeader = document.getElementById('task-list-header');
         const allTasks = await getAllObjects('tasks');
         const user = await getObject('users', 'currentUser');
+        
         // Filter out tasks created by the current user from the main task list
-        const availableTasks = allTasks.filter(t => t.status === 'available' && t.createdBy !== user.id);
+        let availableTasks = allTasks.filter(t => t.status === 'available' && t.createdBy !== user.id);
 
         let filteredTasks = [];
         switch(filter) {
-            case 'foryou': taskListHeader.textContent = 'Recommended Tasks'; filteredTasks = availableTasks.filter(t => user.interests.includes(t.interest_tag)); if (filteredTasks.length === 0) filteredTasks = availableTasks.slice(0, 5); break;
-            case 'missions': taskListHeader.textContent = 'Active Missions'; filteredTasks = availableTasks.filter(t => t.category === 'mission'); break;
-            case 'nearby': default: taskListHeader.textContent = 'Local Operations'; filteredTasks = availableTasks.filter(t => t.category === 'nearby' || t.category === 'scavenger'); break;
+            case 'foryou': 
+                taskListHeader.textContent = 'Recommended Tasks'; 
+                filteredTasks = availableTasks.filter(t => user.interests.includes(t.interest_tag)); 
+                if (filteredTasks.length === 0) filteredTasks = availableTasks.slice(0, 5); 
+                break;
+            case 'missions': 
+                taskListHeader.textContent = 'Active Missions'; 
+                filteredTasks = availableTasks.filter(t => t.category === 'mission'); 
+                break;
+            case 'nearby': 
+            default: 
+                taskListHeader.textContent = 'Local Operations'; 
+                filteredTasks = availableTasks.filter(t => t.category === 'nearby' || t.category === 'scavenger'); 
+                break;
         }
 
+        // Apply distance filter if user location is available and filter is active
+        if (userLocation.lat !== null && userLocation.lon !== null && filter === 'nearby') {
+            filteredTasks = filteredTasks.filter(task => {
+                if (task.latitude && task.longitude) {
+                    const dist = calculateDistance(userLocation.lat, userLocation.lon, task.latitude, task.longitude);
+                    return dist <= maxDistance;
+                }
+                return false; // Task has no location, so it's not "nearby"
+            });
+        }
+
+
         if (filteredTasks.length === 0) {
-            taskList.innerHTML = `<div class="text-center p-8 border-2 border-dashed rounded-lg" style="border-color: var(--tg-theme-hint-color);"><p style="color: var(--tg-theme-hint-color);">No tasks available in this category.</p></div>`;
+            taskList.innerHTML = `<div class="text-center p-8 border-2 border-dashed rounded-lg" style="border-color: var(--tg-theme-hint-color);"><p style="color: var(--tg-theme-hint-color);">No tasks available in this category or within the selected distance.</p></div>`;
             return;
         }
 
@@ -386,11 +501,24 @@
             let tag = '';
             if (task.category === 'mission') tag = `<div class="mt-2 text-xs font-semibold" style="color: var(--tg-theme-link-color);">${task.missionName}</div>`;
             else if (task.category === 'scavenger') tag = `<div class="mt-2 text-xs font-semibold text-yellow-600">Recon Op</div>`;
+            
+            let distanceInfo = '';
+            if (userLocation.lat !== null && userLocation.lon !== null && task.latitude && task.longitude) {
+                const dist = calculateDistance(userLocation.lat, userLocation.lon, task.latitude, task.longitude);
+                distanceInfo = `<span class="text-xs ml-2" style="color: var(--tg-theme-hint-color);">(${dist.toFixed(1)} km)</span>`;
+            }
+
             return `
             <div class="task-card rounded-lg p-4 shadow-sm cursor-pointer" style="background-color: var(--tg-theme-secondary-bg-color);" data-task-id="${task.id}">
                 <div class="flex justify-between items-start">
-                    <div><h3 class="font-bold text-md">${task.title}</h3><p class="text-sm mt-1" style="color: var(--tg-theme-hint-color);">${task.description.substring(0, 50)}...</p></div>
-                    <div class="text-right ml-2 flex-shrink-0"><div class="font-bold text-lg" style="color: var(--tg-theme-link-color);">${task.points}</div><div class="text-xs" style="color: var(--tg-theme-hint-color);">PTS</div></div>
+                    <div>
+                        <h3 class="font-bold text-md">${task.title}</h3>
+                        <p class="text-sm mt-1" style="color: var(--tg-theme-hint-color);">${task.description.substring(0, 50)}...</p>
+                    </div>
+                    <div class="text-right ml-2 flex-shrink-0">
+                        <div class="font-bold text-lg" style="color: var(--tg-theme-link-color);">${task.points}</div>
+                        <div class="text-xs flex items-center" style="color: var(--tg-theme-hint-color);">PTS ${distanceInfo}</div>
+                    </div>
                 </div>
                 ${tag}
             </div>`}).join('');
@@ -418,9 +546,13 @@
         const user = await getObject('users', 'currentUser');
         if (!user) return;
 
+        // Update profile header with Telegram InitData
         document.getElementById('user-score').textContent = `${user.score} PTS`;
         document.getElementById('profile-name').textContent = user.name;
+        document.getElementById('profile-username').textContent = user.username ? `@${user.username}` : ''; // Display username if available
         document.getElementById('profile-score').textContent = `${user.score} PTS`;
+        // Update profile image if Telegram user photo is available (Telegram Web App doesn't directly provide user photo URL)
+        // For now, keep placeholder or implement a way to upload/set user image.
 
         const interestChips = document.getElementById('interest-chips');
         interestChips.innerHTML = ALL_INTERESTS.map(interest => `<button class="interest-chip text-sm py-1 px-3 rounded-full border ${user.interests.includes(interest) ? 'selected' : ''}" data-interest="${interest}">${interest}</button>`).join('');
@@ -439,11 +571,17 @@
         const profileTabButtons = document.querySelectorAll('.profile-tab-button');
         const profileTabContents = document.querySelectorAll('.profile-tab-content');
 
+        // Remove existing listeners to prevent duplicates
         profileTabButtons.forEach(button => {
+            const newButton = button.cloneNode(true);
+            button.parentNode.replaceChild(newButton, button);
+        });
+
+        document.querySelectorAll('.profile-tab-button').forEach(button => {
             button.addEventListener('click', () => {
                 const targetTab = button.dataset.tab;
 
-                profileTabButtons.forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.profile-tab-button').forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
 
                 profileTabContents.forEach(content => content.classList.add('hidden'));
@@ -459,9 +597,21 @@
         });
 
         // Initially render the default active tab (My Tasks)
-        renderMyTasks();
-        // Ensure done history is also rendered so data is available if user switches
-        renderDoneHistory();
+        // Check if there's an active tab already, otherwise default to 'my-tasks'
+        const currentActiveTab = document.querySelector('.profile-tab-button.active');
+        if (currentActiveTab) {
+            const targetTab = currentActiveTab.dataset.tab;
+            if (targetTab === 'my-tasks') {
+                renderMyTasks();
+            } else if (targetTab === 'done-history') {
+                renderDoneHistory();
+            }
+        } else {
+            // Default to 'my-tasks' if no tab is active (e.g., on first load)
+            document.querySelector('.profile-tab-button[data-tab="my-tasks"]').classList.add('active');
+            document.getElementById('my-tasks-tab-content').classList.remove('hidden');
+            renderMyTasks();
+        }
     }
 
     async function renderMyTasks() {
@@ -542,6 +692,7 @@
         modalContent.innerHTML = innerHTML;
         modal.classList.remove('hidden');
         modal.classList.add('flex');
+        // Add event listener to close modal when clicking outside or on close button
         modal.addEventListener('click', (e) => {
             if (e.target.id === 'modal' || e.target.classList.contains('close-modal-btn')) {
                 hideModal();
@@ -669,7 +820,7 @@
         await updateObject('users', user);
         chip.classList.toggle('selected');
         if(document.getElementById('home-screen').offsetParent !== null && document.querySelector('.filter-tab.active').dataset.filter === 'foryou') {
-            await renderTasks('foryou');
+            await renderTasks('foryou', parseInt(document.getElementById('distance-range').value));
         }
     }
     
@@ -747,6 +898,12 @@
         if (taskId !== null) {
             task = await getObject('tasks', taskId);
             modalTitle = 'Edit Task';
+        } else {
+            // For new tasks, try to pre-fill with current location
+            if (userLocation.lat !== null && userLocation.lon !== null) {
+                task.latitude = userLocation.lat;
+                task.longitude = userLocation.lon;
+            }
         }
 
         const categoryOptions = ALL_CATEGORIES.map(cat => 
@@ -758,7 +915,8 @@
         ).join('');
 
         const formHtml = `
-            <h2 class="text-xl font-bold mb-4">${modalTitle}</h2>
+        <div class="modal-content h-[80%] overflow-y-auto p-6 bg-white rounded-lg shadow-lg" style="color: var(--tg-theme-text-color);">
+            <h2 class="text-xl font-bold mb-4 overflow-y-auto">${modalTitle}</h2>
             <form id="task-form" class="space-y-4">
                 <div>
                     <label for="task-title" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Title</label>
@@ -788,6 +946,7 @@
                             <label for="task-longitude" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Longitude</label>
                             <input type="number" step="0.000001" id="task-longitude" value="${task.longitude}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
                         </div>
+                        <button type="button" id="get-current-location-btn" class="action-button text-sm mt-2 py-2 px-4 rounded-md w-full">Get Current Location</button>
                     ` : ''}
                     ${task.category === 'scavenger' ? `
                         <div>
@@ -813,13 +972,15 @@
                     <button type="submit" id="save-task-btn" data-task-id="${taskId || ''}" class="crud-button py-2 px-4 rounded-lg">${taskId !== null ? 'Save Changes' : 'Create Task'}</button>
                 </div>
             </form>
+           </div>  
         `;
         showModal(formHtml);
 
         const taskCategorySelect = document.getElementById('task-category');
-        taskCategorySelect.addEventListener('change', () => {
+        const additionalFieldsDiv = document.getElementById('additional-fields');
+
+        const updateAdditionalFields = () => {
             const selectedCategory = taskCategorySelect.value;
-            const additionalFieldsDiv = document.getElementById('additional-fields');
             let newFieldsHtml = '';
 
             // Retain current values if available, for a smoother UX when switching categories
@@ -827,7 +988,6 @@
             const currentLongitude = document.getElementById('task-longitude')?.value || task.longitude;
             const currentHint = document.getElementById('task-hint')?.value || task.hint;
             const currentMissionName = document.getElementById('task-mission-name')?.value || task.missionName;
-
 
             if (selectedCategory === 'nearby' || selectedCategory === 'scavenger') {
                 newFieldsHtml += `
@@ -839,6 +999,7 @@
                         <label for="task-longitude" class="block text-sm font-medium" style="color: var(--tg-theme-text-color);">Longitude</label>
                         <input type="number" step="0.000001" id="task-longitude" value="${currentLongitude}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm" style="background-color: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);">
                     </div>
+                    <button type="button" id="get-current-location-btn" class="action-button text-sm mt-2 py-2 px-4 rounded-md w-full">Get Current Location</button>
                 `;
             }
             if (selectedCategory === 'scavenger') {
@@ -858,7 +1019,36 @@
                 `;
             }
             additionalFieldsDiv.innerHTML = newFieldsHtml;
-        });
+
+            // Add event listener for Get Current Location button if it exists
+            const getCurrentLocationBtn = document.getElementById('get-current-location-btn');
+            if (getCurrentLocationBtn) {
+                getCurrentLocationBtn.addEventListener('click', () => {
+                    if (navigator.geolocation) {
+                        getCurrentLocationBtn.textContent = 'Fetching...';
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                                document.getElementById('task-latitude').value = position.coords.latitude;
+                                document.getElementById('task-longitude').value = position.coords.longitude;
+                                getCurrentLocationBtn.textContent = 'Location Set!';
+                                setTimeout(() => getCurrentLocationBtn.textContent = 'Get Current Location', 2000);
+                            },
+                            (error) => {
+                                console.error('Geolocation error:', error);
+                                showNotification('Failed to get location. Please allow location access.');
+                                getCurrentLocationBtn.textContent = 'Get Current Location';
+                            },
+                            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                        );
+                    } else {
+                        showNotification('Geolocation is not supported by your browser.');
+                    }
+                });
+            }
+        };
+
+        taskCategorySelect.addEventListener('change', updateAdditionalFields);
+        updateAdditionalFields(); // Call initially to set up fields based on default/existing category
 
 
         document.getElementById('task-form').addEventListener('submit', (e) => {
@@ -888,14 +1078,21 @@
 
         // Add category-specific fields
         if (category === 'nearby' || category === 'scavenger') {
-            newTaskData.latitude = parseFloat(document.getElementById('task-latitude')?.value) || 0;
-            newTaskData.longitude = parseFloat(document.getElementById('task-longitude')?.value) || 0;
+            newTaskData.latitude = parseFloat(document.getElementById('task-latitude')?.value) || null;
+            newTaskData.longitude = parseFloat(document.getElementById('task-longitude')?.value) || null;
+        } else {
+            newTaskData.latitude = null; // Clear if category doesn't need it
+            newTaskData.longitude = null; // Clear if category doesn't need it
         }
         if (category === 'scavenger') {
             newTaskData.hint = document.getElementById('task-hint')?.value || '';
+        } else {
+            newTaskData.hint = ''; // Clear if category doesn't need it
         }
         if (category === 'mission') {
             newTaskData.missionName = document.getElementById('task-mission-name')?.value || '';
+        } else {
+            newTaskData.missionName = ''; // Clear if category doesn't need it
         }
 
         if (taskId) {
@@ -917,7 +1114,7 @@
         } else if (activeProfileTab === 'done-history') {
             await renderDoneHistory();
         }
-        await renderTasks(document.querySelector('.filter-tab.active').dataset.filter); // Re-render main task list
+        await renderTasks(document.querySelector('.filter-tab.active').dataset.filter, parseInt(document.getElementById('distance-range').value)); // Re-render main task list
     }
 
     // Confirm Delete Task
@@ -947,7 +1144,7 @@
         } else if (activeProfileTab === 'done-history') {
             await renderDoneHistory();
         }
-        await renderTasks(document.querySelector('.filter-tab.active').dataset.filter); // Re-render main task list
+        await renderTasks(document.querySelector('.filter-tab.active').dataset.filter, parseInt(document.getElementById('distance-range').value)); // Re-render main task list
     }
 
 
@@ -970,7 +1167,7 @@
             tab.addEventListener('click', () => {
                 document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
-                renderTasks(tab.dataset.filter);
+                renderTasks(tab.dataset.filter, parseInt(document.getElementById('distance-range').value));
             });
         });
 
@@ -978,6 +1175,19 @@
         document.getElementById('find-partner-btn').addEventListener('click', findRandomPartner);
         // The add-task-btn is now inside the profile screen, its listener will be set up by renderMyTasks
         document.getElementById('add-task-btn').addEventListener('click', () => showTaskFormModal()); 
+
+        // Distance filter event listener
+        const distanceRange = document.getElementById('distance-range');
+        const distanceValue = document.getElementById('distance-value');
+        distanceRange.addEventListener('input', () => {
+            distanceValue.textContent = distanceRange.value;
+            // Only re-render tasks if the 'nearby' filter is active
+            if (document.querySelector('.filter-tab.active')?.dataset.filter === 'nearby') {
+                renderTasks('nearby', parseInt(distanceRange.value));
+            }
+        });
+        // Initial set for distance value
+        distanceValue.textContent = distanceRange.value;
     }
 
     // --- APP START ---
@@ -985,6 +1195,7 @@
         try {
             await initDB();
             await populateInitialData();
+            getUserLocation(); // Attempt to get user location on app start
             await renderAll();
             setupEventListeners();
         } catch (error) {
