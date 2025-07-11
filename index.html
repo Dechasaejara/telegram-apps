@@ -1,542 +1,647 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nearby Scavenger Hunt</title>
-    
-    <!-- Tailwind CSS CDN -->
+    <title>Tele-Restaurant</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Telegram Web App Script -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-    <!-- Custom Google Font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <style>
-        /* Use Inter font as default */
         body {
             font-family: 'Inter', sans-serif;
+            background-color: #18222d;
+            color: #ffffff;
+            overscroll-behavior-y: none;
         }
-        /* Simple transition for screen visibility */
-        .screen {
+        .telegram-bg { background-color: #18222d; }
+        .telegram-item-bg { background-color: #222e3a; }
+        .telegram-secondary-text { color: #8a9a9d; }
+        .telegram-accent { color: #5288c1; }
+        .telegram-button { background-color: #5288c1; }
+        
+        .page { display: none; }
+        .page.active { display: flex; flex-direction: column; height: 100%; }
+
+        .bottom-nav-item.active .icon, .bottom-nav-item.active .label { color: #5288c1; }
+        
+        .top-category-tabs::-webkit-scrollbar { display: none; }
+        .top-category-tabs { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .top-category-tab.active { color: #5288c1; border-bottom-color: #5288c1; }
+
+        .secondary-tab.active { color: #ffffff; border-bottom-color: #5288c1; }
+        .secondary-tab-content { display: none; }
+        .secondary-tab-content.active { display: block; }
+
+        /* Custom Modal Styles */
+        .custom-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
             transition: opacity 0.3s ease-in-out;
         }
-        /* Custom scrollbar for better aesthetics */
-        ::-webkit-scrollbar {
-            width: 6px;
+        .custom-modal-overlay.show {
+            opacity: 1;
         }
-        ::-webkit-scrollbar-track {
-            background: #1f2937; /* bg-gray-800 */
+        .custom-modal-content {
+            background-color: #222e3a;
+            padding: 1.5rem; /* Slimmer padding */
+            border-radius: 0.75rem;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2); /* Subtler shadow */
+            text-align: center;
+            max-width: 90%;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease-in-out;
         }
-        ::-webkit-scrollbar-thumb {
-            background: #4b5563; /* bg-gray-600 */
-            border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #6b7280; /* bg-gray-500 */
+        .custom-modal-overlay.show .custom-modal-content {
+            transform: translateY(0);
         }
     </style>
 </head>
-<body class="bg-gray-900 text-white antialiased">
+<body class="h-full flex flex-col antialiased">
 
-    <div id="app" class="min-h-screen p-4 flex flex-col justify-center items-center">
+    <!-- Main Container -->
+    <div id="app" class="flex flex-col h-full w-full max-w-md mx-auto telegram-bg shadow-lg relative">
 
-        <!-- Welcome Screen -->
-        <div id="welcome-screen" class="screen w-full max-w-md text-center">
-            <h1 class="text-4xl font-bold text-cyan-400 mb-2">GeoQuest</h1>
-            <p class="text-gray-400 mb-6">Find teammates nearby and start a scavenger hunt!</p>
-            <p class="text-xs text-gray-500 mb-8">Your User ID: <span id="user-id-display" class="font-mono">loading...</span></p>
-            <button id="find-players-btn" class="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition-transform transform hover:scale-105">
-                Find Nearby Players
-            </button>
+        <!-- Page: Main (Restaurants List) -->
+        <div id="page-main" class="page active">
+            <!-- Top Header -->
+            <header class="px-4 py-3 telegram-item-bg flex justify-between items-center shadow-sm z-10"> <!-- Slimmer padding, subtler shadow -->
+                <h1 class="text-lg font-bold">Tele-Restaurant</h1> <!-- Slightly smaller font -->
+                <div class="flex items-center space-x-3"> <!-- Smaller space -->
+                    <i class="fas fa-search telegram-secondary-text cursor-pointer text-base"></i> <!-- Smaller icon -->
+                    <i class="fas fa-bell telegram-secondary-text cursor-pointer text-base"></i> <!-- Smaller icon -->
+                </div>
+            </header>
+
+            <!-- Top Category Tabs -->
+            <div class="telegram-item-bg border-b border-gray-700">
+                <div id="category-tabs" class="top-category-tabs flex space-x-3 px-4 overflow-x-auto"> <!-- Smaller space -->
+                    <!-- Category tabs will be injected here -->
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <main class="flex-grow overflow-y-auto p-3 pb-20"> <!-- Slimmer padding -->
+                <div id="restaurant-list" class="space-y-3"> <!-- Slimmer space -->
+                    <!-- Restaurant items will be injected here -->
+                </div>
+            </main>
         </div>
 
-        <!-- Loading Screen -->
-        <div id="loading-screen" class="screen w-full max-w-md text-center hidden">
-             <div class="flex justify-center items-center space-x-2">
-                <svg class="animate-spin h-8 w-8 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span class="text-lg text-gray-300">Finding players...</span>
-            </div>
+        <!-- Page: Restaurant Detail -->
+        <div id="page-restaurant-detail" class="page absolute inset-0 bg-gray-900">
+            <!-- Restaurant Detail Content, filled by JS -->
         </div>
         
-        <!-- Error Screen -->
-        <div id="error-screen" class="screen w-full max-w-md text-center hidden p-4 bg-red-900/50 border border-red-700 rounded-lg">
-            <h2 class="text-xl font-bold text-red-400 mb-2">Oops!</h2>
-            <p id="error-message" class="text-red-300"></p>
+        <!-- Page: Menu Item Detail -->
+        <div id="page-menu-item-detail" class="page absolute inset-0 bg-gray-900">
+             <!-- Menu Item Detail Content, filled by JS -->
         </div>
 
-        <!-- Players List Screen -->
-        <div id="players-list-screen" class="screen w-full max-w-md hidden">
-            <h2 class="text-2xl font-bold mb-4 text-center">Nearby Players</h2>
-            <div id="nearby-players" class="space-y-3 max-h-96 overflow-y-auto p-1">
-                <!-- Player items will be injected here -->
-            </div>
-            <p id="no-players-message" class="text-center text-gray-500 mt-6 hidden">No players found nearby. Try moving closer to others!</p>
-            <button id="back-to-welcome-btn" class="mt-6 w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition">
-                Back
-            </button>
+        <!-- Page: My Orders -->
+        <div id="page-orders" class="page">
+             <header class="px-4 py-3 telegram-item-bg flex items-center shadow-sm z-10"> <!-- Slimmer padding, subtler shadow -->
+                <h1 class="text-lg font-bold">My Orders</h1> <!-- Slightly smaller font -->
+            </header>
+            <main class="flex-grow overflow-y-auto p-3 pb-20"> <!-- Slimmer padding -->
+                <div id="order-list" class="space-y-3"></div> <!-- Slimmer space -->
+            </main>
         </div>
 
-        <!-- Game Screen -->
-        <div id="game-screen" class="screen w-full max-w-md hidden">
-            <div class="bg-gray-800 p-6 rounded-lg shadow-2xl">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-bold text-cyan-400">Game On!</h2>
-                    <div class="text-lg font-mono bg-gray-900 px-3 py-1 rounded-md">Score: <span id="score">0</span></div>
-                </div>
-                <div id="task-container" class="mb-6">
-                    <p class="text-gray-400 mb-2">Current Task:</p>
-                    <p id="task" class="text-xl font-medium"></p>
-                </div>
-                <div id="game-over-message" class="text-center hidden">
-                    <h3 class="text-3xl font-bold text-green-400">Congratulations!</h3>
-                    <p class="text-gray-300 mt-2">You've completed all the tasks!</p>
-                </div>
-                <div id="answer-section">
-                    <input type="text" id="answer-input" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500" placeholder="Type your answer...">
-                    <button id="submit-answer-btn" class="mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105">
-                        Submit Answer
+        <!-- Page: Cart -->
+        <div id="page-cart" class="page">
+            <header class="px-4 py-3 telegram-item-bg flex items-center shadow-sm z-10"> <!-- Slimmer padding, subtler shadow -->
+                <h1 class="text-lg font-bold">My Cart</h1> <!-- Slightly smaller font -->
+            </header>
+            <main class="flex-grow overflow-y-auto p-3 pb-20"> <!-- Slimmer padding -->
+                <div id="cart-items" class="space-y-2"></div> <!-- Slimmer space -->
+                <div class="mt-4 pt-3 border-t border-gray-700"> <!-- Slimmer margin/padding -->
+                    <div class="flex justify-between items-center font-bold text-base"> <!-- Slightly smaller font -->
+                        <span>Total:</span>
+                        <span id="cart-total">$0.00</span>
+                    </div>
+                    <button id="checkout-btn" class="w-full telegram-button text-white font-bold py-2 rounded-md mt-3 hover:bg-blue-600 transition-colors"> <!-- Slimmer padding, rounder corners -->
+                        Proceed to Checkout
                     </button>
                 </div>
-                 <button id="leave-game-btn" class="mt-4 w-full bg-red-700 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition">
-                    Leave Game
-                </button>
-            </div>
+            </main>
         </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto telegram-item-bg border-t border-gray-700 flex justify-around p-1 z-20"> <!-- Slimmer padding -->
+            <a href="#page-main" class="bottom-nav-item flex flex-col items-center text-center w-1/4 active py-1"> <!-- Slimmer padding -->
+                <i class="fas fa-home icon text-lg"></i> <!-- Slightly smaller icon -->
+                <span class="label text-xs mt-0.5">Home</span> <!-- Smaller margin -->
+            </a>
+            <a href="#page-orders" class="bottom-nav-item flex flex-col items-center text-center w-1/4 py-1"> <!-- Slimmer padding -->
+                <i class="fas fa-receipt icon text-lg"></i> <!-- Slightly smaller icon -->
+                <span class="label text-xs mt-0.5">My Orders</span> <!-- Smaller margin -->
+            </a>
+            <a href="#page-cart" class="bottom-nav-item flex flex-col items-center text-center w-1/4 py-1"> <!-- Slimmer padding -->
+                <i class="fas fa-shopping-cart icon text-lg"></i> <!-- Slightly smaller icon -->
+                <span class="label text-xs mt-0.5">Cart</span> <!-- Smaller margin -->
+            </a>
+        </nav>
     </div>
 
-    <!-- Firebase SDKs -->
-    <script type="module">
-        // Import functions from the Firebase SDKs
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, serverTimestamp, GeoPoint, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // --- CONFIGURATION ---
-        const NEARBY_RADIUS_KM = 5; // Players within 5km are considered "nearby"
-        const SCAVENGER_HUNT_TASKS = [
-            { task: "What is the color of the sky?", answer: "blue" },
-            { task: "What is the capital of Ethiopia?", answer: "addis ababa" },
-            { task: "How many letters are in 'Telegram'?", answer: "8" },
-        ];
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- MOCK DATA ---
+        const mockData = {
+            restaurants: [
+                { id: 1, name: 'The Gourmet Kitchen', category: 'Italian', rating: 4.8, distance: 0.5, image: 'https://placehold.co/600x400/5288c1/FFFFFF?text=Italian+Cuisine', reviews: [{user: 'Alex', rating: 5, text: 'Amazing pasta!'}, {user: 'Maria', rating: 4, text: 'Good, but a bit pricey.'}], menu: [{id: 101, name: 'Margherita Pizza', price: 15.50, description: 'Classic pizza with fresh tomatoes, mozzarella, and basil.', image: 'https://placehold.co/600x400/7d52c1/FFFFFF?text=Pizza'}, {id: 102, name: 'Carbonara Pasta', price: 18.00, description: 'Creamy pasta with pancetta and parmesan.', image: 'https://placehold.co/600x400/7d52c1/FFFFFF?text=Pasta'}]},
+                { id: 2, name: 'Dragon Wok', category: 'Chinese', rating: 4.5, distance: 1.2, image: 'https://placehold.co/600x400/c15252/FFFFFF?text=Chinese+Food', reviews: [], menu: [{id: 201, name: 'Kung Pao Chicken', price: 16.75, description: 'Spicy stir-fry with chicken, peanuts, and vegetables.', image: 'https://placehold.co/600x400/c17d52/FFFFFF?text=Kung+Pao'}]},
+                { id: 3, name: 'Burger Barn', category: 'Fast Food', rating: 4.2, distance: 0.8, image: 'https://placehold.co/600x400/c1a652/FFFFFF?text=Burgers', reviews: [], menu: [{id: 301, name: 'Classic Cheeseburger', price: 12.00, description: 'Juicy beef patty with cheddar cheese, lettuce, and tomato.', image: 'https://placehold.co/600x400/c1c152/FFFFFF?text=Burger'}]},
+                { id: 4, name: 'Sushi Central', category: 'Japanese', rating: 4.9, distance: 2.1, image: 'https://placehold.co/600x400/52c18f/FFFFFF?text=Sushi', reviews: [], menu: [{id: 401, name: 'California Roll', price: 14.00, description: 'Crab meat, avocado, and cucumber wrapped in seaweed and rice.', image: 'https://placehold.co/600x400/52c152/FFFFFF?text=Sushi+Roll'}]},
+            ],
+            categories: ['All', 'Italian', 'Chinese', 'Fast Food', 'Japanese'],
+            orders: [
+                { id: 'A123', status: 'Preparing', items: '1x Margherita Pizza', total: 15.50 },
+                { id: 'B456', status: 'Out for Delivery', items: '2x Cheeseburger, 1x Fries', total: 22.00 },
+            ],
+            cart: [
+                { id: 102, name: 'Carbonara Pasta', price: 18.00, quantity: 1, restaurantId: 1 },
+                { id: 301, name: 'Classic Cheeseburger', price: 12.00, quantity: 1, restaurantId: 3 },
+            ]
+        };
 
         // --- DOM ELEMENTS ---
-        const screens = {
-            welcome: document.getElementById('welcome-screen'),
-            loading: document.getElementById('loading-screen'),
-            error: document.getElementById('error-screen'),
-            playersList: document.getElementById('players-list-screen'),
-            game: document.getElementById('game-screen'),
-        };
-        const findPlayersBtn = document.getElementById('find-players-btn');
-        const backToWelcomeBtn = document.getElementById('back-to-welcome-btn');
-        const nearbyPlayersContainer = document.getElementById('nearby-players');
-        const noPlayersMessage = document.getElementById('no-players-message');
-        const userIdDisplay = document.getElementById('user-id-display');
-        const errorMessage = document.getElementById('error-message');
-        const scoreDisplay = document.getElementById('score');
-        const taskDisplay = document.getElementById('task');
-        const answerInput = document.getElementById('answer-input');
-        const submitAnswerBtn = document.getElementById('submit-answer-btn');
-        const gameOverMessage = document.getElementById('game-over-message');
-        const answerSection = document.getElementById('answer-section');
-        const leaveGameBtn = document.getElementById('leave-game-btn');
+        const app = document.getElementById('app');
+        const pages = document.querySelectorAll('.page');
+        const navItems = document.querySelectorAll('.bottom-nav-item');
+        const restaurantList = document.getElementById('restaurant-list');
+        const categoryTabsContainer = document.getElementById('category-tabs');
+        const restaurantDetailPage = document.getElementById('page-restaurant-detail');
+        const menuItemDetailPage = document.getElementById('page-menu-item-detail');
+        const orderListContainer = document.getElementById('order-list');
+        const cartItemsContainer = document.getElementById('cart-items');
+        const cartTotalEl = document.getElementById('cart-total');
+        const checkoutBtn = document.getElementById('checkout-btn');
 
-        // --- APP STATE ---
-        let db, auth;
-        let currentUser = null;
-        let currentLocation = null;
-        let playersUnsubscribe = null;
-        let gameUnsubscribe = null;
-        let activeGameId = null;
+        // --- NAVIGATION STATE ---
+        let currentPageId = 'page-main';
+        const navigationHistory = ['page-main'];
 
-        // --- TELEGRAM WEB APP INIT ---
-        const tg = window.Telegram.WebApp;
-        tg.expand();
+        // --- UTILITY FUNCTIONS ---
 
-        // --- HELPER FUNCTIONS ---
-        
         /**
-         * Shows a specific screen and hides others.
-         * @param {string} screenName - The key of the screen to show.
+         * Displays a custom modal message.
+         * @param {string} message - The message to display.
+         * @param {string} [type='success'] - Type of message (e.g., 'success', 'error').
          */
-        function showScreen(screenName) {
-            Object.values(screens).forEach(screen => screen.classList.add('hidden'));
-            if (screens[screenName]) {
-                screens[screenName].classList.remove('hidden');
+        function showCustomModal(message, type = 'success') {
+            const existingModal = document.querySelector('.custom-modal-overlay');
+            if (existingModal) existingModal.remove();
+
+            const modalOverlay = document.createElement('div');
+            modalOverlay.className = 'custom-modal-overlay';
+            modalOverlay.innerHTML = `
+                <div class="custom-modal-content">
+                    <p class="text-lg font-semibold mb-4">${message}</p>
+                    <button class="telegram-button px-4 py-2 rounded-md">OK</button> <!-- Slimmer button -->
+                </div>
+            `;
+            document.body.appendChild(modalOverlay);
+
+            // Animate in
+            setTimeout(() => {
+                modalOverlay.classList.add('show');
+            }, 10); // Small delay for transition to work
+
+            modalOverlay.querySelector('button').addEventListener('click', () => {
+                modalOverlay.classList.remove('show');
+                modalOverlay.addEventListener('transitionend', () => {
+                    modalOverlay.remove();
+                }, { once: true });
+            });
+        }
+
+
+        // --- NAVIGATION LOGIC ---
+
+        /**
+         * Navigates to a specified page by its ID.
+         * Manages active page classes and updates navigation history.
+         * @param {string} pageId - The ID of the page to navigate to.
+         * @param {boolean} [isBack=false] - True if navigating back, false otherwise.
+         */
+        function navigateTo(pageId, isBack = false) {
+            // Deactivate current page
+            const currentActivePage = document.getElementById(currentPageId);
+            if (currentActivePage) {
+                currentActivePage.classList.remove('active');
             }
-        }
-        
-        /**
-         * Displays an error message.
-         * @param {string} message - The error message to display.
-         */
-        function showError(message) {
-            errorMessage.textContent = message;
-            showScreen('error');
-        }
 
-        /**
-         * Calculates distance between two geo coordinates in kilometers using Haversine formula.
-         * @param {object} coords1 - { latitude, longitude }
-         * @param {object} coords2 - { latitude, longitude }
-         * @returns {number} Distance in kilometers.
-         */
-        function getDistance(coords1, coords2) {
-            function toRad(x) {
-                return x * Math.PI / 180;
-            }
-            const R = 6371; // Earth's radius in km
-            const dLat = toRad(coords2.latitude - coords1.latitude);
-            const dLon = toRad(coords2.longitude - coords1.longitude);
-            const lat1 = toRad(coords1.latitude);
-            const lat2 = toRad(coords2.latitude);
+            // Activate target page
+            const targetPage = document.getElementById(pageId);
+            if (targetPage) {
+                targetPage.classList.add('active');
+                currentPageId = pageId;
 
-            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c;
-        }
-
-        // --- FIREBASE & AUTHENTICATION ---
-        
-        /**
-         * Initializes Firebase and sets up authentication.
-         */
-        async function initializeFirebase() {
-            try {
-                // These global variables are provided by the environment.
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-                const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-                if (!firebaseConfig.apiKey) {
-                    showError("Firebase configuration is missing. The app cannot start.");
-                    return;
-                }
-
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        console.log("User is signed in:", user.uid);
-                        const tgUser = tg.initDataUnsafe?.user;
-                        currentUser = {
-                            uid: user.uid,
-                            isAnonymous: user.isAnonymous,
-                            name: tgUser?.first_name || `Player-${user.uid.substring(0, 5)}`,
-                        };
-                        userIdDisplay.textContent = currentUser.uid;
-                        // Check if user is already in a game
-                        listenForGameUpdates();
-                    } else {
-                        console.log("User is signed out. Attempting to sign in.");
-                        if (initialAuthToken) {
-                            await signInWithCustomToken(auth, initialAuthToken);
-                        } else {
-                            await signInAnonymously(auth);
-                        }
+                // Update navigation history
+                if (!isBack) {
+                    // Only push if it's a new navigation, not a back action
+                    // And reset history if navigating to 'page-main' from bottom nav
+                    if (pageId === 'page-main' && navigationHistory[navigationHistory.length - 1] !== 'page-main') {
+                        navigationHistory.splice(0, navigationHistory.length, 'page-main'); // Clear and add 'page-main'
+                    } else if (navigationHistory[navigationHistory.length - 1] !== pageId) {
+                         navigationHistory.push(pageId);
                     }
-                });
-            } catch (error) {
-                console.error("Firebase Initialization Error:", error);
-                showError("Could not connect to the server. Please try again later.");
+                }
+            }
+            console.log('Navigation History:', navigationHistory);
+        }
+
+        /**
+         * Navigates back to the previous page in history.
+         */
+        function navigateBack() {
+            if (navigationHistory.length > 1) {
+                navigationHistory.pop(); // Remove current page
+                const previousPageId = navigationHistory[navigationHistory.length - 1];
+                navigateTo(previousPageId, true); // Navigate to previous, mark as back navigation
+            } else {
+                // Optionally handle going back from the very first page
+                console.log('No more history to go back to.');
             }
         }
 
-        // --- GEOLOCATION & PLAYER LOGIC ---
+        // Bottom Nav Handling
+        navItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = item.getAttribute('href').substring(1);
+                
+                // Update active class for bottom nav items
+                navItems.forEach(nav => nav.classList.remove('active'));
+                item.classList.add('active');
+                
+                navigateTo(targetId);
+            });
+        });
+
+        // --- RENDER FUNCTIONS ---
 
         /**
-         * Gets the user's current location and updates it in Firestore.
+         * Renders the category tabs at the top of the main page.
+         * @param {string} selectedCategory - The currently selected category.
          */
-        function findAndRegisterPlayer() {
-            if (!navigator.geolocation) {
-                showError("Geolocation is not supported by your browser.");
+        function renderCategoryTabs(selectedCategory = 'All') {
+            categoryTabsContainer.innerHTML = '';
+            mockData.categories.forEach(cat => {
+                const tab = document.createElement('button');
+                tab.className = `top-category-tab py-2 px-2 text-sm font-semibold border-b-2 transition-colors duration-200 ${selectedCategory === cat ? 'active text-white' : 'text-gray-400 border-transparent'}`; /* Slimmer padding */
+                tab.textContent = cat;
+                tab.onclick = () => filterRestaurantsByCategory(cat);
+                categoryTabsContainer.appendChild(tab);
+            });
+        }
+        
+        /**
+         * Filters and renders restaurants based on the selected category.
+         * @param {string} category - The category to filter by.
+         */
+        function filterRestaurantsByCategory(category) {
+            renderCategoryTabs(category);
+            renderRestaurants(category);
+        }
+
+        /**
+         * Renders the list of restaurants.
+         * @param {string} category - The category to display restaurants for. 'All' for all restaurants.
+         */
+        function renderRestaurants(category = 'All') {
+            restaurantList.innerHTML = '';
+            const filtered = category === 'All' ? mockData.restaurants : mockData.restaurants.filter(r => r.category === category);
+            
+            if (filtered.length === 0) {
+                restaurantList.innerHTML = '<p class="telegram-secondary-text text-center mt-6">No restaurants found in this category.</p>'; /* Slimmer margin */
                 return;
             }
-            showScreen('loading');
-            navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                    currentLocation = {
-                        latitude: position.coords.latitude,
-                        longitude: position.coords.longitude,
-                    };
-                    await updateUserLocationInFirestore();
-                    listenForNearbyPlayers();
-                    showScreen('playersList');
-                },
-                (error) => {
-                    console.error("Geolocation Error:", error);
-                    showError("Could not get your location. Please enable location services and try again.");
-                }
-            );
-        }
-        
-        /**
-         * Writes or updates the current user's location data in Firestore.
-         */
-        async function updateUserLocationInFirestore() {
-            if (!currentUser || !currentLocation) return;
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const playerRef = doc(db, `/artifacts/${appId}/public/data/players`, currentUser.uid);
-            try {
-                await setDoc(playerRef, {
-                    name: currentUser.name,
-                    location: new GeoPoint(currentLocation.latitude, currentLocation.longitude),
-                    lastSeen: serverTimestamp(),
-                }, { merge: true });
-                console.log("Player location updated in Firestore.");
-            } catch (error) {
-                console.error("Error updating player location:", error);
-                showError("Could not save your location. Please check your connection.");
-            }
-        }
 
-        /**
-         * Listens for real-time updates to the players collection.
-         */
-        function listenForNearbyPlayers() {
-            if (playersUnsubscribe) playersUnsubscribe(); // Stop previous listener
-            if (!currentUser || !currentLocation) return;
-
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const playersRef = collection(db, `/artifacts/${appId}/public/data/players`);
-            
-            playersUnsubscribe = onSnapshot(playersRef, (snapshot) => {
-                const nearbyPlayers = [];
-                snapshot.forEach((doc) => {
-                    const playerData = doc.data();
-                    // Exclude self and players without location
-                    if (doc.id !== currentUser.uid && playerData.location) {
-                        const distance = getDistance(currentLocation, playerData.location);
-                        if (distance <= NEARBY_RADIUS_KM) {
-                            nearbyPlayers.push({ id: doc.id, ...playerData, distance });
-                        }
-                    }
-                });
-                renderPlayersList(nearbyPlayers);
-            }, (error) => {
-                console.error("Error listening for players:", error);
-                showError("Failed to get nearby players.");
-            });
-        }
-        
-        /**
-         * Renders the list of nearby players in the UI.
-         * @param {Array} players - An array of player objects.
-         */
-        function renderPlayersList(players) {
-            nearbyPlayersContainer.innerHTML = '';
-            if (players.length === 0) {
-                noPlayersMessage.classList.remove('hidden');
-            } else {
-                noPlayersMessage.classList.add('hidden');
-                players.forEach(player => {
-                    const playerElement = document.createElement('div');
-                    playerElement.className = 'bg-gray-800 p-4 rounded-lg flex justify-between items-center';
-                    playerElement.innerHTML = `
-                        <div>
-                            <p class="font-semibold">${player.name}</p>
-                            <p class="text-sm text-gray-400">${player.distance.toFixed(2)} km away</p>
+            filtered.forEach(r => {
+                const el = document.createElement('div');
+                el.className = 'telegram-item-bg rounded-lg overflow-hidden shadow-sm cursor-pointer'; /* Subtler shadow */
+                el.innerHTML = `
+                    <img src="${r.image}" alt="${r.name}" class="w-full h-28 object-cover rounded-t-lg" onerror="this.onerror=null;this.src='https://placehold.co/600x400/333/FFF?text=Image+Error';"> <!-- Slightly smaller height -->
+                    <div class="p-3"> <!-- Slimmer padding -->
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-base">${r.name}</h3> <!-- Slightly smaller font -->
+                                <p class="telegram-secondary-text text-xs">${r.category}</p> <!-- Smaller font -->
+                            </div>
+                            <div class="flex items-center space-x-0.5 telegram-accent"> <!-- Smaller space -->
+                                <i class="fas fa-star text-yellow-400 text-sm"></i> <!-- Smaller icon -->
+                                <span class="text-sm">${r.rating}</span> <!-- Smaller font -->
+                            </div>
                         </div>
-                        <button class="start-game-btn bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition" data-player-id="${player.id}">
-                            Start Game
-                        </button>
-                    `;
-                    nearbyPlayersContainer.appendChild(playerElement);
-                });
-            }
-        }
-
-        // --- GAME LOGIC ---
-        
-        /**
-         * Creates a new game document in Firestore.
-         * @param {string} otherPlayerId - The ID of the player to start a game with.
-         */
-        async function createGame(otherPlayerId) {
-            if (!currentUser) return;
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            activeGameId = [currentUser.uid, otherPlayerId].sort().join('_');
-            const gameRef = doc(db, `/artifacts/${appId}/public/data/games`, activeGameId);
-
-            try {
-                await setDoc(gameRef, {
-                    players: [currentUser.uid, otherPlayerId],
-                    tasks: SCAVENGER_HUNT_TASKS,
-                    status: 'active',
-                    createdAt: serverTimestamp(),
-                    scores: {
-                        [currentUser.uid]: 0,
-                        [otherPlayerId]: 0,
-                    },
-                    currentTaskIndex: {
-                        [currentUser.uid]: 0,
-                        [otherPlayerId]: 0,
-                    },
-                });
-                console.log("Game created with ID:", activeGameId);
-                // The onSnapshot listener will handle switching to the game screen
-            } catch (error) {
-                console.error("Error creating game:", error);
-                showError("Could not start the game.");
-            }
-        }
-        
-        /**
-         * Listens for updates to any game the current user is part of.
-         */
-        function listenForGameUpdates() {
-            if (gameUnsubscribe) gameUnsubscribe();
-            if (!currentUser) return;
-
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const gamesRef = collection(db, `/artifacts/${appId}/public/data/games`);
-            
-            gameUnsubscribe = onSnapshot(gamesRef, (snapshot) => {
-                let foundGame = false;
-                snapshot.forEach((doc) => {
-                    const gameData = doc.data();
-                    if (gameData.players && gameData.players.includes(currentUser.uid) && gameData.status === 'active') {
-                        activeGameId = doc.id;
-                        renderGame(gameData);
-                        foundGame = true;
-                    }
-                });
-
-                if (foundGame) {
-                    showScreen('game');
-                    if (playersUnsubscribe) playersUnsubscribe(); // Stop looking for players
-                } else {
-                    activeGameId = null;
-                    // If user was in game screen but game ended, go back to welcome
-                    if (screens.game.offsetParent !== null) {
-                        showScreen('welcome');
-                    }
-                }
+                        <p class="telegram-secondary-text text-xs mt-1">${r.distance} km away</p> <!-- Smaller font, margin -->
+                    </div>
+                `;
+                el.onclick = () => renderRestaurantDetail(r.id);
+                restaurantList.appendChild(el);
             });
         }
-        
-        /**
-         * Renders the current state of the game.
-         * @param {object} gameData - The data for the current game.
-         */
-        function renderGame(gameData) {
-            const userTaskIndex = gameData.currentTaskIndex[currentUser.uid];
-            const userScore = gameData.scores[currentUser.uid];
-            
-            scoreDisplay.textContent = userScore;
 
-            if (userTaskIndex >= gameData.tasks.length) {
-                gameOverMessage.classList.remove('hidden');
-                answerSection.classList.add('hidden');
-            } else {
-                taskDisplay.textContent = gameData.tasks[userTaskIndex].task;
-                gameOverMessage.classList.add('hidden');
-                answerSection.classList.remove('hidden');
-                answerInput.value = '';
-            }
-        }
-        
         /**
-         * Submits the user's answer and updates the game state.
+         * Renders the detailed view of a single restaurant.
+         * @param {number} restaurantId - The ID of the restaurant to display.
          */
-        async function submitAnswer() {
-            if (!activeGameId || !currentUser) return;
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const gameRef = doc(db, `/artifacts/${appId}/public/data/games`, activeGameId);
-            const answer = answerInput.value.trim().toLowerCase();
+        function renderRestaurantDetail(restaurantId) {
+            const restaurant = mockData.restaurants.find(r => r.id === restaurantId);
+            if (!restaurant) {
+                console.error('Restaurant not found:', restaurantId);
+                navigateBack(); // Go back if restaurant doesn't exist
+                return;
+            }
+
+            restaurantDetailPage.innerHTML = `
+                <header class="px-4 py-3 telegram-item-bg flex items-center shadow-sm z-10"> <!-- Slimmer padding, subtler shadow -->
+                    <button class="mr-3 back-btn text-lg"><i class="fas fa-arrow-left"></i></button> <!-- Slimmer margin, larger icon -->
+                    <h1 class="text-lg font-bold truncate">${restaurant.name}</h1> <!-- Slightly smaller font -->
+                </header>
+                <div class="relative h-40 bg-cover bg-center" style="background-image: url('${restaurant.image}')"> <!-- Slimmer height -->
+                    <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent"></div>
+                </div>
+                <div class="p-4 -mt-12 relative z-10"> <!-- Slimmer margin -->
+                    <h2 class="text-2xl font-bold">${restaurant.name}</h2> <!-- Slightly smaller font -->
+                    <p class="telegram-secondary-text text-sm">${restaurant.category} &bull; ${restaurant.distance}km away</p> <!-- Smaller font -->
+                    <div class="flex items-center space-x-1 telegram-accent mt-1"> <!-- Slimmer margin -->
+                        <i class="fas fa-star text-yellow-400 text-sm"></i> <!-- Smaller icon -->
+                        <span class="font-semibold text-sm">${restaurant.rating}</span> <!-- Smaller font -->
+                        <span class="telegram-secondary-text text-sm">(${restaurant.reviews.length} reviews)</span> <!-- Smaller font -->
+                    </div>
+                    <!-- Show on Map Button -->
+                    <button id="show-on-map-btn" class="w-full telegram-button text-white font-bold py-2 rounded-md mt-3 hover:bg-blue-600 transition-colors flex items-center justify-center space-x-2 text-sm"> <!-- Slimmer padding, rounder corners, smaller font -->
+                        <i class="fas fa-map-marked-alt"></i>
+                        <span>Show on Map</span>
+                    </button>
+                </div>
+                <!-- Secondary Tabs -->
+                <div class="border-b border-gray-700 px-4 flex space-x-5 bg-gray-900"> <!-- Slimmer space -->
+                    <button class="secondary-tab py-2.5 font-semibold border-b-2 active text-sm" data-tab="menu">Menu</button> <!-- Slimmer padding, smaller font -->
+                    <button class="secondary-tab py-2.5 font-semibold border-b-2 border-transparent text-gray-400 text-sm" data-tab="reviews">Reviews</button> <!-- Slimmer padding, smaller font -->
+                </div>
+                <main class="flex-grow overflow-y-auto p-3"> <!-- Slimmer padding -->
+                    <div id="restaurant-menu" class="secondary-tab-content active space-y-2"> <!-- Slimmer space -->
+                        ${restaurant.menu.length > 0 ? restaurant.menu.map(item => `
+                            <div class="telegram-item-bg p-3 rounded-lg flex items-center justify-between cursor-pointer menu-item-btn shadow-sm"> <!-- Slimmer padding, subtler shadow -->
+                                <div>
+                                    <p class="font-semibold text-base">${item.name}</p> <!-- Slightly smaller font -->
+                                    <p class="text-sm telegram-secondary-text">$${item.price.toFixed(2)}</p>
+                                </div>
+                                <i class="fas fa-chevron-right telegram-secondary-text text-sm"></i> <!-- Smaller icon -->
+                            </div>
+                        `).join('') : '<p class="telegram-secondary-text text-center">No menu items available.</p>'}
+                    </div>
+                    <div id="restaurant-reviews" class="secondary-tab-content space-y-2"> <!-- Slimmer space -->
+                        ${restaurant.reviews.length > 0 ? restaurant.reviews.map(review => `
+                            <div class="telegram-item-bg p-3 rounded-lg shadow-sm"> <!-- Slimmer padding, subtler shadow -->
+                                <div class="flex justify-between">
+                                    <p class="font-semibold text-base">${review.user}</p> <!-- Slightly smaller font -->
+                                    <div class="flex items-center space-x-0.5 text-yellow-400 text-sm">${'★'.repeat(review.rating)}${'☆'.repeat(5-review.rating)}</div> <!-- Smaller font -->
+                                </div>
+                                <p class="text-sm telegram-secondary-text mt-1">${review.text}</p>
+                            </div>
+                        `).join('') : '<p class="telegram-secondary-text text-center">No reviews yet.</p>'}
+                    </div>
+                </main>
+            `;
+            navigateTo('page-restaurant-detail');
             
-            // This requires a transaction or a read-then-write to be safe in a real app,
-            // but for this demo, we'll do a simple update.
-            onSnapshot(gameRef, async (docSnap) => {
-                if (docSnap.exists()) {
-                    const gameData = docSnap.data();
-                    const userTaskIndex = gameData.currentTaskIndex[currentUser.uid];
+            // Add event listeners for new content
+            restaurantDetailPage.querySelector('.back-btn').onclick = navigateBack;
+
+            // Show on Map button functionality
+            restaurantDetailPage.querySelector('#show-on-map-btn').addEventListener('click', () => {
+                const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(restaurant.name)}`;
+                window.open(mapUrl, '_blank');
+            });
+
+            // Secondary tabs logic
+            restaurantDetailPage.querySelectorAll('.secondary-tab').forEach(tab => {
+                tab.onclick = (e) => {
+                    restaurantDetailPage.querySelectorAll('.secondary-tab').forEach(t => {
+                        t.classList.remove('active', 'text-white');
+                        t.classList.add('text-gray-400', 'border-transparent');
+                    });
+                    e.target.classList.add('active', 'text-white');
+                    e.target.classList.remove('text-gray-400', 'border-transparent');
                     
-                    if (userTaskIndex < gameData.tasks.length && answer === gameData.tasks[userTaskIndex].answer) {
-                        const newIndex = userTaskIndex + 1;
-                        const newScore = gameData.scores[currentUser.uid] + 1;
-                        
-                        try {
-                            await setDoc(gameRef, {
-                                scores: { ...gameData.scores, [currentUser.uid]: newScore },
-                                currentTaskIndex: { ...gameData.currentTaskIndex, [currentUser.uid]: newIndex }
-                            }, { merge: true });
-                            console.log("Correct answer submitted!");
-                        } catch (error) {
-                            console.error("Error updating game state:", error);
-                        }
-                    } else {
-                        console.log("Incorrect answer.");
-                        answerInput.classList.add('border-red-500', 'animate-shake');
-                        setTimeout(() => answerInput.classList.remove('border-red-500', 'animate-shake'), 500);
-                    }
+                    restaurantDetailPage.querySelectorAll('.secondary-tab-content').forEach(c => c.classList.remove('active'));
+                    restaurantDetailPage.querySelector(`#restaurant-${e.target.dataset.tab}`).classList.add('active');
                 }
-            }, { onlyOnce: true }); // Use onlyOnce to avoid race conditions with the main listener
+            });
+
+            // Menu item detail navigation
+            restaurantDetailPage.querySelectorAll('.menu-item-btn').forEach(btn => {
+                btn.onclick = () => renderMenuItemDetail(btn.dataset.restId, btn.dataset.itemId);
+            });
         }
-        
+
         /**
-         * Deletes the game document from Firestore.
+         * Renders the detailed view of a single menu item.
+         * @param {number} restaurantId - The ID of the parent restaurant.
+         * @param {number} itemId - The ID of the menu item to display.
          */
-        async function leaveGame() {
-            if (!activeGameId) return;
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const gameRef = doc(db, `/artifacts/${appId}/public/data/games`, activeGameId);
-            try {
-                await deleteDoc(gameRef);
-                console.log("Game deleted.");
-                showScreen('welcome');
-            } catch (error) {
-                console.error("Error leaving game:", error);
-                showError("Could not leave the game. Please try again.");
+        function renderMenuItemDetail(restaurantId, itemId) {
+            const restaurant = mockData.restaurants.find(r => r.id == restaurantId);
+            const item = restaurant ? restaurant.menu.find(m => m.id == itemId) : null;
+            
+            if (!item) {
+                console.error('Menu item not found:', itemId, 'for restaurant:', restaurantId);
+                navigateBack(); // Go back if item doesn't exist
+                return;
             }
+
+            let currentQuantity = 1; // Default quantity
+
+            menuItemDetailPage.innerHTML = `
+                <header class="px-4 py-3 telegram-item-bg flex items-center shadow-sm z-10"> <!-- Slimmer padding, subtler shadow -->
+                    <button class="mr-3 back-btn text-lg"><i class="fas fa-arrow-left"></i></button> <!-- Slimmer margin, larger icon -->
+                    <h1 class="text-lg font-bold truncate">${item.name}</h1> <!-- Slightly smaller font -->
+                </header>
+                <main class="flex-grow overflow-y-auto pb-20"> <!-- Slimmer padding -->
+                    <img src="${item.image}" class="w-full h-56 object-cover" onerror="this.onerror=null;this.src='https://placehold.co/600x400/333/FFF?text=Image+Error';"> <!-- Slimmer height -->
+                    <div class="p-4">
+                        <h2 class="text-2xl font-bold">${item.name}</h2> <!-- Slightly smaller font -->
+                        <p class="text-xl font-semibold telegram-accent my-1">$<span id="item-current-price">${(item.price * currentQuantity).toFixed(2)}</span></p> <!-- Slimmer margin, slightly smaller font -->
+                        <p class="telegram-secondary-text text-sm leading-relaxed">${item.description}</p> <!-- Smaller font -->
+                    </div>
+                    <div class="px-4 py-3 flex items-center justify-center space-x-3 telegram-item-bg rounded-lg mx-3 mt-3 shadow-sm"> <!-- Slimmer padding, margin, space, subtler shadow -->
+                        <button id="quantity-decrease" class="telegram-button w-8 h-8 rounded-full flex items-center justify-center text-lg font-bold">-</button> <!-- Smaller buttons -->
+                        <span id="quantity-display" class="text-xl font-bold">${currentQuantity}</span> <!-- Slightly smaller font -->
+                        <button id="quantity-increase" class="telegram-button w-8 h-8 rounded-full flex items-center justify-center text-lg font-bold">+</button> <!-- Smaller buttons -->
+                    </div>
+                </main>
+                <footer class="p-3 telegram-item-bg border-t border-gray-700"> <!-- Slimmer padding -->
+                     <button id="add-to-cart-btn" class="w-full telegram-button text-white font-bold py-2 rounded-md hover:bg-blue-600 transition-colors text-sm"> <!-- Slimmer padding, rounder corners, smaller font -->
+                        Add to Cart
+                    </button>
+                </footer>
+            `;
+            navigateTo('page-menu-item-detail');
+            menuItemDetailPage.querySelector('.back-btn').onclick = navigateBack;
+
+            // Quantity controls logic
+            const quantityDisplay = menuItemDetailPage.querySelector('#quantity-display');
+            const itemCurrentPrice = menuItemDetailPage.querySelector('#item-current-price');
+
+            menuItemDetailPage.querySelector('#quantity-decrease').addEventListener('click', () => {
+                if (currentQuantity > 1) {
+                    currentQuantity--;
+                    quantityDisplay.textContent = currentQuantity;
+                    itemCurrentPrice.textContent = (item.price * currentQuantity).toFixed(2);
+                }
+            });
+
+            menuItemDetailPage.querySelector('#quantity-increase').addEventListener('click', () => {
+                currentQuantity++;
+                quantityDisplay.textContent = currentQuantity;
+                itemCurrentPrice.textContent = (item.price * currentQuantity).toFixed(2);
+            });
+
+            // Add to Cart functionality
+            menuItemDetailPage.querySelector('#add-to-cart-btn').addEventListener('click', () => {
+                const existingCartItemIndex = mockData.cart.findIndex(cartItem => cartItem.id === item.id);
+
+                if (existingCartItemIndex > -1) {
+                    // Item already in cart, update quantity
+                    mockData.cart[existingCartItemIndex].quantity += currentQuantity;
+                } else {
+                    // Add new item to cart
+                    mockData.cart.push({
+                        id: item.id,
+                        name: item.name,
+                        price: item.price,
+                        quantity: currentQuantity,
+                        restaurantId: restaurantId // Keep track of parent restaurant
+                    });
+                }
+                showCustomModal(`Added ${currentQuantity}x "${item.name}" to cart!`);
+                renderCart(); // Re-render cart to show updated items
+            });
         }
 
-        // --- EVENT LISTENERS ---
-        findPlayersBtn.addEventListener('click', findAndRegisterPlayer);
-        backToWelcomeBtn.addEventListener('click', () => {
-            if (playersUnsubscribe) playersUnsubscribe();
-            showScreen('welcome');
-        });
-        submitAnswerBtn.addEventListener('click', submitAnswer);
-        answerInput.addEventListener('keyup', (e) => {
-            if (e.key === 'Enter') submitAnswer();
-        });
-        leaveGameBtn.addEventListener('click', leaveGame);
-
-        document.body.addEventListener('click', (e) => {
-            if (e.target && e.target.classList.contains('start-game-btn')) {
-                const otherPlayerId = e.target.dataset.playerId;
-                createGame(otherPlayerId);
+        /**
+         * Renders the list of user orders.
+         */
+        function renderOrders() {
+            orderListContainer.innerHTML = '';
+            if (mockData.orders.length === 0) {
+                orderListContainer.innerHTML = '<p class="telegram-secondary-text text-center mt-6">You have no orders yet.</p>'; /* Slimmer margin */
+                return;
             }
+
+            mockData.orders.forEach(o => {
+                let statusColor = 'text-yellow-400';
+                if (o.status === 'Out for Delivery') statusColor = 'text-blue-400';
+                if (o.status === 'Delivered') statusColor = 'text-green-400';
+                const el = document.createElement('div');
+                el.className = 'telegram-item-bg p-3 rounded-lg shadow-sm'; /* Slimmer padding, subtler shadow */
+                el.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <p class="font-bold text-base">Order #${o.id}</p> <!-- Slightly smaller font -->
+                        <p class="font-semibold ${statusColor} text-sm">${o.status}</p> <!-- Smaller font -->
+                    </div>
+                    <p class="telegram-secondary-text text-xs mt-1">${o.items}</p> <!-- Smaller font, margin -->
+                    <p class="text-right font-bold mt-1 text-base">$${o.total.toFixed(2)}</p> <!-- Slimmer margin, slightly smaller font -->
+                `;
+                orderListContainer.appendChild(el);
+            });
+        }
+
+        /**
+         * Renders the items in the user's cart and calculates the total.
+         */
+        function renderCart() {
+            cartItemsContainer.innerHTML = '';
+            let total = 0;
+
+            if (mockData.cart.length === 0) {
+                cartItemsContainer.innerHTML = '<p class="telegram-secondary-text text-center mt-6">Your cart is empty.</p>'; /* Slimmer margin */
+                cartTotalEl.textContent = `$0.00`;
+                checkoutBtn.disabled = true; // Disable checkout if cart is empty
+                checkoutBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                return;
+            } else {
+                checkoutBtn.disabled = false; // Enable checkout if cart has items
+                checkoutBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+
+            mockData.cart.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
+                const el = document.createElement('div');
+                el.className = 'flex justify-between items-center telegram-item-bg p-3 rounded-lg shadow-sm'; /* Slimmer padding, subtler shadow */
+                el.innerHTML = `
+                    <div>
+                        <p class="font-semibold text-base">${item.name}</p> <!-- Slightly smaller font -->
+                        <p class="telegram-secondary-text text-sm">$${item.price.toFixed(2)}</p>
+                    </div>
+                    <div class="flex items-center space-x-2"> <!-- Slimmer space -->
+                        <span class="font-bold text-base">x ${item.quantity}</span> <!-- Slightly smaller font -->
+                        <span class="font-bold text-lg">$${itemTotal.toFixed(2)}</span>
+                    </div>
+                `;
+                cartItemsContainer.appendChild(el);
+            });
+            cartTotalEl.textContent = `$${total.toFixed(2)}`;
+        }
+
+        // Checkout button event listener
+        checkoutBtn.addEventListener('click', () => {
+            if (mockData.cart.length === 0) {
+                showCustomModal("Your cart is empty. Please add items before checking out.", "error");
+                return;
+            }
+
+            const orderId = 'ORD' + Math.random().toString(36).substr(2, 9).toUpperCase(); // Simple unique ID
+            const orderItemsSummary = mockData.cart.map(item => `${item.quantity}x ${item.name}`).join(', ');
+            const orderTotal = parseFloat(cartTotalEl.textContent.replace('$', ''));
+
+            const newOrder = {
+                id: orderId,
+                status: 'Preparing',
+                items: orderItemsSummary,
+                total: orderTotal,
+                timestamp: new Date().toISOString() // Add timestamp for realism
+            };
+
+            mockData.orders.unshift(newOrder); // Add to the beginning of orders list
+            mockData.cart = []; // Clear the cart
+
+            showCustomModal(`Order #${orderId} placed successfully!`);
+            renderOrders(); // Re-render orders page
+            renderCart(); // Re-render cart page (should now be empty)
+            
+            // Navigate to My Orders page
+            navItems.forEach(nav => nav.classList.remove('active'));
+            document.querySelector('a[href="#page-orders"]').classList.add('active');
+            navigateTo('page-orders');
         });
-        
+
+
         // --- INITIALIZATION ---
-        initializeFirebase();
+        function init() {
+            renderCategoryTabs();
+            renderRestaurants();
+            renderOrders();
+            renderCart(); // Initial render of cart to set total and button state
+        }
 
+        init();
+    });
     </script>
-    
-    <!-- Custom animation for input shake -->
-    <style>
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-            20%, 40%, 60%, 80% { transform: translateX(5px); }
-        }
-        .animate-shake {
-            animation: shake 0.5s ease-in-out;
-        }
-    </style>
-
 </body>
-</html>
+        </html>
