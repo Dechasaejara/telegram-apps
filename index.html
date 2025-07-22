@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Classroom</title>
+    <title>Classroom & Quiz App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Custom CSS variables for consistent theming */
         :root {
             --bg-dark: #17212b;
             --bg-light: #242f3d;
@@ -24,6 +25,10 @@
             font-family: 'Poppins', sans-serif;
             background-color: var(--bg-dark);
             color: var(--text-light);
+            /* Ensure body takes full height for proper modal positioning */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
         .tab-btn.active {
             border-color: var(--primary);
@@ -36,6 +41,10 @@
             background-color: var(--bg-dark);
             border-color: var(--border-color);
             color: var(--text-light);
+            /* Add rounded corners and focus styles */
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            transition: all 0.2s ease-in-out;
         }
         .form-input:focus, .form-select:focus, .form-textarea:focus {
             outline: none;
@@ -118,14 +127,55 @@
             object-fit: cover;
             color: var(--text-light);
         }
+
+        /* Modal specific styles for smooth transitions */
+        .modal-content {
+            transition: all 0.3s ease-out;
+        }
+        /* Loading overlay styles */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: white;
+            font-size: 1.5rem;
+            flex-direction: column;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="antialiased">
 
-    <div class="container mx-auto p-2 sm:p-4 max-w-7xl">
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="hidden">
+        <div class="spinner"></div>
+        <p>Loading...</p>
+    </div>
+
+    <div class="container mx-auto p-2 sm:p-4 max-w-7xl flex-grow">
         <header class="text-center mb-6">
             <h1 class="text-3xl md:text-4xl font-bold text-white">Teacher's Dashboard</h1>
             <p class="text-md" style="color: var(--text-medium);">Classroom Planner & Digital Yearbook</p>
+            <p id="user-info" class="text-sm mt-2" style="color: var(--text-medium);">Loading user info...</p>
         </header>
 
         <div class="mb-6 flex justify-center border-b" style="border-color: var(--border-color);">
@@ -150,8 +200,6 @@
                                 <h2 class="text-xl font-bold text-white">Configuration</h2>
                             </div>
                             
-                           
-
                             <details class="space-y-4 mb-4">
                                 <summary class="text-lg font-semibold cursor-pointer text-white flex justify-between items-center">
                                     <span>Class Details</span>
@@ -261,7 +309,7 @@
 
     <!-- Student Profile Modal -->
     <div id="seatModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-end sm:items-center justify-center hidden p-0 sm:p-4 z-50">
-        <div class="p-6 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-sm mx-auto transform transition-all scale-95 opacity-0 text-center" id="seatModalContent" style="background-color: var(--bg-light);">
+        <div class="p-6 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-sm mx-auto transform transition-all scale-95 opacity-0 text-center modal-content" id="seatModalContent" style="background-color: var(--bg-light);">
             <div class="relative">
                 <img id="modalPicture" src="" class="w-28 h-28 rounded-full mx-auto mb-4 border-4 object-cover" style="border-color: var(--primary);">
                 <span id="modalEmoji" class="absolute bottom-1 right-[calc(50%-48px)] transform translate-x-1/2 text-4xl"></span>
@@ -276,7 +324,7 @@
     
     <!-- Edit Details Modal -->
     <div id="editModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-end sm:items-center justify-center hidden p-0 sm:p-4 z-50">
-        <div class="p-6 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-md mx-auto transform transition-all scale-95 opacity-0" id="editModalContent" style="background-color: var(--bg-light);">
+        <div class="p-6 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-md mx-auto transform transition-all scale-95 opacity-0 modal-content" id="editModalContent" style="background-color: var(--bg-light);">
             <h2 class="text-xl font-bold mb-4 text-white">Edit Student Details <span id="seatIdDisplay" style="color: var(--primary);"></span></h2>
             <div class="space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -310,98 +358,279 @@
         </div>
     </div>
 
+    <!-- Message Modal -->
     <div id="messageModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden p-4 z-50">
-        <div class="p-8 rounded-2xl shadow-2xl w-full max-w-sm mx-auto text-center transform transition-all scale-95 opacity-0" id="messageModalContent" style="background-color: var(--bg-light);">
+        <div class="p-8 rounded-2xl shadow-2xl w-full max-w-sm mx-auto text-center transform transition-all scale-95 opacity-0 modal-content" id="messageModalContent" style="background-color: var(--bg-light);">
             <p id="messageText" class="text-lg font-medium mb-6 text-white"></p>
             <button id="messageOkBtn" class="text-white px-6 py-2 rounded-lg w-full transition-colors" style="background-color: var(--primary);">OK</button>
         </div>
     </div>
 
-    <script>
-        // --- TABS LOGIC ---
-        const allTabs = document.querySelectorAll('.tab-btn');
-        const tabContents = document.querySelectorAll('.tab-content');
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, query, onSnapshot, updateDoc, deleteDoc, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        allTabs.forEach(clickedTab => {
-            clickedTab.addEventListener('click', () => {
-                const targetTabName = clickedTab.dataset.tab;
-                const targetContent = document.getElementById(targetTabName);
+        // --- GLOBAL VARIABLES & FIREBASE SETUP ---
+        let db;
+        let auth;
+        let currentUserId = null;
+        let currentSeatAssignments = {}; // Stores student data for the current layout
+        let currentLayoutId = null; // Stores the ID of the currently loaded layout
+        const emojis = ['😀', '😎', '🤓', '🥳', '🤩', '😇', '🤠', '🤖', '👻', '👽', '🧑‍🚀', '🧑‍🎨', '🧑‍💻', '🧑‍🔬', '🧑‍🏫', '🧑‍🌾', '🧑‍🍳', '🧑‍🎤'];
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; // Canvas environment app ID
+        
+        // Ensure firebaseConfig has a projectId, even if __firebase_config is not fully provided
+        const defaultFirebaseConfig = {
+            apiKey: "AIzaSyAQ5kt3Be-aGBWMJNcsjf9PF9XAlOGQQVI",
+    authDomain: "lib-lelib.firebaseapp.com",
+    projectId: "lib-lelib",
+    storageBucket: "lib-lelib.firebasestorage.app",
+    messagingSenderId: "845613414852",
+    appId: "1:845613414852:web:f3912e29be739c9f69cc91",
+    measurementId: "G-VBVD57WD15"
+        };
+        let firebaseConfig;
+        try {
+            // Attempt to parse __firebase_config, fall back to default if it's empty or invalid
+            const parsedConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+            firebaseConfig = { ...defaultFirebaseConfig, ...parsedConfig };
+        } catch (e) {
+            console.error("Error parsing __firebase_config, using default config:", e);
+            firebaseConfig = defaultFirebaseConfig;
+        }
 
-                allTabs.forEach(tab => tab.classList.remove('active'));
-                clickedTab.classList.add('active');
+        console.log("Using Firebase Config:", firebaseConfig); // Log the config for debugging
 
-                tabContents.forEach(content => content.classList.remove('active'));
-                targetContent.classList.add('active');
-            });
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+
+        // Show loading overlay initially
+        showLoadingOverlay(true, "Initializing app...");
+
+        // Authenticate user with Firebase
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                document.getElementById('user-info').textContent = `User ID: ${currentUserId}`;
+                console.log("Firebase authenticated:", currentUserId);
+                // Load layouts and initial data after authentication
+                await loadAllLayouts();
+                // Attempt to load the last used layout or generate a default one
+                if (currentLayoutId) {
+                    const layout = await loadLayoutFromFirestore(currentLayoutId); // Use Firestore load
+                    if (layout) {
+                        setConfiguration(layout);
+                        generateLayout();
+                    } else {
+                        generateLayout(); // Generate default if last layout not found
+                    }
+                } else {
+                    generateLayout(); // Generate default if no last layout
+                }
+                showLoadingOverlay(false); // Hide loading overlay once authenticated and initial data loaded
+            } else {
+                currentUserId = null;
+                document.getElementById('user-info').textContent = 'Not authenticated. Signing in anonymously...';
+                try {
+                    // Use __initial_auth_token if available (from Canvas/Telegram Mini App)
+                    if (typeof __initial_auth_token !== 'undefined') {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                        console.log("Signed in with custom token.");
+                    } else {
+                        await signInAnonymously(auth);
+                        console.log("Signed in anonymously.");
+                    }
+                } catch (error) {
+                    console.error("Firebase authentication failed:", error);
+                    showMessage("Authentication failed. Please try again.");
+                    showLoadingOverlay(false);
+                }
+            }
         });
 
-        // --- CLASSROOM PLANNER LOGIC ---
-        let db;
-        let currentSeatAssignments = {};
-        const emojis = ['😀', '😎', '🤓', '🥳', '🤩', '😇', '🤠', '🤖', '👻', '👽', '🧑‍🚀', '🧑‍🎨', '🧑‍💻', '🧑‍🔬', '🧑‍🏫', '🧑‍🌾', '🧑‍🍳', '🧑‍🎤'];
-
+        // --- UTILITY FUNCTIONS ---
         function getRandomEmoji() {
             return emojis[Math.floor(Math.random() * emojis.length)];
         }
-        
-        function openDB() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open('ClassroomPlannerDB_v11', 1);
-                request.onupgradeneeded = (e) => {
-                    let db = e.target.result;
-                    if (!db.objectStoreNames.contains('layouts')) {
-                        db.createObjectStore('layouts', { keyPath: 'layoutId' });
-                    }
-                };
-                request.onsuccess = (e) => {
-                    db = e.target.result;
-                    resolve(db);
-                };
-                request.onerror = (e) => {
-                    console.error('DB Error:', e.target.error);
-                    reject(e.target.error);
-                };
-            });
+
+        function showLoadingOverlay(show, message = "Loading...") {
+            const overlay = document.getElementById('loading-overlay');
+            const messageElement = overlay.querySelector('p');
+            messageElement.textContent = message;
+            if (show) {
+                overlay.classList.remove('hidden');
+            } else {
+                overlay.classList.add('hidden');
+            }
         }
 
-        function saveLayout(layoutData) {
-            return new Promise((resolve, reject) => {
-                if (!db) return reject("Database not initialized.");
-                const transaction = db.transaction(['layouts'], 'readwrite');
-                const store = transaction.objectStore('layouts');
-                const request = store.put(layoutData);
-                request.onsuccess = () => resolve();
-                request.onerror = (e) => reject(e.target.error);
-            });
+        function showMessage(message) {
+            const modal = document.getElementById('messageModal');
+            document.getElementById('messageText').textContent = message;
+            openModal('messageModal');
         }
 
-        function loadLayout(layoutId) {
-            return new Promise((resolve, reject) => {
-                if (!db) return reject("DB not open");
-                const request = db.transaction('layouts').objectStore('layouts').get(layoutId);
-                request.onsuccess = (e) => resolve(e.target.result);
-                request.onerror = (e) => reject(e.target.error);
-            });
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.querySelector('.modal-content').classList.remove('scale-95', 'opacity-0'), 10);
         }
         
-        function loadAllLayouts() {
-            if (!db) return;
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            const content = modal.querySelector('.modal-content');
+            content.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 200);
+        }
+
+        // --- FIREBASE FIRESTORE FUNCTIONS ---
+
+        // Saves a layout to Firestore
+        async function saveLayoutToFirestore(layoutData) {
+            if (!currentUserId) {
+                showMessage("Authentication required to save layouts.");
+                return;
+            }
+            showLoadingOverlay(true, "Saving layout...");
+            try {
+                // Store layouts in a public collection for sharing/discoverability
+                const layoutDocRef = doc(db, `artifacts/${appId}/public/data/layouts`, layoutData.layoutId);
+                await setDoc(layoutDocRef, {
+                    ...layoutData,
+                    userId: currentUserId, // Associate layout with the creator
+                    updatedAt: new Date().toISOString()
+                });
+                console.log("Layout saved to Firestore:", layoutData.layoutId);
+                showMessage("Layout saved successfully!");
+                loadAllLayouts(); // Refresh the dropdown after saving
+            } catch (error) {
+                console.error("Error saving layout to Firestore:", error);
+                showMessage("Failed to save layout. Please try again.");
+            } finally {
+                showLoadingOverlay(false);
+            }
+        }
+
+        // Loads a layout from Firestore
+        async function loadLayoutFromFirestore(layoutId) {
+            if (!currentUserId) {
+                showMessage("Authentication required to load layouts.");
+                return null;
+            }
+            showLoadingOverlay(true, "Loading layout...");
+            try {
+                const layoutDocRef = doc(db, `artifacts/${appId}/public/data/layouts`, layoutId);
+                const docSnap = await getDoc(layoutDocRef);
+                if (docSnap.exists()) {
+                    const layout = docSnap.data();
+                    console.log("Layout loaded from Firestore:", layout);
+                    currentLayoutId = layoutId; // Set current layout ID
+                    return layout;
+                } else {
+                    showMessage("Layout not found.");
+                    return null;
+                }
+            } catch (error) {
+                console.error("Error loading layout from Firestore:", error);
+                showMessage("Failed to load layout. Please try again.");
+                return null;
+            } finally {
+                showLoadingOverlay(false);
+            }
+        }
+
+        // Loads all layouts for the current user from Firestore
+        async function loadAllLayouts() {
+            if (!currentUserId) {
+                console.warn("User not authenticated, cannot load all layouts.");
+                return;
+            }
             const select = document.getElementById('loadLayoutSelect');
             select.innerHTML = '<option value="">-- Select a saved layout --</option>';
-            const store = db.transaction('layouts').objectStore('layouts');
-            store.openCursor().onsuccess = (e) => {
-                const cursor = e.target.result;
-                if (cursor) {
-                    const layout = cursor.value;
-                    const option = document.createElement('option');
-                    option.value = layout.layoutId;
-                    option.textContent = `${layout.schoolName || 'School'} | ${layout.grade} - ${layout.sectionName} (${layout.year})`;
-                    select.appendChild(option);
-                    cursor.continue();
-                }
-            };
+            try {
+                // Query layouts created by the current user
+                const layoutsColRef = collection(db, `artifacts/${appId}/public/data/layouts`);
+                const q = query(layoutsColRef); // No 'where' clause here to allow loading public layouts
+                
+                // Use onSnapshot for real-time updates to the dropdown
+                onSnapshot(q, (snapshot) => {
+                    select.innerHTML = '<option value="">-- Select a saved layout --</option>'; // Clear existing options
+                    snapshot.forEach((doc) => {
+                        const layout = doc.data();
+                        const option = document.createElement('option');
+                        option.value = layout.layoutId;
+                        option.textContent = `${layout.schoolName || 'School'} | ${layout.grade} - ${layout.sectionName} (${layout.year})`;
+                        select.appendChild(option);
+                    });
+                    // If a layout was previously selected, re-select it
+                    if (currentLayoutId) {
+                        select.value = currentLayoutId;
+                    }
+                }, (error) => {
+                    console.error("Error listening to layouts:", error);
+                    showMessage("Failed to load layouts list.");
+                });
+            } catch (error) {
+                console.error("Error setting up layouts listener:", error);
+                showMessage("Failed to set up layouts listener.");
+            }
         }
 
+        // Saves student data for a specific layout to Firestore
+        async function saveStudentDataToFirestore(layoutId, seatAssignments) {
+            if (!currentUserId) {
+                showMessage("Authentication required to save student data.");
+                return;
+            }
+            showLoadingOverlay(true, "Saving student data...");
+            try {
+                // Store student data privately for the user under their layout
+                const studentDocRef = doc(db, `artifacts/${appId}/users/${currentUserId}/layouts/${layoutId}/studentData`, 'assignments');
+                await setDoc(studentDocRef, {
+                    assignments: JSON.stringify(seatAssignments), // Stringify complex object
+                    updatedAt: new Date().toISOString()
+                });
+                console.log("Student data saved to Firestore for layout:", layoutId);
+            } catch (error) {
+                console.error("Error saving student data to Firestore:", error);
+                showMessage("Failed to save student data.");
+            } finally {
+                showLoadingOverlay(false);
+            }
+        }
+
+        // Loads student data for a specific layout from Firestore
+        async function loadStudentDataFromFirestore(layoutId) {
+            if (!currentUserId) {
+                showMessage("Authentication required to load student data.");
+                return {};
+            }
+            showLoadingOverlay(true, "Loading student data...");
+            try {
+                const studentDocRef = doc(db, `artifacts/${appId}/users/${currentUserId}/layouts/${layoutId}/studentData`, 'assignments');
+                const docSnap = await getDoc(studentDocRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    console.log("Student data loaded from Firestore:", data);
+                    return JSON.parse(data.assignments || '{}'); // Parse the stringified object
+                } else {
+                    console.log("No student data found for this layout.");
+                    return {};
+                }
+            } catch (error) {
+                console.error("Error loading student data from Firestore:", error);
+                showMessage("Failed to load student data.");
+                return {};
+            } finally {
+                showLoadingOverlay(false);
+            }
+        }
+
+        // --- CLASSROOM PLANNER LOGIC ---
         function populateGradeDropdown() {
             const select = document.getElementById('gradeSelect');
             select.innerHTML = '';
@@ -427,6 +656,7 @@
             
             for (let k = 0; k < config.studentsPerDesk; k++) {
                 const seatId = `${deskId}-${k}`;
+                // Ensure seat assignment exists, initialize if not
                 if (!currentSeatAssignments[seatId]) {
                     currentSeatAssignments[seatId] = { name: '', roll: '', emoji: getRandomEmoji(), picUrl: '', bio: '', social: { twitter: '', linkedin: ''} };
                 } else if (!currentSeatAssignments[seatId].emoji) {
@@ -456,7 +686,7 @@
                 seatBack.className = 'seat-back';
                 const picUrl = assignment.picUrl;
                 seatBack.innerHTML = picUrl 
-                    ? `<img src="${picUrl}" alt="${assignment.name}" class="seat-back-img">`
+                    ? `<img src="${picUrl}" alt="${assignment.name}" class="seat-back-img" onerror="this.onerror=null;this.src='https://placehold.co/200x200/718096/FFFFFF?text=?';">` // Fallback for broken images
                     : `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>`;
 
                 seatInner.appendChild(seatFront);
@@ -487,7 +717,7 @@
             return desk;
         }
 
-        function generateLayout() {
+        async function generateLayout() {
             const classroomContainer = document.getElementById('classroomContainer');
             classroomContainer.innerHTML = '';
             
@@ -495,6 +725,13 @@
             if (!config.rows || !config.columns || !config.studentsPerDesk) {
                 showMessage("Please provide valid numbers for layout dimensions.");
                 return;
+            }
+
+            // Load student assignments for the current layout
+            if (currentLayoutId === config.layoutId) {
+                currentSeatAssignments = await loadStudentDataFromFirestore(config.layoutId);
+            } else {
+                currentSeatAssignments = {}; // Clear assignments if layout changed
             }
 
             const layoutWrapper = document.createElement('div');
@@ -545,7 +782,8 @@
             const year = document.getElementById('year').value;
             const grade = document.getElementById('gradeSelect').value;
             const sectionName = document.getElementById('sectionName').value.trim();
-            const layoutId = `${schoolName}-${year}-${grade}-${sectionName}`.replace(/\s+/g, '-').toLowerCase();
+            // Generate a unique layoutId
+            const layoutId = `${schoolName || 'UnnamedSchool'}-${year || 'UnknownYear'}-${grade || 'UnknownGrade'}-${sectionName || 'UnknownSection'}-${currentUserId || 'anonymous'}`.replace(/\s+/g, '-').toLowerCase();
 
             return {
                 layoutId, schoolName, year, grade, sectionName,
@@ -567,13 +805,8 @@
              document.getElementById('columns').value = layout.columns || 4;
              document.getElementById('studentsPerDesk').value = layout.studentsPerDesk || 3;
              document.getElementById('teacherDeskPosition').value = layout.teacherDeskPosition || 'top';
-             currentSeatAssignments = layout.seatAssignments || {};
-        }
-
-        function showMessage(message) {
-            const modal = document.getElementById('messageModal');
-            document.getElementById('messageText').textContent = message;
-            openModal('messageModal');
+             currentSeatAssignments = layout.seatAssignments || {}; // This will be overwritten by loadStudentDataFromFirestore
+             currentLayoutId = layout.layoutId; // Set the current layout ID when loading
         }
 
         function showStudentProfile(seatId) {
@@ -613,47 +846,27 @@
             document.getElementById('studentName').focus();
         }
 
-        function openModal(modalId) {
-            const modal = document.getElementById(modalId);
-            modal.classList.remove('hidden');
-            setTimeout(() => modal.querySelector(`#${modalId}Content`).classList.remove('scale-95', 'opacity-0'), 10);
-        }
-        
-        function closeModal(modalId) {
-            const modal = document.getElementById(modalId);
-            const content = modal.querySelector(`#${modalId}Content`);
-            content.classList.add('scale-95', 'opacity-0');
-            setTimeout(() => modal.classList.add('hidden'), 200);
-        }
-
+        // --- EVENT LISTENERS ---
         document.getElementById('generateBtn').addEventListener('click', generateLayout);
-        document.getElementById('saveBtn').addEventListener('click', () => {
+        document.getElementById('saveBtn').addEventListener('click', async () => {
             const config = getConfiguration();
             if (!config.schoolName || !config.year || !config.grade || !config.sectionName) {
                 showMessage("Please fill in School, Year, Grade, and Section to save.");
                 return;
             }
             const layoutData = { ...config, seatAssignments: currentSeatAssignments };
-            saveLayout(layoutData)
-                .then(() => {
-                    showMessage("Layout saved successfully!");
-                    loadAllLayouts();
-                })
-                .catch(err => {
-                    console.error('Save error:', err);
-                    showMessage('Failed to save layout.');
-                });
+            await saveLayoutToFirestore(layoutData);
+            await saveStudentDataToFirestore(config.layoutId, currentSeatAssignments);
         });
         
-        document.getElementById('loadLayoutSelect').addEventListener('change', (e) => {
+        document.getElementById('loadLayoutSelect').addEventListener('change', async (e) => {
             const layoutId = e.target.value;
             if (layoutId) {
-                loadLayout(layoutId).then(layout => {
-                    if (layout) {
-                        setConfiguration(layout);
-                        generateLayout();
-                    }
-                });
+                const layout = await loadLayoutFromFirestore(layoutId);
+                if (layout) {
+                    setConfiguration(layout);
+                    await generateLayout(); // Regenerate layout with loaded data
+                }
             }
         });
         
@@ -663,7 +876,7 @@
             setTimeout(() => openEditModal(seatId), 250);
         });
 
-        document.getElementById('saveSeatBtn').addEventListener('click', () => {
+        document.getElementById('saveSeatBtn').addEventListener('click', async () => {
             const seatId = document.getElementById('editModal').dataset.seatId;
             const newEmoji = document.getElementById('studentEmoji').value.trim();
             
@@ -678,7 +891,12 @@
                     linkedin: document.getElementById('socialLinkedin').value.trim()
                 }
             };
-            generateLayout();
+            generateLayout(); // Regenerate layout to reflect changes
+            if (currentLayoutId) {
+                await saveStudentDataToFirestore(currentLayoutId, currentSeatAssignments);
+            } else {
+                showMessage("Please save the layout first before saving student details.");
+            }
             closeModal('editModal');
         });
 
@@ -781,14 +999,34 @@
 
         // --- INITIAL LOAD ---
         window.onload = () => {
-            openDB().then(() => {
-                populateGradeDropdown();
-                loadAllLayouts();
-                generateLayout();
-            }).catch(err => showMessage("Could not open database."));
-
+            populateGradeDropdown();
             startQuiz();
+            // The Firebase onAuthStateChanged listener will handle initial data loading
         };
+
+        // --- Telegram Web App SDK Integration ---
+        // Load Telegram Web App SDK if available (it's usually injected by Telegram)
+        if (window.Telegram && window.Telegram.WebApp) {
+            Telegram.WebApp.ready();
+            console.log("Telegram WebApp is ready.");
+            console.log("Telegram User Data:", Telegram.WebApp.initDataUnsafe.user);
+            // You can use Telegram.WebApp.initDataUnsafe.user to get user details
+            // For instance, if you want to display the Telegram user's first name:
+            if (Telegram.WebApp.initDataUnsafe.user) {
+                const tgUser = Telegram.WebApp.initDataUnsafe.user;
+                document.getElementById('user-info').textContent = `Logged in as: ${tgUser.first_name} ${tgUser.last_name || ''} (ID: ${currentUserId || 'N/A'})`;
+                // If you need to send this data to your backend for custom authentication,
+                // you would typically send Telegram.WebApp.initData to your server,
+                // which then validates it and returns a custom Firebase auth token.
+                // For this example, we're assuming __initial_auth_token is already provided
+                // by the Canvas environment, simulating this step.
+            }
+        } else {
+            console.warn("Telegram WebApp SDK not found. Running standalone.");
+            document.getElementById('user-info').textContent += " (Standalone Mode)";
+        }
     </script>
+    <!-- Optional: Include Telegram Web App SDK if not already injected by Telegram -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </body>
 </html>
